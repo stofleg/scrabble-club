@@ -15,6 +15,13 @@ if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY ||
 
 const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
+// Service worker (PWA installable)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
 const POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 
 const state = {
