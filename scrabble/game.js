@@ -188,7 +188,8 @@ function renderBoard() {
         const sc = computePendingScore();
         if (sc !== null) badge = `<span class="score-badge">${sc}</span>`;
       }
-      html += `<td class="${cls.join(" ")}" data-r="${r}" data-c="${c}">${tileHtmlStr}${badge}</td>`;
+      const annot = renderAnnotations(r, c);
+      html += `<td class="${cls.join(" ")}" data-r="${r}" data-c="${c}">${tileHtmlStr}${badge}${annot}</td>`;
     }
     html += "</tr>";
   }
@@ -380,6 +381,8 @@ function escapeHtmlS(s) {
 function handleBoardClick(r, c) {
   // en mode review, désactivé
   if (review.active) return;
+  // En mode annotation, on annote la case (même si elle a une tuile)
+  if (state.annotTool && annotateCell(r, c)) return;
   // si tuile committed déjà posée → ne rien faire
   if (state.board[r][c]) return;
 
@@ -399,6 +402,79 @@ function clearPending() {
   for (const t of state.rack) t.used = false;
   state.pending = [];
   state.jokerPending = false;
+}
+
+function moveCursorKey(key) {
+  let { row, col } = state.cursor;
+  if (key === "ArrowLeft")  col--;
+  if (key === "ArrowRight") col++;
+  if (key === "ArrowUp")    row--;
+  if (key === "ArrowDown")  row++;
+  if (row < 0 || col < 0 || row >= BOARD_SIZE || col >= BOARD_SIZE) return;
+  state.cursor.row = row;
+  state.cursor.col = col;
+  // En sens horizontal : flèches G/D ; en vertical : flèches H/B (sinon on garde le sens actuel)
+  if (key === "ArrowLeft" || key === "ArrowRight") state.cursor.dir = "H";
+  else state.cursor.dir = "V";
+  renderBoard();
+}
+
+// ===== Annotations sur la grille =====
+state.annotations = {};          // "r,c" → { tl, tr, bl, br, center, arrows: [...] }
+state.annotTool = "";            // "", "tl"/"tr"/"bl"/"br"/"center", "arrow-up"/.../"arrow-left", "erase"
+
+function setAnnotTool(t) {
+  state.annotTool = t || "";
+  $$(".annot-btn").forEach(b => b.classList.toggle("active", (b.dataset.tool ?? "") === state.annotTool));
+  $("#board").classList.toggle("annot-mode", !!state.annotTool);
+}
+
+function annotateCell(r, c) {
+  const key = `${r},${c}`;
+  const t = state.annotTool;
+  if (!t) return false;
+  if (t === "erase") {
+    delete state.annotations[key];
+  } else if (t.startsWith("arrow-")) {
+    const dir = t.split("-")[1];
+    const cur = state.annotations[key] || {};
+    cur.arrows = cur.arrows || [];
+    if (cur.arrows.includes(dir)) cur.arrows = cur.arrows.filter(d => d !== dir);
+    else cur.arrows.push(dir);
+    state.annotations[key] = cur;
+  } else {
+    // texte dans un coin / centre
+    const text = (prompt(`Texte (1-3 caractères max) :`, (state.annotations[key]?.[t]) || "") || "").trim().slice(0, 3);
+    const cur = state.annotations[key] || {};
+    if (text) cur[t] = text; else delete cur[t];
+    if (Object.keys(cur).length === 0) delete state.annotations[key];
+    else state.annotations[key] = cur;
+  }
+  renderBoard();
+  return true;
+}
+
+window.clearAllAnnotations = function () {
+  if (!Object.keys(state.annotations).length) return;
+  if (confirm("Effacer toutes les annotations ?")) {
+    state.annotations = {};
+    renderBoard();
+  }
+};
+
+function renderAnnotations(r, c) {
+  const a = state.annotations[`${r},${c}`];
+  if (!a) return "";
+  let html = "";
+  for (const pos of ["tl","tr","bl","br"]) {
+    if (a[pos]) html += `<span class="annot ${pos}">${escapeHtmlS(a[pos])}</span>`;
+  }
+  if (a.center) html += `<span class="annot center">${escapeHtmlS(a.center)}</span>`;
+  for (const dir of (a.arrows || [])) {
+    const ch = { up:"▲", down:"▼", left:"◀", right:"▶" }[dir] || "";
+    html += `<span class="annot arrow ${dir}">${ch}</span>`;
+  }
+  return html;
 }
 
 function isOccupied(r, c) {
@@ -440,6 +516,13 @@ function handleKey(e) {
   if (e.key === "Enter") { e.preventDefault(); validate(); return; }
   if (e.key === "Escape") { e.preventDefault(); cancelCurrent(); return; }
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+  // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
+  if (state.cursor && state.pending.length === 0 &&
+      ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
+    e.preventDefault();
+    moveCursorKey(e.key);
+    return;
+  }
 
   if (e.key === "?") {
     // Active le mode joker pour la prochaine lettre
@@ -1341,7 +1424,8 @@ function startGame() {
   $("#actionRowInGame").hidden = false;
   const isTraining = !state.prepared && !state.isPuzzle;
   $("#btnPause").hidden = !isTraining;
-  if (isTraining) clearSavedTraining();   // nouvelle partie → on oublie l'ancienne pause
+  $("#annotToolbar").hidden = false;     // outils d'annotation disponibles dès le démarrage
+  if (isTraining) clearSavedTraining();
   startChrono();
   nextMove();
 }
@@ -1673,6 +1757,9 @@ window.jumpToReviewMove = (moveNo) => {
 };
 
 document.addEventListener("keydown", handleKey);
+$$(".annot-btn[data-tool]").forEach(b => {
+  b.onclick = () => setAnnotTool(b.dataset.tool || "");
+});
 $("#btnStart").onclick = startGame;
 $("#btnGiveUp").onclick = revealTop;
 $("#btnPause").onclick = pauseGame;

@@ -19,6 +19,21 @@
         <div class="board" id="board"></div>
         <div class="rack" id="rack"></div>
       </div>
+      <div class="annot-toolbar" id="annotToolbar" hidden>
+        <span class="annot-label">Annoter :</span>
+        <button class="annot-btn" data-tool="" title="Mode jeu (curseur)">🎮</button>
+        <button class="annot-btn" data-tool="tl" title="Texte coin haut-gauche">⌜</button>
+        <button class="annot-btn" data-tool="tr" title="Texte coin haut-droit">⌝</button>
+        <button class="annot-btn" data-tool="bl" title="Texte coin bas-gauche">⌞</button>
+        <button class="annot-btn" data-tool="br" title="Texte coin bas-droit">⌟</button>
+        <button class="annot-btn" data-tool="c"  title="Texte au centre">●</button>
+        <button class="annot-btn" data-tool="arrow-up"    title="Flèche ↑">↑</button>
+        <button class="annot-btn" data-tool="arrow-right" title="Flèche →">→</button>
+        <button class="annot-btn" data-tool="arrow-down"  title="Flèche ↓">↓</button>
+        <button class="annot-btn" data-tool="arrow-left"  title="Flèche ←">←</button>
+        <button class="annot-btn" data-tool="erase" title="Effacer la case">🧽</button>
+        <button class="annot-btn" onclick="clearAllAnnotations()" title="Tout effacer">×</button>
+      </div>
     </div>
 
     <aside class="right-col">
