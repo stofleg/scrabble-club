@@ -1000,6 +1000,10 @@ async function initGame() {
       return;
     }
   }
+  // Si aucune URL spéciale, et qu'on a un entraînement en pause sauvegardé → restaurer
+  if (!PREPARED_ID && !TRAINING_ID && !PUZZLE_GAME_ID && !REVIEW_ID) {
+    if (restorePausedTraining()) return;
+  }
   hideFeedback();
 }
 
@@ -1307,29 +1311,101 @@ function startGame() {
   state.started = true;
   $("#actionRowPreStart").hidden = true;
   $("#actionRowInGame").hidden = false;
-  // Pause autorisée seulement en mode entraînement (ni partie pré-tirée, ni puzzle)
   const isTraining = !state.prepared && !state.isPuzzle;
   $("#btnPause").hidden = !isTraining;
+  if (isTraining) clearSavedTraining();   // nouvelle partie → on oublie l'ancienne pause
   startChrono();
   nextMove();
 }
 
-// ===== Pause (uniquement entraînement) =====
+// ===== Pause + persistance (uniquement entraînement) =====
+const TRAINING_STORAGE_KEY = "trainingPaused";
 state.paused = false;
-state._pauseInfo = null;       // {chronoElapsedAtPause, moveTimeLeftAtPause}
+state._pauseInfo = null;
 
-function pauseGame() {
+function saveTrainingState() {
+  if (state.prepared || state.isPuzzle) return;
+  try {
+    const snapshot = {
+      bag: state.bag,
+      board: state.board,
+      rack: state.rack.map(t => ({ letter: t.letter })),
+      moveNo: state.moveNo,
+      totalScore: state.totalScore,
+      sumNeg: state.sumNeg,
+      spareJokers: state.spareJokers,
+      history: state.history,
+      lastPlaced: state.lastPlaced || [],
+      bestAttempt: state.bestAttempt,
+      settings: state.settings,
+      chronoElapsed: state._pauseInfo?.elapsed ?? elapsedSeconds(),
+      chronoPenalty: state.chronoPenalty,
+      moveTimeLeft: state._pauseInfo?.moveTimeLeft ?? state.moveTimeLeft,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(TRAINING_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (e) { console.error("Save training state failed:", e); }
+}
+
+function clearSavedTraining() {
+  localStorage.removeItem(TRAINING_STORAGE_KEY);
+}
+
+function restorePausedTraining() {
+  const raw = localStorage.getItem(TRAINING_STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+    state.bag = s.bag;
+    state.board = s.board;
+    state.rack = (s.rack || []).map(t => ({ letter: t.letter, used: false, id: nextTileId() }));
+    state.moveNo = s.moveNo;
+    state.totalScore = s.totalScore;
+    state.sumNeg = s.sumNeg;
+    state.spareJokers = s.spareJokers || 0;
+    state.history = s.history || [];
+    state.lastPlaced = s.lastPlaced || [];
+    state.bestAttempt = s.bestAttempt || null;
+    Object.assign(state.settings, s.settings || {});
+    state.chronoPenalty = s.chronoPenalty || 0;
+    state.started = true;
+    state.paused = true;
+    state._pauseInfo = { elapsed: s.chronoElapsed || 0, moveTimeLeft: s.moveTimeLeft || 0 };
+    state.chronoFinal = null;
+    // UI
+    $("#actionRowPreStart").hidden = true;
+    $("#actionRowInGame").hidden = false;
+    $("#btnPause").hidden = false;
+    renderInfo();
+    renderRack();
+    renderBoard();
+    renderGameTitle();
+    computeTop();
+    // Modale de pause active dès l'arrivée
+    $("#pauseModal").hidden = false;
+    return true;
+  } catch (e) {
+    console.error("Restore failed:", e);
+    clearSavedTraining();
+    return false;
+  }
+}
+
+function pauseGame({ showModal = true } = {}) {
   if (!state.started || state.chronoFinal != null || state.prepared || state.isPuzzle) return;
-  if (state.paused) return;
+  if (state.paused) {
+    if (showModal) $("#pauseModal").hidden = false;
+    return;
+  }
   state.paused = true;
-  // Fige l'élapsed du chrono : on convertit le "moment où on a démarré" en "élapsed acquis"
   state._pauseInfo = {
     elapsed: elapsedSeconds(),
     moveTimeLeft: state.moveTimeLeft,
   };
   if (chronoTimer) { clearInterval(chronoTimer); chronoTimer = null; }
   if (moveTimer)   { clearInterval(moveTimer);   moveTimer = null; }
-  $("#pauseModal").hidden = false;
+  saveTrainingState();
+  if (showModal) $("#pauseModal").hidden = false;
 }
 function resumeGame() {
   if (!state.paused) { $("#pauseModal").hidden = true; return; }
@@ -1353,11 +1429,13 @@ function resumeGame() {
   }
   state._pauseInfo = null;
   $("#pauseModal").hidden = true;
+  clearSavedTraining();
 }
 
 function endGame() {
   stopChrono();
   stopMoveTimer();
+  clearSavedTraining();
   hideFeedback();
   const time = fmtChrono(state.chronoFinal);
   $("#endSummary").innerHTML = `
@@ -1573,16 +1651,15 @@ $("#btnPause").onclick = pauseGame;
 $("#btnResume").onclick = resumeGame;
 // Intercepter le clic sur Accueil : en entraînement actif, on met en pause au lieu
 // de quitter directement. Le joueur peut alors choisir Reprendre ou Quitter.
-// Intercepte UNIQUEMENT le lien Accueil du header (pas celui de la modale pause)
-const headerAccueilLink = document.querySelector('header a[href="../index.html"]');
+// Intercepte le lien Accueil du header : pause silencieuse + nav
+const headerAccueilLink = document.querySelector('.title-row a[href="../index.html"], header a[href="../index.html"]');
 if (headerAccueilLink) {
   headerAccueilLink.addEventListener("click", (e) => {
     const isTraining = state.started && state.chronoFinal == null && !state.prepared && !state.isPuzzle;
     if (isTraining && !state.paused) {
       e.preventDefault();
-      e.stopImmediatePropagation();
-      pauseGame();
-      return false;
+      pauseGame({ showModal: false });   // pause + sauvegarde, sans modale
+      setTimeout(() => { window.location.href = headerAccueilLink.href; }, 50);
     }
   }, { capture: true });
 }
