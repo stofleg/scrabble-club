@@ -87,14 +87,14 @@ const state = {
   settings: loadSettings(),
 };
 
-const SETTINGS_DEFAULTS = {
-  rackPos: "bottom", sortRack: false, showCoords: true,
-  timePerMove: 0, gameMode: "duplicate", withJoker: false,
-};
 function loadSettings() {
+  const defaults = {
+    rackPos: "bottom", sortRack: false, showCoords: true,
+    timePerMove: 0, gameMode: "duplicate", withJoker: false,
+  };
   try {
-    return Object.assign({ ...SETTINGS_DEFAULTS }, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
-  } catch { return { ...SETTINGS_DEFAULTS }; }
+    return Object.assign(defaults, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
+  } catch { return defaults; }
 }
 async function loadSettingsFromSupabase() {
   const pid = +(localStorage.getItem("currentPlayerId") || 0);
