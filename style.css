@@ -577,14 +577,14 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 /* ===== Stats par tournoi (Phase F) ===== */
 .tournament-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 12px;
 }
 .t-stat-card {
   background: var(--cream);
   border-radius: 10px;
   padding: 12px 14px;
-  border-left: 3px solid var(--yellow);
+  border-top: 3px solid var(--yellow);
 }
 .t-stat-card h3 {
   margin: 0 0 8px 0;
