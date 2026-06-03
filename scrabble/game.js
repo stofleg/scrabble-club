@@ -1573,15 +1573,19 @@ $("#btnPause").onclick = pauseGame;
 $("#btnResume").onclick = resumeGame;
 // Intercepter le clic sur Accueil : en entraînement actif, on met en pause au lieu
 // de quitter directement. Le joueur peut alors choisir Reprendre ou Quitter.
-document.querySelectorAll('a[href="../index.html"]').forEach(a => {
-  a.addEventListener("click", (e) => {
+// Intercepte UNIQUEMENT le lien Accueil du header (pas celui de la modale pause)
+const headerAccueilLink = document.querySelector('header a[href="../index.html"]');
+if (headerAccueilLink) {
+  headerAccueilLink.addEventListener("click", (e) => {
     const isTraining = state.started && state.chronoFinal == null && !state.prepared && !state.isPuzzle;
     if (isTraining && !state.paused) {
       e.preventDefault();
+      e.stopImmediatePropagation();
       pauseGame();
+      return false;
     }
-  });
-});
+  }, { capture: true });
+}
 $("#btnRestart").onclick = () => {
   if (confirm("Démarrer une nouvelle partie ? La partie en cours sera perdue.")) restartGame();
 };
