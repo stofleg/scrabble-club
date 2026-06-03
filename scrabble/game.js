@@ -84,6 +84,9 @@ const state = {
   spareJokers: 0,
   // Meilleur essai sur le coup courant (réinitialisé à chaque coup)
   bestAttempt: null,          // { word, score }
+  // Annotations sur la grille (mode entraînement)
+  annotations: {},            // "r,c" → { tl, tr, bl, br, center, arrows: [...], dot }
+  annotTool: "",              // outil sélectionné dans la toolbar
   settings: loadSettings(),
 };
 
@@ -420,8 +423,6 @@ function moveCursorKey(key) {
 }
 
 // ===== Annotations sur la grille =====
-state.annotations = {};          // "r,c" → { tl, tr, bl, br, center, arrows: [...] }
-state.annotTool = "";            // "", "tl"/"tr"/"bl"/"br"/"center", "arrow-up"/.../"arrow-left", "erase"
 
 function setAnnotTool(t) {
   state.annotTool = t || "";
@@ -470,6 +471,7 @@ window.clearAllAnnotations = function () {
 };
 
 function renderAnnotations(r, c) {
+  if (!state.annotations) return "";
   const a = state.annotations[`${r},${c}`];
   if (!a) return "";
   let html = "";
