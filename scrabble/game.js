@@ -200,6 +200,9 @@ function renderBoard() {
   div.innerHTML = html;
   div.querySelectorAll("td[data-r]").forEach(td => {
     td.onclick = () => handleBoardClick(+td.dataset.r, +td.dataset.c);
+    td.addEventListener("dragover", onCellDragOver);
+    td.addEventListener("dragleave", onCellDragLeave);
+    td.addEventListener("drop", onCellDrop);
   });
 }
 
@@ -214,7 +217,6 @@ function cellTile(r, c) {
 
 function renderRack() {
   const div = $("#rack");
-  // Avant le démarrage, afficher des emplacements vides à la taille du mode
   if (state.rack.length === 0 && !state.started) {
     const size = currentMode().rackSize;
     div.innerHTML = Array.from({ length: size }, () => `<div class="tile empty"></div>`).join("");
@@ -223,18 +225,117 @@ function renderRack() {
   let tiles = [...state.rack];
   if (state.settings.sortRack) {
     tiles.sort((a, b) => {
-      // joker à la fin
       if (a.letter === "?" && b.letter !== "?") return 1;
       if (b.letter === "?" && a.letter !== "?") return -1;
       return a.letter.localeCompare(b.letter);
     });
   }
-  div.innerHTML = tiles.map(t =>
-    tileHtml(t.letter, t.letter === "?" ? "" : LETTER_VALUE[t.letter], {
-      used: t.used,
-      blank: t.letter === "?",
-    })
-  ).join("");
+  // Génère les tuiles draggables
+  div.innerHTML = tiles.map(t => {
+    const blank = t.letter === "?";
+    const val = blank ? "" : LETTER_VALUE[t.letter];
+    const cls = ["tile"];
+    if (t.used) cls.push("used");
+    if (blank) cls.push("blank");
+    const draggable = t.used ? "" : `draggable="true" data-rack-id="${t.id}"`;
+    return `<div class="${cls.join(" ")}" ${draggable}>${t.letter || ""}<span class="val">${val ?? ""}</span></div>`;
+  }).join("");
+  // Bind handlers DnD
+  div.querySelectorAll(".tile[data-rack-id]").forEach(el => {
+    el.addEventListener("dragstart", onRackTileDragStart);
+    el.addEventListener("dragend", onDragEnd);
+    el.addEventListener("dragover", onRackTileDragOver);
+    el.addEventListener("drop", onRackTileDrop);
+  });
+}
+
+// ===== Drag & Drop : chevalet =====
+let _dragRackId = null;
+
+function onRackTileDragStart(e) {
+  _dragRackId = +e.currentTarget.dataset.rackId;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", String(_dragRackId));
+  e.currentTarget.classList.add("dragging");
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  _dragRackId = null;
+  $$(".board td.drop-target").forEach(td => td.classList.remove("drop-target"));
+}
+function onRackTileDragOver(e) {
+  if (_dragRackId == null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+}
+function onRackTileDrop(e) {
+  if (_dragRackId == null) return;
+  e.preventDefault();
+  const targetId = +e.currentTarget.dataset.rackId;
+  if (targetId === _dragRackId) return;
+  // Réordonner state.rack : déplacer la tuile draguée avant la tuile cible
+  const srcIdx = state.rack.findIndex(t => t.id === _dragRackId);
+  const dstIdx = state.rack.findIndex(t => t.id === targetId);
+  if (srcIdx < 0 || dstIdx < 0) return;
+  const [moved] = state.rack.splice(srcIdx, 1);
+  const adjustedDst = dstIdx > srcIdx ? dstIdx : dstIdx;   // après suppression, dstIdx peut avoir bougé
+  // Insérer avant la cible (ou après si on dragge vers la droite)
+  const newIdx = state.rack.indexOf(state.rack.find(t => t.id === targetId));
+  state.rack.splice(newIdx, 0, moved);
+  // En mode "sortRack" actif, on désactive le tri pour préserver le réordonnement manuel
+  if (state.settings.sortRack) { state.settings.sortRack = false; saveSettings(); }
+  renderRack();
+}
+
+// Drop sur une case de la grille = pose la lettre tirée du chevalet
+function onCellDragOver(e) {
+  if (_dragRackId == null) return;
+  const td = e.currentTarget;
+  const r = +td.dataset.r, c = +td.dataset.c;
+  if (state.board[r][c] || state.pending.some(p => p.row === r && p.col === c)) return;
+  e.preventDefault();
+  td.classList.add("drop-target");
+}
+function onCellDragLeave(e) {
+  e.currentTarget.classList.remove("drop-target");
+}
+function onCellDrop(e) {
+  if (_dragRackId == null) return;
+  e.preventDefault();
+  const td = e.currentTarget;
+  td.classList.remove("drop-target");
+  const r = +td.dataset.r, c = +td.dataset.c;
+  if (state.board[r][c] || state.pending.some(p => p.row === r && p.col === c)) return;
+  const tile = state.rack.find(t => t.id === _dragRackId);
+  if (!tile || tile.used) return;
+  // Si c'est un joker, demander la lettre cible
+  let letter = tile.letter, isBlank = false;
+  if (tile.letter === "?") {
+    const L = (prompt("Lettre à associer au joker (A-Z) :", "") || "").trim().toUpperCase();
+    if (!/^[A-Z]$/.test(L)) return;
+    letter = L; isBlank = true;
+  }
+  tile.used = true;
+  state.pending.push({ row: r, col: c, letter, rackId: tile.id, isBlank });
+  // Positionner/avancer le curseur logique
+  if (!state.cursor) state.cursor = { row: r, col: c, dir: "H" };
+  state.cursor.row = r;
+  state.cursor.col = c;
+  advanceCursor();
+  renderBoard();
+  renderRack();
+}
+
+function shuffleRack() {
+  // Fisher-Yates parmi les tuiles non utilisées
+  const idxs = state.rack.map((t, i) => t.used ? -1 : i).filter(i => i >= 0);
+  for (let i = idxs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.rack[idxs[i]], state.rack[idxs[j]]] = [state.rack[idxs[j]], state.rack[idxs[i]]];
+  }
+  // Désactiver le tri auto si actif (sinon le mélange est inutile)
+  if (state.settings.sortRack) { state.settings.sortRack = false; saveSettings(); }
+  renderRack();
 }
 
 function renderInfo() {
@@ -526,6 +627,7 @@ function handleKey(e) {
   if (e.key === "Enter") { e.preventDefault(); validate(); return; }
   if (e.key === "Escape") { e.preventDefault(); cancelCurrent(); return; }
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+  if (e.key === "F1") { e.preventDefault(); shuffleRack(); return; }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
   if (state.cursor && state.pending.length === 0 &&
       ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {

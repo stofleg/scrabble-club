@@ -439,6 +439,10 @@ main {
   opacity: .25;
   transform: translateY(4px);
 }
+.rack .tile[draggable="true"] { cursor: grab; }
+.rack .tile[draggable="true"]:active { cursor: grabbing; }
+.rack .tile.dragging { opacity: .4; }
+.board td.drop-target { background: rgba(255,221,0,.45) !important; }
 .rack .tile.empty {
   background: transparent;
   border: 1.5px dashed rgba(255,221,0,.35);
