@@ -22,6 +22,19 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// Détection mode app (Chrome standalone/fullscreen/minimal-ui, Safari home-screen)
+function detectAppMode() {
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    window.navigator.standalone === true;     // iOS
+  document.body.classList.toggle("app-mode", isStandalone);
+}
+detectAppMode();
+window.matchMedia("(display-mode: standalone)").addEventListener?.("change", detectAppMode);
+window.matchMedia("(display-mode: fullscreen)").addEventListener?.("change", detectAppMode);
+
 const POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 
 const state = {

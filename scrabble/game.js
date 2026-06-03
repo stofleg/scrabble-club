@@ -1,3 +1,13 @@
+// Détection mode app (PWA standalone/fullscreen/minimal-ui)
+(function () {
+  const isApp =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    window.navigator.standalone === true;
+  if (isApp) document.body.classList.add("app-mode");
+})();
+
 // ============================================================
 //  La Garenna — Jeu Scrabble (mode entraînement)
 //

@@ -271,10 +271,11 @@ nav button .ico {
 /* ---------- MAIN ---------- */
 main { padding: 28px 20px; max-width: 1320px; margin: 0 auto; }
 
-/* En mode PWA installée, on profite du viewport plein écran */
-@media (display-mode: standalone) {
+/* En mode PWA installée (toutes variantes), on profite du viewport plein écran */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   main { max-width: 1500px; }
 }
+body.app-mode main { max-width: 1500px; }
 
 .card {
   background: var(--paper);
