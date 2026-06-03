@@ -587,6 +587,42 @@ main {
 
 .board.annot-mode td { cursor: crosshair; }
 
+/* Pastilles colorées (boutons toolbar) */
+.annot-toolbar .annot-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin: 0 4px;
+}
+.annot-btn.dot {
+  border: 2px solid rgba(0,0,0,.15);
+}
+.annot-btn.dot-red    { background: #e23b3b; }
+.annot-btn.dot-orange { background: #f08a2c; }
+.annot-btn.dot-yellow { background: #f1c40f; }
+.annot-btn.dot-green  { background: #2c9c4e; }
+.annot-btn.dot-blue   { background: #3a7bd5; }
+.annot-btn.dot-purple { background: #8a3cb5; }
+.annot-btn.dot.active { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--petrol-dark); }
+
+/* Pastille dans la case (au centre, semi-transparente pour voir la case dessous) */
+.board td .dot-mark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 55%; height: 55%;
+  border-radius: 50%;
+  opacity: .55;
+  z-index: 6;
+  pointer-events: none;
+}
+.board td .dot-mark.red    { background: #e23b3b; }
+.board td .dot-mark.orange { background: #f08a2c; }
+.board td .dot-mark.yellow { background: #f1c40f; }
+.board td .dot-mark.green  { background: #2c9c4e; }
+.board td .dot-mark.blue   { background: #3a7bd5; }
+.board td .dot-mark.purple { background: #8a3cb5; }
+
 /* ===== Mode review (parcours coup par coup) ===== */
 .review-panel {
   background: #fff;

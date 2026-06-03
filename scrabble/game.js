@@ -442,6 +442,13 @@ function annotateCell(r, c) {
     if (cur.arrows.includes(dir)) cur.arrows = cur.arrows.filter(d => d !== dir);
     else cur.arrows.push(dir);
     state.annotations[key] = cur;
+  } else if (t.startsWith("dot-")) {
+    const color = t.split("-")[1];
+    const cur = state.annotations[key] || {};
+    cur.dot = (cur.dot === color) ? null : color;   // re-clic même couleur = retire
+    if (!cur.dot) delete cur.dot;
+    state.annotations[key] = cur;
+    if (Object.keys(cur).length === 0) delete state.annotations[key];
   } else {
     // texte dans un coin / centre
     const text = (prompt(`Texte (1-3 caractères max) :`, (state.annotations[key]?.[t]) || "") || "").trim().slice(0, 3);
@@ -466,6 +473,7 @@ function renderAnnotations(r, c) {
   const a = state.annotations[`${r},${c}`];
   if (!a) return "";
   let html = "";
+  if (a.dot) html += `<span class="dot-mark ${a.dot}"></span>`;
   for (const pos of ["tl","tr","bl","br"]) {
     if (a[pos]) html += `<span class="annot ${pos}">${escapeHtmlS(a[pos])}</span>`;
   }
@@ -521,6 +529,13 @@ function handleKey(e) {
       ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
     e.preventDefault();
     moveCursorKey(e.key);
+    return;
+  }
+  // Barre espace : toggle sens du curseur (H ↔ V)
+  if (state.cursor && state.pending.length === 0 && e.key === " ") {
+    e.preventDefault();
+    state.cursor.dir = state.cursor.dir === "H" ? "V" : "H";
+    renderBoard();
     return;
   }
 
