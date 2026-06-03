@@ -826,11 +826,46 @@ window.archiveTournament = async (id) => {
 };
 window.delCurrentTournament = () => archiveTournament(currentTournamentId).then(() => backToTournaments());
 
+// Purge complète : supprime le tournoi, ses parties, tous les résultats associés,
+// ET le mirroir championnat (table games + results).
+window.purgeTournament = async (id) => {
+  const ok1 = confirm("⚠️ Purger ce tournoi DÉFINITIVEMENT ?\n\nToutes les parties, tous les résultats, et leurs scores au classement seront perdus.\n\nUtile pour effacer un tournoi de test sans polluer les statistiques.");
+  if (!ok1) return;
+  const ok2 = confirm("Vraiment sûr ? Cette action est IRRÉVERSIBLE.");
+  if (!ok2) return;
+
+  // 1) Récupérer les ids des prepared_games du tournoi
+  const { data: games } = await sb.from("prepared_games").select("id").eq("tournament_id", id);
+  const gameIds = (games || []).map(g => g.id);
+
+  // 2) Supprimer le mirroir championnat (games + results en cascade)
+  //    convention : session_no = 1000 + prepared_game.id, game_no = 1
+  if (gameIds.length) {
+    const sessionNos = gameIds.map(gid => 1000 + gid);
+    const { error: gErr } = await sb.from("games").delete().in("session_no", sessionNos);
+    if (gErr) console.warn("Suppression games championnat :", gErr.message);
+  }
+
+  // 3) Supprimer les prepared_games (cascade sur prepared_game_results)
+  if (gameIds.length) {
+    const { error: pErr } = await sb.from("prepared_games").delete().in("id", gameIds);
+    if (pErr) { alert("Suppression parties : " + pErr.message); return; }
+  }
+
+  // 4) Supprimer le tournoi
+  const { error: tErr } = await sb.from("tournaments").delete().eq("id", id);
+  if (tErr) { alert("Suppression tournoi : " + tErr.message); return; }
+
+  alert("Tournoi purgé.");
+};
+window.purgeCurrentTournament = () => purgeTournament(currentTournamentId).then(() => backToTournaments());
+
 async function loadTournamentDetail(tournamentId) {
   $("#tournamentsView").hidden = true;
   $("#tournamentDetailView").hidden = false;
   $("#pgFormCard").hidden = !isAdmin();
   $("#tournamentDelete").hidden = !isAdmin();
+  $("#tournamentPurge").hidden = !isAdmin();
 
   const { data: t } = await sb.from("tournaments").select("*").eq("id", tournamentId).maybeSingle();
   if (!t) { backToTournaments(); return; }
