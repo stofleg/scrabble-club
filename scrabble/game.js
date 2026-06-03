@@ -87,14 +87,39 @@ const state = {
   settings: loadSettings(),
 };
 
+const SETTINGS_DEFAULTS = {
+  rackPos: "bottom", sortRack: false, showCoords: true,
+  timePerMove: 0, gameMode: "duplicate", withJoker: false,
+};
 function loadSettings() {
-  const defaults = {
-    rackPos: "bottom", sortRack: false, showCoords: true,
-    timePerMove: 0, gameMode: "duplicate", withJoker: false,
-  };
   try {
-    return Object.assign(defaults, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
-  } catch { return defaults; }
+    return Object.assign({ ...SETTINGS_DEFAULTS }, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
+  } catch { return { ...SETTINGS_DEFAULTS }; }
+}
+async function loadSettingsFromSupabase() {
+  const pid = +(localStorage.getItem("currentPlayerId") || 0);
+  if (!pid) return;
+  if (!window._sb) await loadSupabaseClient();
+  const { data, error } = await window._sb.from("players").select("settings").eq("id", pid).maybeSingle();
+  if (error || !data?.settings) return;
+  Object.assign(state.settings, data.settings);
+  saveSettings();              // miroir local
+  applyRackPos();
+  renderRack();
+  renderBoard();
+  renderGameTitle();
+}
+async function saveSettingsToSupabase() {
+  const pid = +(localStorage.getItem("currentPlayerId") || 0);
+  if (!pid) return;
+  if (!window._sb) await loadSupabaseClient();
+  // On ne pousse que les préférences UI (pas la durée/mode imposés par un tournoi)
+  const persisted = {
+    rackPos: state.settings.rackPos,
+    sortRack: state.settings.sortRack,
+    showCoords: state.settings.showCoords,
+  };
+  await window._sb.from("players").update({ settings: persisted }).eq("id", pid);
 }
 
 function currentMode() {
@@ -892,6 +917,7 @@ window.closeSettings = () => {
   state.settings.showCoords = $("#optShowCoords").checked;
   state.settings.timePerMove = +$("#optTimePerMove").value || 0;
   saveSettings();
+  saveSettingsToSupabase().catch(() => {});   // sync compte (silencieux si pas connecté ou pas de colonne)
   applyRackPos();
   renderRack();
   renderBoard();
@@ -963,6 +989,8 @@ async function initGame() {
     showFeedback("", "Chargement du dictionnaire…", "");
     state.dict = await new Dictionary().load("ods9.txt");
   }
+  // Charger les préférences perso depuis Supabase (asynchrone, silencieux)
+  loadSettingsFromSupabase().catch(() => {});
   // Mode REVIEW d'une partie pré-tirée jouée
   if (REVIEW_ID) {
     try {
