@@ -565,3 +565,15 @@ main {
   .board td .tile { font-size: .75rem; }
   .rack .tile { width: 38px; height: 42px; font-size: 1.3rem; }
 }
+
+/* ===== Mode PWA installée (Chrome standalone) ===== */
+@media (display-mode: standalone) {
+  /* Grille plus grande pour exploiter le viewport plein écran */
+  .board td { width: 48px; height: 48px; }
+  .board td .tile { font-size: 1.7rem; }
+  .board td.coord { width: 22px; height: 22px; font-size: .85rem; }
+  /* Chevalet un peu plus grand aussi */
+  .rack .tile { width: 46px; height: 50px; font-size: 1.85rem; }
+  /* Centrer la zone de jeu quand la colonne de droite est creuse */
+  .layout { gap: 32px; }
+}
