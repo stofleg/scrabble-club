@@ -1307,8 +1307,52 @@ function startGame() {
   state.started = true;
   $("#actionRowPreStart").hidden = true;
   $("#actionRowInGame").hidden = false;
+  // Pause autorisée seulement en mode entraînement (ni partie pré-tirée, ni puzzle)
+  const isTraining = !state.prepared && !state.isPuzzle;
+  $("#btnPause").hidden = !isTraining;
   startChrono();
   nextMove();
+}
+
+// ===== Pause (uniquement entraînement) =====
+state.paused = false;
+state._pauseInfo = null;       // {chronoElapsedAtPause, moveTimeLeftAtPause}
+
+function pauseGame() {
+  if (!state.started || state.chronoFinal != null || state.prepared || state.isPuzzle) return;
+  if (state.paused) return;
+  state.paused = true;
+  // Fige l'élapsed du chrono : on convertit le "moment où on a démarré" en "élapsed acquis"
+  state._pauseInfo = {
+    elapsed: elapsedSeconds(),
+    moveTimeLeft: state.moveTimeLeft,
+  };
+  if (chronoTimer) { clearInterval(chronoTimer); chronoTimer = null; }
+  if (moveTimer)   { clearInterval(moveTimer);   moveTimer = null; }
+  $("#pauseModal").hidden = false;
+}
+function resumeGame() {
+  if (!state.paused) { $("#pauseModal").hidden = true; return; }
+  state.paused = false;
+  // Repartir le chrono à partir de l'élapsed acquis
+  state.chronoStart = Date.now() - (state._pauseInfo.elapsed - state.chronoPenalty) * 1000;
+  if (chronoTimer) clearInterval(chronoTimer);
+  chronoTimer = setInterval(renderChrono, 1000);
+  // Reprendre le minuteur de coup si actif
+  if (state.settings.timePerMove > 0 && state._pauseInfo.moveTimeLeft > 0) {
+    state.moveTimeLeft = state._pauseInfo.moveTimeLeft;
+    if (moveTimer) clearInterval(moveTimer);
+    moveTimer = setInterval(() => {
+      state.moveTimeLeft--;
+      renderMoveTimer();
+      if (state.moveTimeLeft <= 0) {
+        clearInterval(moveTimer);
+        timeoutAdvance();
+      }
+    }, 1000);
+  }
+  state._pauseInfo = null;
+  $("#pauseModal").hidden = true;
 }
 
 function endGame() {
@@ -1525,6 +1569,19 @@ window.jumpToReviewMove = (moveNo) => {
 document.addEventListener("keydown", handleKey);
 $("#btnStart").onclick = startGame;
 $("#btnGiveUp").onclick = revealTop;
+$("#btnPause").onclick = pauseGame;
+$("#btnResume").onclick = resumeGame;
+// Intercepter le clic sur Accueil : en entraînement actif, on met en pause au lieu
+// de quitter directement. Le joueur peut alors choisir Reprendre ou Quitter.
+document.querySelectorAll('a[href="../index.html"]').forEach(a => {
+  a.addEventListener("click", (e) => {
+    const isTraining = state.started && state.chronoFinal == null && !state.prepared && !state.isPuzzle;
+    if (isTraining && !state.paused) {
+      e.preventDefault();
+      pauseGame();
+    }
+  });
+});
 $("#btnRestart").onclick = () => {
   if (confirm("Démarrer une nouvelle partie ? La partie en cours sera perdue.")) restartGame();
 };

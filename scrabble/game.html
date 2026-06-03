@@ -45,6 +45,7 @@
       </div>
       <div class="action-row" id="actionRowInGame" hidden>
         <button class="btn ghost small" id="btnGiveUp">Voir le top (−20s)</button>
+        <button class="btn ghost small" id="btnPause" hidden>⏸ Pause</button>
         <button class="btn ghost small" id="btnAbandon">Abandonner</button>
         <button class="btn ghost small" id="btnRestart">Nouvelle partie</button>
       </div>
@@ -118,6 +119,19 @@
     </div>
     <div class="setting">
       <button class="btn secondary" onclick="restartGame()">Nouvelle partie</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pause -->
+<div id="pauseModal" class="modal" hidden>
+  <div class="backdrop"></div>
+  <div class="content" style="max-width:380px;text-align:center">
+    <h2 style="margin-top:0">⏸ Partie en pause</h2>
+    <p class="muted">Le chrono est arrêté. Reprends quand tu es prêt.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+      <button class="btn primary" id="btnResume" style="background:var(--yellow);color:var(--petrol-dark);font-weight:700">▶ Reprendre</button>
+      <a href="../index.html" class="btn ghost">Quitter la partie</a>
     </div>
   </div>
 </div>
