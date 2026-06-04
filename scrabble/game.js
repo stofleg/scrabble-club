@@ -181,11 +181,16 @@ function renderBoard() {
       const isCursor = state.cursor && state.cursor.row === r && state.cursor.col === c;
       if (isCursor) cls.push("cursor", state.cursor.dir === "H" ? "dir-h" : "dir-v");
       if (state.lastPlaced.some(p => p.row === r && p.col === c)) cls.push("last-placed");
-      const tileHtmlStr = tile ? tileHtml(
-        tile.letter,
-        tile.isBlank ? "" : LETTER_VALUE[tile.letter],
-        { pending: !!tile.pending, blank: tile.isBlank }
-      ) : "";
+      let tileHtmlStr = "";
+      if (tile) {
+        const tcls = ["tile"];
+        if (tile.isBlank) tcls.push("blank");
+        if (tile.pending) tcls.push("pending");
+        const tval = tile.isBlank ? "" : LETTER_VALUE[tile.letter];
+        // Les tuiles "pending" sont draggables (pour les déplacer)
+        const dragAttr = tile.pending ? `draggable="true" data-pending-r="${r}" data-pending-c="${c}"` : "";
+        tileHtmlStr = `<div class="${tcls.join(" ")}" ${dragAttr}>${tile.letter}<span class="val">${tval ?? ""}</span></div>`;
+      }
       // Badge de score live sur la case du curseur s'il y a des pending
       let badge = "";
       if (isCursor && state.pending.length > 0) {
@@ -207,6 +212,11 @@ function renderBoard() {
     td.addEventListener("drop", onCellDrop);
     td.addEventListener("mousedown", (e) => onCellMouseDown(e, r, c));
     td.addEventListener("mouseup",   (e) => onCellMouseUp(e, r, c));
+  });
+  // Tuiles "pending" sur le plateau : draggables pour déplacement
+  div.querySelectorAll(".tile[data-pending-r]").forEach(el => {
+    el.addEventListener("dragstart", onPendingTileDragStart);
+    el.addEventListener("dragend", onDragEnd);
   });
 }
 
@@ -253,18 +263,30 @@ function renderRack() {
   });
 }
 
-// ===== Drag & Drop : chevalet =====
+// ===== Drag & Drop : chevalet + tuiles posées =====
 let _dragRackId = null;
+let _dragPendingFrom = null;     // { row, col } pour déplacement d'une tuile pending
 
 function onRackTileDragStart(e) {
   _dragRackId = +e.currentTarget.dataset.rackId;
+  _dragPendingFrom = null;
   e.dataTransfer.effectAllowed = "move";
   e.dataTransfer.setData("text/plain", String(_dragRackId));
+  e.currentTarget.classList.add("dragging");
+}
+function onPendingTileDragStart(e) {
+  const r = +e.currentTarget.dataset.pendingR;
+  const c = +e.currentTarget.dataset.pendingC;
+  _dragPendingFrom = { row: r, col: c };
+  _dragRackId = null;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", `pending:${r},${c}`);
   e.currentTarget.classList.add("dragging");
 }
 function onDragEnd(e) {
   e.currentTarget.classList.remove("dragging");
   _dragRackId = null;
+  _dragPendingFrom = null;
   $$(".board td.drop-target").forEach(td => td.classList.remove("drop-target"));
 }
 function onRackTileDragOver(e) {
@@ -291,10 +313,16 @@ function onRackTileDrop(e) {
 
 // Drop sur une case de la grille = pose la lettre tirée du chevalet
 function onCellDragOver(e) {
-  if (_dragRackId == null) return;
+  if (_dragRackId == null && !_dragPendingFrom) return;
   const td = e.currentTarget;
   const r = +td.dataset.r, c = +td.dataset.c;
-  if (state.board[r][c] || state.pending.some(p => p.row === r && p.col === c)) return;
+  // Cible doit être vide (ni committed, ni pending — sauf si on déplace une tuile sur sa propre case)
+  if (state.board[r][c]) return;
+  const occupiedByOtherPending = state.pending.some(p =>
+    p.row === r && p.col === c &&
+    !(_dragPendingFrom && p.row === _dragPendingFrom.row && p.col === _dragPendingFrom.col)
+  );
+  if (occupiedByOtherPending) return;
   e.preventDefault();
   td.classList.add("drop-target");
 }
@@ -302,15 +330,29 @@ function onCellDragLeave(e) {
   e.currentTarget.classList.remove("drop-target");
 }
 function onCellDrop(e) {
-  if (_dragRackId == null) return;
+  if (_dragRackId == null && !_dragPendingFrom) return;
   e.preventDefault();
   const td = e.currentTarget;
   td.classList.remove("drop-target");
   const r = +td.dataset.r, c = +td.dataset.c;
+  // ===== Déplacement d'une tuile pending =====
+  if (_dragPendingFrom) {
+    const src = _dragPendingFrom;
+    if (state.board[r][c]) return;
+    if (src.row === r && src.col === c) return;
+    const occupiedByOther = state.pending.some(p => p.row === r && p.col === c);
+    if (occupiedByOther) return;
+    const tile = state.pending.find(p => p.row === src.row && p.col === src.col);
+    if (!tile) return;
+    tile.row = r;
+    tile.col = c;
+    renderBoard();
+    return;
+  }
+  // ===== Pose depuis le chevalet =====
   if (state.board[r][c] || state.pending.some(p => p.row === r && p.col === c)) return;
   const tile = state.rack.find(t => t.id === _dragRackId);
   if (!tile || tile.used) return;
-  // Si c'est un joker, demander la lettre cible
   let letter = tile.letter, isBlank = false;
   if (tile.letter === "?") {
     const L = (prompt("Lettre à associer au joker (A-Z) :", "") || "").trim().toUpperCase();
@@ -319,7 +361,6 @@ function onCellDrop(e) {
   }
   tile.used = true;
   state.pending.push({ row: r, col: c, letter, rackId: tile.id, isBlank });
-  // Positionner/avancer le curseur logique
   if (!state.cursor) state.cursor = { row: r, col: c, dir: "H" };
   state.cursor.row = r;
   state.cursor.col = c;
