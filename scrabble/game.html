@@ -28,12 +28,25 @@
         <a href="../index.html" class="btn small" title="Retour">← Accueil</a>
       </div>
 
-      <div class="info-bar">
-        <div class="item"><span class="label">Coup</span><span class="value" id="moveNo">1</span></div>
-        <div class="item"><span class="label">Cumul</span><span class="value" id="totalScore">0</span></div>
-        <div class="item"><span class="label">Négatif</span><span class="value" id="sumNeg">0</span></div>
-        <div class="item"><span class="label">Temps</span><span class="value" id="chrono">0:00</span></div>
+      <div class="info-bar two-sections">
+        <div class="info-section info-left">
+          <div class="section-title">Partie</div>
+          <div class="items">
+            <div class="item"><span class="label">Cumul</span><span class="value" id="totalScore">0</span></div>
+            <div class="item"><span class="label">Négatif</span><span class="value" id="sumNeg">0</span></div>
+            <div class="item"><span class="label">Temps</span><span class="value" id="chrono">0:00</span></div>
+          </div>
+        </div>
+        <div class="info-section info-right">
+          <div class="section-title">Coup précédent</div>
+          <div class="items">
+            <div class="item"><span class="label">N°</span><span class="value" id="prevMoveNo">—</span></div>
+            <div class="item"><span class="label">Négatif</span><span class="value" id="prevNeg">—</span></div>
+            <div class="item"><span class="label">Temps</span><span class="value" id="prevTime">—</span></div>
+          </div>
+        </div>
       </div>
+      <span id="moveNo" hidden>1</span>
 
       <div class="move-timer-chip" id="moveTimerChip" style="display:none">
         <span class="label">Ce coup</span>

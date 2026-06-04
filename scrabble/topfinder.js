@@ -32,7 +32,8 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   if (!all.length) return null;
   const top = all[0].score;
   const tied = all.filter(c => c.score === top);
-  if (tied.length === 1) return { ...tied[0], isotops: 1 };
+  const isotopWords = [...new Set(tied.map(c => c.move.word))];
+  if (tied.length === 1) return { ...tied[0], isotops: 1, isotopWords };
 
   const preserveJoker = !!opts.preserveJoker;
   const isFirstMove = board.every(row => row.every(c => !c));
@@ -70,7 +71,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     b._open - a._open ||
     b._leave - a._leave
   );
-  return { ...scored[0], isotops: tied.length };
+  return { ...scored[0], isotops: tied.length, isotopWords };
 }
 
 function scoreQPosition(move) {

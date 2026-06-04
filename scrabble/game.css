@@ -190,6 +190,35 @@ main {
 .info-bar .grow { flex: 1; }
 .info-bar .btn { margin-left: auto; }
 
+/* Variante "deux sections" : Partie (gauche) | Coup précédent (droite) */
+.info-bar.two-sections { gap: 0; padding: 8px 12px; }
+.info-bar.two-sections .info-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 12px;
+  min-width: 0;
+}
+.info-bar.two-sections .info-section + .info-section {
+  border-left: 1px solid #e3eaee;
+}
+.info-bar.two-sections .section-title {
+  font-size: .6rem;
+  color: #8595a0;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-weight: 600;
+}
+.info-bar.two-sections .items {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+}
+.info-bar.two-sections .item { gap: 1px; }
+.info-bar.two-sections .item .value { font-size: 1.1rem; }
+.info-bar.two-sections .info-right .item .value { color: #6a7980; }
+
 .btn {
   font-family: inherit;
   font-weight: 600;

@@ -425,9 +425,18 @@ function restoreRackSort() {
 }
 
 function renderInfo() {
-  $("#moveNo").textContent = state.moveNo;
+  const moveNoEl = document.getElementById("moveNo");
+  if (moveNoEl) moveNoEl.textContent = state.moveNo;
   $("#totalScore").textContent = state.totalScore;
   $("#sumNeg").textContent = state.sumNeg;
+  // Section "coup précédent"
+  const last = state.history?.[state.history.length - 1];
+  const prevNoEl = document.getElementById("prevMoveNo");
+  const prevNegEl = document.getElementById("prevNeg");
+  const prevTimeEl = document.getElementById("prevTime");
+  if (prevNoEl)   prevNoEl.textContent   = last ? last.moveNo : "—";
+  if (prevNegEl)  prevNegEl.textContent  = last ? last.neg : "—";
+  if (prevTimeEl) prevTimeEl.textContent = last ? fmtChrono(Math.round((last.timeMs || 0) / 1000)) : "—";
   renderChrono();
   renderMoveTimer();
   renderBag();
@@ -611,12 +620,20 @@ function handleBoardClick(r, c) {
   if (review.active) return;
   if (state.annotTool) { annotateCell(r, c); return; }
   if (state.board[r][c]) return;
+  // Si on a des tuiles en cours de pose et qu'on clique en dehors, on les renvoie
+  // sur le chevalet (annule la saisie) puis on repositionne le curseur.
+  const clickedOnPending = state.pending.some(p => p.row === r && p.col === c);
+  if (state.pending.length > 0 && !clickedOnPending) {
+    clearPending();
+    state.cursor = { row: r, col: c, dir: "H" };
+    renderRack();
+    renderBoard();
+    return;
+  }
   if (state.cursor && state.cursor.row === r && state.cursor.col === c) {
     state.cursor.dir = state.cursor.dir === "H" ? "V" : "H";
   } else {
-    // Repositionnement sans effacer les tuiles posées (utile pour compléter ailleurs).
-    // Pour effacer, le joueur utilise Échap.
-    // Nouvelle case : on repart toujours en horizontal (2e clic sur la même case → bascule en V).
+    // Nouvelle case : on repart toujours en horizontal (2e clic = bascule en V).
     state.cursor = { row: r, col: c, dir: "H" };
   }
   renderBoard();
@@ -933,16 +950,18 @@ function validate() {
   // peu importe la position de placement.
   if (state.moveNo === 1 && topMv && state.topMove) {
     const topScore = state.topMove.score;
-    const rackLetters = state.rack.map(t => t.letter);
-    const allMoves = findTop(state.board, rackLetters, state.dict, {
-      all: true,
-      maxTilesUsed: mode.maxPlayed,
-      bonuses: mode.bonuses,
-    }) || [];
-    const isotopWords = new Set(
-      allMoves.filter(c => c.score === topScore).map(c => c.move.word)
-    );
-    if (isotopWords.has(move.word)) {
+    // Liste des mots isotopes pré-calculée par findTopRanked.
+    // En mode pré-tiré (tournoi), la liste n'est pas stockée → on la calcule à la volée.
+    let isotopWords = state.topMove.isotopWords;
+    if (!isotopWords) {
+      const rackLetters = state.rack.map(t => t.letter);
+      const allMoves = findTop(state.board, rackLetters, state.dict, {
+        all: true, maxTilesUsed: mode.maxPlayed, bonuses: mode.bonuses,
+      }) || [];
+      isotopWords = [...new Set(allMoves.filter(c => c.score === topScore).map(c => c.move.word))];
+      state.topMove.isotopWords = isotopWords;
+    }
+    if (isotopWords.includes(move.word)) {
       recordMove({ status: "top", playerScore: topScore, playedWord: move.word });
       placeTopAndAdvance(topScore);
       nextMove();
