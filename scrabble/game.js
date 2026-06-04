@@ -85,7 +85,8 @@ const state = {
   // Meilleur essai sur le coup courant (réinitialisé à chaque coup)
   bestAttempt: null,          // { word, score }
   // Annotations sur la grille (mode entraînement)
-  annotations: {},            // "r,c" → { tl, tr, bl, br, center, arrows: [...], dot }
+  annotations: {},            // "r,c" → { tl, tr, bl, br, center, dot }
+  arrowAnnotations: [],       // [{fromR, fromC, toR, toC}]
   annotTool: "",              // outil sélectionné dans la toolbar
   settings: loadSettings(),
 };
@@ -199,10 +200,13 @@ function renderBoard() {
   html += "</table>";
   div.innerHTML = html;
   div.querySelectorAll("td[data-r]").forEach(td => {
-    td.onclick = () => handleBoardClick(+td.dataset.r, +td.dataset.c);
+    const r = +td.dataset.r, c = +td.dataset.c;
+    td.onclick = () => handleBoardClick(r, c);
     td.addEventListener("dragover", onCellDragOver);
     td.addEventListener("dragleave", onCellDragLeave);
     td.addEventListener("drop", onCellDrop);
+    td.addEventListener("mousedown", (e) => onCellMouseDown(e, r, c));
+    td.addEventListener("mouseup",   (e) => onCellMouseUp(e, r, c));
   });
 }
 
@@ -483,11 +487,9 @@ function escapeHtmlS(s) {
 //  Curseur & frappe
 // ============================================================
 function handleBoardClick(r, c) {
-  // en mode review, désactivé
   if (review.active) return;
-  // En mode annotation, on annote la case (même si elle a une tuile)
-  if (state.annotTool && annotateCell(r, c)) return;
-  // si tuile committed déjà posée → ne rien faire
+  // En mode annotation, on annote (ou rien pour l'outil flèche qui se trace au drag)
+  if (state.annotTool) { annotateCell(r, c); return; }
   if (state.board[r][c]) return;
 
   if (state.cursor && state.cursor.row === r && state.cursor.col === c) {
@@ -537,13 +539,10 @@ function annotateCell(r, c) {
   if (!t) return false;
   if (t === "erase") {
     delete state.annotations[key];
-  } else if (t.startsWith("arrow-")) {
-    const dir = t.split("-")[1];
-    const cur = state.annotations[key] || {};
-    cur.arrows = cur.arrows || [];
-    if (cur.arrows.includes(dir)) cur.arrows = cur.arrows.filter(d => d !== dir);
-    else cur.arrows.push(dir);
-    state.annotations[key] = cur;
+    // Effacer aussi les flèches qui passent par cette case
+    state.arrowAnnotations = (state.arrowAnnotations || []).filter(a => !arrowPassesThrough(a, r, c));
+  } else if (t === "arrow") {
+    return false;   // la flèche se trace au mousedown/up, pas au click
   } else if (t.startsWith("dot-")) {
     const color = t.split("-")[1];
     const cur = state.annotations[key] || {};
@@ -564,28 +563,83 @@ function annotateCell(r, c) {
 }
 
 window.clearAllAnnotations = function () {
-  if (!Object.keys(state.annotations).length) return;
+  const hasAny = Object.keys(state.annotations).length || (state.arrowAnnotations || []).length;
+  if (!hasAny) return;
   if (confirm("Effacer toutes les annotations ?")) {
     state.annotations = {};
+    state.arrowAnnotations = [];
     renderBoard();
   }
 };
 
+// ===== Dessin de flèches par cliquer-glisser =====
+let _arrowStart = null;
+function onCellMouseDown(e, r, c) {
+  if (state.annotTool !== "arrow") return;
+  _arrowStart = { r, c };
+  e.preventDefault();
+}
+function onCellMouseUp(e, r, c) {
+  if (state.annotTool !== "arrow" || !_arrowStart) return;
+  const start = _arrowStart;
+  _arrowStart = null;
+  if (start.r === r && start.c === c) return; // pas de flèche sur un seul clic
+  // Aligner le point d'arrivée sur l'axe dominant (purement H ou V)
+  const dr = Math.abs(r - start.r), dc = Math.abs(c - start.c);
+  let endR = r, endC = c;
+  if (dr > dc) endC = start.c; else endR = start.r;
+  state.arrowAnnotations = state.arrowAnnotations || [];
+  state.arrowAnnotations.push({ fromR: start.r, fromC: start.c, toR: endR, toC: endC });
+  renderBoard();
+}
+
 function renderAnnotations(r, c) {
   if (!state.annotations) return "";
-  const a = state.annotations[`${r},${c}`];
-  if (!a) return "";
   let html = "";
-  if (a.dot) html += `<span class="dot-mark ${a.dot}"></span>`;
-  for (const pos of ["tl","tr","bl","br"]) {
-    if (a[pos]) html += `<span class="annot ${pos}">${escapeHtmlS(a[pos])}</span>`;
+  // Segments de flèches dans la case
+  for (const a of (state.arrowAnnotations || [])) {
+    const seg = arrowSegmentAt(a, r, c);
+    if (!seg) continue;
+    html += `<span class="arrow-line ${seg.cls}"></span>`;
+    if (seg.head) html += `<span class="arrow-head ${seg.head}"></span>`;
   }
-  if (a.center) html += `<span class="annot center">${escapeHtmlS(a.center)}</span>`;
-  for (const dir of (a.arrows || [])) {
-    const ch = { up:"▲", down:"▼", left:"◀", right:"▶" }[dir] || "";
-    html += `<span class="annot arrow ${dir}">${ch}</span>`;
+  const a = state.annotations[`${r},${c}`];
+  if (a) {
+    if (a.dot) html += `<span class="dot-mark ${a.dot}"></span>`;
+    for (const pos of ["tl","tr","bl","br"]) {
+      if (a[pos]) html += `<span class="annot ${pos}">${escapeHtmlS(a[pos])}</span>`;
+    }
+    if (a.center) html += `<span class="annot center">${escapeHtmlS(a.center)}</span>`;
   }
   return html;
+}
+
+// Segment d'une flèche dans une case donnée (null si la case n'est pas sur le chemin)
+function arrowSegmentAt(a, r, c) {
+  if (a.fromR === a.toR && a.fromC === a.toC) return null;
+  if (a.fromR === a.toR) {
+    if (r !== a.fromR) return null;
+    const minC = Math.min(a.fromC, a.toC), maxC = Math.max(a.fromC, a.toC);
+    if (c < minC || c > maxC) return null;
+    const right = a.toC > a.fromC;
+    if (c === a.fromC) return { cls: right ? "h-half-right" : "h-half-left" };
+    if (c === a.toC)   return { cls: right ? "h-half-left"  : "h-half-right", head: right ? "right" : "left" };
+    return { cls: "h-full" };
+  }
+  if (a.fromC === a.toC) {
+    if (c !== a.fromC) return null;
+    const minR = Math.min(a.fromR, a.toR), maxR = Math.max(a.fromR, a.toR);
+    if (r < minR || r > maxR) return null;
+    const down = a.toR > a.fromR;
+    if (r === a.fromR) return { cls: down ? "v-half-down" : "v-half-up" };
+    if (r === a.toR)   return { cls: down ? "v-half-up"   : "v-half-down", head: down ? "down" : "up" };
+    return { cls: "v-full" };
+  }
+  return null;
+}
+
+function arrowPassesThrough(a, r, c) {
+  return !!arrowSegmentAt(a, r, c);
 }
 
 function isOccupied(r, c) {
