@@ -917,7 +917,16 @@ function cancelCurrent() {
   state.cursor = null;
   renderBoard();
   renderRack();
-  showFeedback("", "Saisie annulée", "Clique sur une case pour repositionner le curseur.");
+  // On rappelle le meilleur essai accumulé pour ce coup, s'il existe, pour que
+  // le joueur ne perde pas de vue son score-plancher déjà acquis.
+  const best = state.bestAttempt;
+  if (best) {
+    showFeedback("miss",
+      `Saisie annulée — meilleur essai : <strong>${best.word}</strong> = <strong>${best.score}</strong> pts ✓`,
+      `Clique sur une case pour repositionner le curseur.`);
+  } else {
+    showFeedback("", "Saisie annulée", "Clique sur une case pour repositionner le curseur.");
+  }
 }
 
 let flashTimer = null;
