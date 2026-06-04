@@ -650,6 +650,53 @@ main {
 .play-info .play-line .val { font-weight: 700; color: var(--petrol-dark); }
 .play-info .play-line .val.muted { color: var(--ink-soft); font-weight: 400; }
 
+/* ===== Affichage du sac restant ===== */
+.bag-display {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0,46,68,.08);
+}
+.bag-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--petrol-dark);
+  margin-bottom: 8px;
+}
+.bag-title #bagCount { color: var(--yellow); font-weight: 700; padding: 0 4px; background: var(--petrol); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: .82rem; }
+.bag-tiles {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.bag-chip {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #fce8a8, var(--tile-bg) 60%, var(--tile-bg-2));
+  color: var(--tile-text);
+  border-radius: 4px;
+  font-family: 'Georgia', serif;
+  font-weight: 700;
+  font-size: .92rem;
+  padding: 3px 5px 3px 6px;
+  border: 1px solid rgba(138,106,31,.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+  line-height: 1;
+}
+.bag-chip .ct {
+  background: var(--petrol-dark);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: .65rem;
+  padding: 1px 5px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+.bag-chip.joker { color: #c8202a; }
+.bag-chip.empty { opacity: .25; }
+
 /* ===== Annotations sur la grille (mode entraînement) ===== */
 .annot-toolbar {
   display: flex;

@@ -422,6 +422,31 @@ function renderInfo() {
   $("#sumNeg").textContent = state.sumNeg;
   renderChrono();
   renderMoveTimer();
+  renderBag();
+}
+
+const VOYELLES_SET = ["A","E","I","O","U","Y"];
+function renderBag() {
+  const el = $("#bagDisplay");
+  if (!el) return;
+  if (!state.started || review.active) { el.hidden = true; return; }
+  el.hidden = false;
+  const counts = { ...state.bag };
+  if (state.settings.withJoker && state.spareJokers > 0) {
+    counts["?"] = (counts["?"] || 0) + state.spareJokers;
+  }
+  const allLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const consonnes = allLetters.filter(l => !VOYELLES_SET.includes(l));
+  const ordered = [...VOYELLES_SET, ...consonnes, "?"];
+  const total = Object.values(counts).reduce((a, n) => a + (n > 0 ? n : 0), 0);
+  $("#bagCount").textContent = total;
+  $("#bagTiles").innerHTML = ordered.map(l => {
+    const n = counts[l] || 0;
+    if (n === 0) return "";
+    const cls = ["bag-chip"];
+    if (l === "?") cls.push("joker");
+    return `<span class="${cls.join(" ")}">${l}<span class="ct">${n}</span></span>`;
+  }).join("");
 }
 
 // Case où placer le badge de score (rightmost en H, bottommost en V, sinon dernière posée)
