@@ -676,7 +676,12 @@ function handleKey(e) {
   }
 
   if (e.key === "Enter") { e.preventDefault(); validate(); return; }
-  if (e.key === "Escape") { e.preventDefault(); cancelCurrent(); return; }
+  if (e.key === "Escape") {
+    e.preventDefault();
+    if (state.annotTool) { setAnnotTool(""); return; }   // Échap : sort du mode annotation
+    cancelCurrent();
+    return;
+  }
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
   if (e.key === "F1") { e.preventDefault(); shuffleRack(); return; }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)

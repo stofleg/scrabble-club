@@ -477,6 +477,17 @@ main {
 .modal h2 { margin-top: 0; font-family: 'Fraunces', serif; color: var(--petrol); }
 .modal .close { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 1.5rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; color: #5a6a73; }
 .modal .close:hover { background: var(--normal); }
+.settings-section {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: .95rem;
+  color: var(--petrol-dark);
+  margin: 18px 0 4px 0;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--yellow);
+}
+.settings-section:first-of-type { margin-top: 8px; }
+.settings-section .muted { color: var(--ink-soft); font-weight: 400; font-size: .8rem; font-family: 'Inter', sans-serif; }
 .setting { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ede4ce; }
 .setting:last-child { border-bottom: none; }
 

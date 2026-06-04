@@ -94,19 +94,8 @@
   <div class="content">
     <button class="close" onclick="closeSettings()">×</button>
     <h2>Paramètres</h2>
-    <div class="setting" style="display:block">
-      <label for="optGameMode" style="margin-bottom:6px">Mode de partie</label>
-      <select id="optGameMode" style="width:100%">
-        <option value="duplicate">Duplicate classique (7 lettres)</option>
-        <option value="7sur8">7 sur 8 — tirage 8, max 7 jouables</option>
-        <option value="7et8">7 et 8 — primes 50/75</option>
-        <option value="789">7, 8 et 9 — primes 50/75/100</option>
-      </select>
-    </div>
-    <div class="setting">
-      <label for="optWithJoker">Mode joker (6 lettres + 1 joker imposé)</label>
-      <input type="checkbox" id="optWithJoker">
-    </div>
+
+    <h3 class="settings-section">Préférences personnelles <span class="muted">(liées à ton compte)</span></h3>
     <div class="setting">
       <label for="optRackPos">Position du chevalet</label>
       <select id="optRackPos">
@@ -121,6 +110,21 @@
     <div class="setting">
       <label for="optShowCoords">Afficher les références A-O / 1-15</label>
       <input type="checkbox" id="optShowCoords">
+    </div>
+
+    <h3 class="settings-section">Paramètres de jeu</h3>
+    <div class="setting" style="display:block">
+      <label for="optGameMode" style="margin-bottom:6px">Mode de partie</label>
+      <select id="optGameMode" style="width:100%">
+        <option value="duplicate">Duplicate classique (7 lettres)</option>
+        <option value="7sur8">7 sur 8 — tirage 8, max 7 jouables</option>
+        <option value="7et8">7 et 8 — primes 50/75</option>
+        <option value="789">7, 8 et 9 — primes 50/75/100</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label for="optWithJoker">Mode joker (6 lettres + 1 joker imposé)</label>
+      <input type="checkbox" id="optWithJoker">
     </div>
     <div class="setting">
       <label for="optTimePerMove">Temps par coup (0 = illimité)</label>
