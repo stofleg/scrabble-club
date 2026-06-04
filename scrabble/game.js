@@ -606,9 +606,6 @@ function renderAnnotations(r, c) {
   const a = state.annotations[`${r},${c}`];
   if (a) {
     if (a.dot) html += `<span class="dot-mark ${a.dot}"></span>`;
-    for (const pos of ["tl","tr","bl","br"]) {
-      if (a[pos]) html += `<span class="annot ${pos}">${escapeHtmlS(a[pos])}</span>`;
-    }
     if (a.center) html += `<span class="annot center">${escapeHtmlS(a.center)}</span>`;
   }
   return html;

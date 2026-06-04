@@ -561,6 +561,19 @@ main {
 }
 .annot-btn:hover { background: var(--yellow-soft); }
 .annot-btn.active { background: var(--yellow); box-shadow: inset 0 0 0 2px var(--petrol-dark); }
+.annot-btn .badge-sample {
+  display: inline-block;
+  background: #fff;
+  color: var(--petrol-dark);
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  line-height: 8px;
+  font-weight: 700;
+  border: 1px solid var(--petrol-dark);
+  letter-spacing: .02em;
+}
 
 /* Couches d'annotations dans la case */
 .board td .annot {
