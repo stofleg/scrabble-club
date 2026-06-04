@@ -616,8 +616,8 @@ function handleBoardClick(r, c) {
   } else {
     // Repositionnement sans effacer les tuiles posées (utile pour compléter ailleurs).
     // Pour effacer, le joueur utilise Échap.
-    const dir = state.cursor?.dir || "H";
-    state.cursor = { row: r, col: c, dir };
+    // Nouvelle case : on repart toujours en horizontal (2e clic sur la même case → bascule en V).
+    state.cursor = { row: r, col: c, dir: "H" };
   }
   renderBoard();
 }
