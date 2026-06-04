@@ -286,8 +286,6 @@ function onRackTileDrop(e) {
   // Insérer avant la cible (ou après si on dragge vers la droite)
   const newIdx = state.rack.indexOf(state.rack.find(t => t.id === targetId));
   state.rack.splice(newIdx, 0, moved);
-  // En mode "sortRack" actif, on désactive le tri pour préserver le réordonnement manuel
-  if (state.settings.sortRack) { state.settings.sortRack = false; saveSettings(); }
   renderRack();
 }
 
@@ -337,8 +335,6 @@ function shuffleRack() {
     const j = Math.floor(Math.random() * (i + 1));
     [state.rack[idxs[i]], state.rack[idxs[j]]] = [state.rack[idxs[j]], state.rack[idxs[i]]];
   }
-  // Désactiver le tri auto si actif (sinon le mélange est inutile)
-  if (state.settings.sortRack) { state.settings.sortRack = false; saveSettings(); }
   renderRack();
 }
 
