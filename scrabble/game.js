@@ -949,7 +949,10 @@ function validate() {
       return;
     }
   }
-  const result = scoreMove(state.board, move, state.dict, { bonuses: mode.bonuses });
+  // Règle FFSC : si le joker a un homonyme (même lettre) dans le mot, on permute
+  // automatiquement vers la combinaison la plus avantageuse en points.
+  const result = bestJokerVariant(state.board, move, state.dict, { bonuses: mode.bonuses });
+  // bestJokerVariant peut avoir modifié move.blanks ; on relit ici.
   if (result.errors.length) {
     showFeedback("error", "Coup invalide", result.errors.join("<br>"));
     return;
@@ -1007,6 +1010,42 @@ function validate() {
       : `${currentLine}<br>Meilleur essai : <strong>${best.word}</strong> = ${best.score} pts`;
     showFeedback("miss", bestLine, `Pas le top, cherche encore. <kbd>Voir le top</kbd> pour révéler.`);
   }
+}
+
+// Règle FFSC : pour chaque joker du coup, si la lettre qu'il représente apparaît
+// aussi en tant que vraie tuile dans le mot (parmi les tuiles posées), on essaie
+// les permutations joker ↔ vraie tuile et on retient le placement qui maximise
+// le score. Mute move.blanks vers la meilleure variante.
+function bestJokerVariant(board, move, dict, opts) {
+  const blanks = move.blanks || [];
+  let best = scoreMove(board, move, dict, opts);
+  if (!blanks.length || best.errors.length) return best;
+  const dr = move.dir === "V" ? 1 : 0;
+  const dc = move.dir === "H" ? 1 : 0;
+  // Positions des tuiles nouvellement posées (par index dans le mot)
+  const placedIdx = [];
+  for (let i = 0; i < move.word.length; i++) {
+    const r = move.row + i * dr, c = move.col + i * dc;
+    if (!board[r][c]) placedIdx.push(i);
+  }
+  let bestBlanks = blanks.slice();
+  for (const b of blanks) {
+    const letter = move.word[b];
+    for (const i of placedIdx) {
+      if (i === b) continue;
+      if (move.word[i] !== letter) continue;
+      if (bestBlanks.includes(i)) continue;
+      const trial = bestBlanks.filter(x => x !== b).concat([i]).sort((a, b) => a - b);
+      const trialMove = { ...move, blanks: trial };
+      const r = scoreMove(board, trialMove, dict, opts);
+      if (r.errors.length === 0 && r.score > best.score) {
+        best = r;
+        bestBlanks = trial;
+      }
+    }
+  }
+  move.blanks = bestBlanks;
+  return best;
 }
 
 function buildMoveFromPending() {
