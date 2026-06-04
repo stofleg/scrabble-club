@@ -238,7 +238,8 @@ function renderRack() {
     return;
   }
   let tiles = [...state.rack];
-  if (state.settings.sortRack) {
+  // _tempUnsorted : override transitoire (F1 / drag-reorder) qui ignore le tri pour ce render
+  if (state.settings.sortRack && !state._tempUnsorted) {
     tiles.sort((a, b) => {
       if (a.letter === "?" && b.letter !== "?") return 1;
       if (b.letter === "?" && a.letter !== "?") return -1;
@@ -309,6 +310,7 @@ function onRackTileDrop(e) {
   // Insérer avant la cible (ou après si on dragge vers la droite)
   const newIdx = state.rack.indexOf(state.rack.find(t => t.id === targetId));
   state.rack.splice(newIdx, 0, moved);
+  state._tempUnsorted = true;
   renderRack();
 }
 
@@ -401,12 +403,16 @@ function updateCursorAfterDrop(r, c) {
 }
 
 function shuffleRack() {
-  // Fisher-Yates parmi les tuiles non utilisées
   const idxs = state.rack.map((t, i) => t.used ? -1 : i).filter(i => i >= 0);
   for (let i = idxs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [state.rack[idxs[i]], state.rack[idxs[j]]] = [state.rack[idxs[j]], state.rack[idxs[i]]];
   }
+  state._tempUnsorted = true;   // override le tri alpha pour montrer le mélange
+  renderRack();
+}
+function restoreRackSort() {
+  state._tempUnsorted = false;
   renderRack();
 }
 
@@ -763,6 +769,7 @@ function handleKey(e) {
   }
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
   if (e.key === "F1") { e.preventDefault(); shuffleRack(); return; }
+  if (e.key === "F2") { e.preventDefault(); restoreRackSort(); return; }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
   if (state.cursor && state.pending.length === 0 &&
       ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
