@@ -288,41 +288,24 @@ main {
 .board td.has-tile { padding: 0; }
 
 /* ===== Curseur en forme de flèche violette ===== */
-.board td.cursor { overflow: visible; }
+/* Curseur : forme pentagonale type "home plate" entièrement contenue dans la
+   case, qui pointe dans le sens du curseur (droite en H, bas en V).
+   Comme la forme est interne, elle ne masque jamais les jetons voisins. */
 .board td.cursor::before {
   content: "";
   position: absolute;
   inset: 0;
-  border: 3px solid #8a3cb5;
-  pointer-events: none;
-  z-index: 12;
-  box-sizing: border-box;
-}
-.board td.cursor.dir-h::after {
-  content: "";
-  position: absolute;
-  right: -9px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0; height: 0;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-left: 9px solid #8a3cb5;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
   pointer-events: none;
   z-index: 12;
 }
-.board td.cursor.dir-v::after {
-  content: "";
-  position: absolute;
-  bottom: -9px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-top: 9px solid #8a3cb5;
-  pointer-events: none;
-  z-index: 12;
+.board td.cursor.dir-h::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><polygon points='5,5 60,5 95,50 60,95 5,95' fill='none' stroke='%238a3cb5' stroke-width='6' stroke-linejoin='round'/></svg>");
+}
+.board td.cursor.dir-v::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><polygon points='5,5 95,5 95,60 50,95 5,60' fill='none' stroke='%238a3cb5' stroke-width='6' stroke-linejoin='round'/></svg>");
 }
 
 /* ===== Surbrillance du dernier coup placé ===== */
