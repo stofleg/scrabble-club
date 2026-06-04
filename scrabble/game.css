@@ -191,18 +191,26 @@ main {
 .info-bar .btn { margin-left: auto; }
 
 /* Variante "deux sections" : Partie (gauche) | Coup précédent (droite),
-   sur une seule ligne, séparées par un trait vertical. */
-.info-bar.two-sections { gap: 0; padding: 10px 16px; flex-wrap: nowrap; }
+   chaque info en 2 lignes (label / valeur), split vertical au milieu. */
+.info-bar.two-sections {
+  gap: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
 .info-bar.two-sections .info-section {
   flex: 1;
   display: flex;
-  gap: 14px;
+  gap: 18px;
   align-items: center;
-  padding: 0 14px;
+  justify-content: space-around;
+  padding: 10px 16px;
   min-width: 0;
 }
+.info-bar.two-sections .info-left  { background: #ffffff; }
+.info-bar.two-sections .info-right { background: #f5f7f9; }
 .info-bar.two-sections .info-section + .info-section {
-  border-left: 1px solid #e3eaee;
+  border-left: 1px solid #cdd6dc;
 }
 .info-bar.two-sections .info-right .item .value { color: #6a7980; }
 
