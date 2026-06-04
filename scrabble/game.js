@@ -412,6 +412,14 @@ function shuffleRack() {
   renderRack();
 }
 function restoreRackSort() {
+  // Tri alpha forcé (indépendant du réglage sortRack) : F2 doit toujours ranger.
+  const free = state.rack.map((t, i) => ({ t, i })).filter(x => !x.t.used);
+  free.sort((a, b) => (a.t.letter === "?" ? "ZZ" : a.t.letter).localeCompare(
+                       b.t.letter === "?" ? "ZZ" : b.t.letter));
+  let k = 0;
+  for (let i = 0; i < state.rack.length; i++) {
+    if (!state.rack[i].used) { state.rack[i] = free[k++].t; }
+  }
   state._tempUnsorted = false;
   renderRack();
 }
