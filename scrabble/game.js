@@ -368,30 +368,36 @@ function onCellDrop(e) {
   renderRack();
 }
 
-// Repositionne le curseur en déduisant le sens du jeu d'après les tuiles posées.
-// 1re tuile : curseur à droite, direction H.
-// 2+ tuiles alignées en ligne : à droite de la dernière, H.
-// 2+ tuiles alignées en colonne : sous la dernière, V.
-// Tuiles non alignées : curseur inchangé.
+// Repositionne le curseur en déduisant le sens H/V d'après les tuiles posées.
+// Saute par-dessus les lettres committées et pending sur le chemin.
 function updateCursorAfterDrop(r, c) {
   const pending = state.pending;
+  if (pending.length === 0) return;
+  let row, col, dir;
   if (pending.length === 1) {
-    const nc = c + 1;
-    state.cursor = nc < BOARD_SIZE ? { row: r, col: nc, dir: "H" } : { row: r, col: c, dir: "H" };
-    return;
+    row = r; col = c + 1; dir = "H";
+  } else {
+    const sameRow = pending.every(p => p.row === pending[0].row);
+    const sameCol = pending.every(p => p.col === pending[0].col);
+    if (sameRow) {
+      row = pending[0].row;
+      col = Math.max(...pending.map(p => p.col)) + 1;
+      dir = "H";
+    } else if (sameCol) {
+      col = pending[0].col;
+      row = Math.max(...pending.map(p => p.row)) + 1;
+      dir = "V";
+    } else {
+      return; // non aligné, on laisse
+    }
   }
-  const sameRow = pending.every(p => p.row === pending[0].row);
-  const sameCol = pending.every(p => p.col === pending[0].col);
-  if (sameRow) {
-    const maxC = Math.max(...pending.map(p => p.col));
-    const nc = maxC + 1;
-    state.cursor = { row: pending[0].row, col: Math.min(nc, BOARD_SIZE - 1), dir: "H" };
-  } else if (sameCol) {
-    const maxR = Math.max(...pending.map(p => p.row));
-    const nr = maxR + 1;
-    state.cursor = { row: Math.min(nr, BOARD_SIZE - 1), col: pending[0].col, dir: "V" };
+  // Sauter les cases occupées (committées ou pending) dans la direction du jeu
+  const dr = dir === "V" ? 1 : 0;
+  const dc = dir === "H" ? 1 : 0;
+  while (row < BOARD_SIZE && col < BOARD_SIZE && (state.board[row]?.[col] || state.pending.some(p => p.row === row && p.col === col))) {
+    row += dr; col += dc;
   }
-  // sinon : on laisse le curseur où il est
+  if (row < BOARD_SIZE && col < BOARD_SIZE) state.cursor = { row, col, dir };
 }
 
 function shuffleRack() {
