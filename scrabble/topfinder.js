@@ -35,22 +35,83 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   if (tied.length === 1) return { ...tied[0], isotops: 1 };
 
   const preserveJoker = !!opts.preserveJoker;
+  const isFirstMove = board.every(row => row.every(c => !c));
 
   const scored = tied.map(c => ({
     ...c,
-    _noJoker: (c.move.blanks?.length || 0) === 0 ? 1 : 0,
-    _ext: scoreExtensibility(board, c.move),
-    _open: scoreOpenness(board, c.move),
-    _leave: scoreLeave(board, rack, c.move, bag),
+    _noJoker:   (c.move.blanks?.length || 0) === 0 ? 1 : 0,
+    _playsQ:    c.move.word.includes("Q") ? 1 : 0,
+    _qPos:      scoreQPosition(c.move),                 // -1 si Q en bout, 0 sinon
+    _ext:       scoreExtensibility(board, c.move),
+    _scrab:     scoreScrabbleOpenings(board, c.move),   // nb d'appuis pour scrabble perpendiculaire
+    _open:      scoreOpenness(board, c.move),
+    _left:      scoreLeftPosition(c.move),              // utile au 1er coup
+    _leave:     scoreLeave(board, rack, c.move, bag),
   }));
-  // Critères, dans l'ordre : (joker préservé si mode joker) → rallongeabilité → ouverture → reliquat
+  // Ordre de priorité :
+  //   1. joker préservé (mode joker)
+  //   2. joue le Q
+  //   3. Q pas en bout de mot
+  //   4. rallongeabilité (les 2 côtés ouverts)
+  //   5. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
+  //   6. position à gauche (1er coup uniquement)
+  //   7. ouverture de la grille (générique)
+  //   8. qualité du reliquat
   scored.sort((a, b) =>
     (preserveJoker ? b._noJoker - a._noJoker : 0) ||
+    b._playsQ - a._playsQ ||
+    b._qPos - a._qPos ||
     b._ext - a._ext ||
+    b._scrab - a._scrab ||
+    (isFirstMove ? b._left - a._left : 0) ||
     b._open - a._open ||
     b._leave - a._leave
   );
   return { ...scored[0], isotops: tied.length };
+}
+
+function scoreQPosition(move) {
+  const qIdx = move.word.indexOf("Q");
+  if (qIdx === -1) return 0;
+  // Pénalité si Q est au début ou à la fin du mot (bloque l'extension d'un côté)
+  if (qIdx === 0 || qIdx === move.word.length - 1) return -1;
+  return 0;
+}
+
+function scoreScrabbleOpenings(board, move) {
+  // Compte le nombre de NOUVELLES lettres posées qui ouvrent un scrabble :
+  // une lettre posée crée un "appui scrabble" si elle a >= 6 cases vides
+  // contiguës dans la direction perpendiculaire (avant + après), permettant
+  // de poser un mot de 7 lettres en utilisant cette lettre comme ancre.
+  const newBoard = applyMove(board, move);
+  const dr = move.dir === "V" ? 1 : 0;
+  const dc = move.dir === "H" ? 1 : 0;
+  // Direction perpendiculaire
+  const pdr = move.dir === "V" ? 0 : 1;
+  const pdc = move.dir === "V" ? 1 : 0;
+  let count = 0;
+  for (let i = 0; i < move.word.length; i++) {
+    const r = move.row + i * dr, c = move.col + i * dc;
+    if (board[r][c]) continue; // lettre déjà là
+    let before = 0;
+    let br = r - pdr, bc = c - pdc;
+    while (br >= 0 && bc >= 0 && br < BOARD_SIZE && bc < BOARD_SIZE && !newBoard[br][bc]) {
+      before++; br -= pdr; bc -= pdc;
+    }
+    let after = 0;
+    let ar = r + pdr, ac = c + pdc;
+    while (ar >= 0 && ac >= 0 && ar < BOARD_SIZE && ac < BOARD_SIZE && !newBoard[ar][ac]) {
+      after++; ar += pdr; ac += pdc;
+    }
+    if (before + after >= 6) count++;
+  }
+  return count;
+}
+
+function scoreLeftPosition(move) {
+  // Pour le 1er coup : plus le mot commence à gauche/haut, plus le score est élevé.
+  // -col en H, -row en V. (max donc = position la plus à gauche/haut).
+  return -(move.dir === "H" ? move.col : move.row);
 }
 
 function scoreExtensibility(board, move) {
