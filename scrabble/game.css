@@ -539,7 +539,7 @@ main {
   -webkit-appearance: none;
   width: 44px;
   height: 24px;
-  background: var(--soft);
+  background: #b8c3c9;
   border-radius: 999px;
   position: relative;
   cursor: pointer;
