@@ -346,6 +346,7 @@ function onCellDrop(e) {
     if (!tile) return;
     tile.row = r;
     tile.col = c;
+    updateCursorAfterDrop(r, c);
     renderBoard();
     return;
   }
@@ -361,12 +362,35 @@ function onCellDrop(e) {
   }
   tile.used = true;
   state.pending.push({ row: r, col: c, letter, rackId: tile.id, isBlank });
-  if (!state.cursor) state.cursor = { row: r, col: c, dir: "H" };
-  state.cursor.row = r;
-  state.cursor.col = c;
-  advanceCursor();
+  updateCursorAfterDrop(r, c);
   renderBoard();
   renderRack();
+}
+
+// Repositionne le curseur en déduisant le sens du jeu d'après les tuiles posées.
+// 1re tuile : curseur à droite, direction H.
+// 2+ tuiles alignées en ligne : à droite de la dernière, H.
+// 2+ tuiles alignées en colonne : sous la dernière, V.
+// Tuiles non alignées : curseur inchangé.
+function updateCursorAfterDrop(r, c) {
+  const pending = state.pending;
+  if (pending.length === 1) {
+    const nc = c + 1;
+    state.cursor = nc < BOARD_SIZE ? { row: r, col: nc, dir: "H" } : { row: r, col: c, dir: "H" };
+    return;
+  }
+  const sameRow = pending.every(p => p.row === pending[0].row);
+  const sameCol = pending.every(p => p.col === pending[0].col);
+  if (sameRow) {
+    const maxC = Math.max(...pending.map(p => p.col));
+    const nc = maxC + 1;
+    state.cursor = { row: pending[0].row, col: Math.min(nc, BOARD_SIZE - 1), dir: "H" };
+  } else if (sameCol) {
+    const maxR = Math.max(...pending.map(p => p.row));
+    const nr = maxR + 1;
+    state.cursor = { row: Math.min(nr, BOARD_SIZE - 1), col: pending[0].col, dir: "V" };
+  }
+  // sinon : on laisse le curseur où il est
 }
 
 function shuffleRack() {
@@ -525,20 +549,17 @@ function escapeHtmlS(s) {
 // ============================================================
 function handleBoardClick(r, c) {
   if (review.active) return;
-  // En mode annotation, on annote (ou rien pour l'outil flèche qui se trace au drag)
   if (state.annotTool) { annotateCell(r, c); return; }
   if (state.board[r][c]) return;
-
   if (state.cursor && state.cursor.row === r && state.cursor.col === c) {
-    // toggle direction
     state.cursor.dir = state.cursor.dir === "H" ? "V" : "H";
   } else {
-    // efface les pending (nouveau mot) — comme un Échap
-    clearPending();
-    state.cursor = { row: r, col: c, dir: "H" };
+    // Repositionnement sans effacer les tuiles posées (utile pour compléter ailleurs).
+    // Pour effacer, le joueur utilise Échap.
+    const dir = state.cursor?.dir || "H";
+    state.cursor = { row: r, col: c, dir };
   }
   renderBoard();
-  renderRack();
 }
 
 function clearPending() {
