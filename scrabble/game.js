@@ -191,9 +191,10 @@ function renderBoard() {
         const dragAttr = tile.pending ? `draggable="true" data-pending-r="${r}" data-pending-c="${c}"` : "";
         tileHtmlStr = `<div class="${tcls.join(" ")}" ${dragAttr}>${tile.letter}<span class="val">${tval ?? ""}</span></div>`;
       }
-      // Badge de score live sur la case du curseur s'il y a des pending
+      // Badge de score live au-dessus de la dernière lettre du mot
       let badge = "";
-      if (isCursor && state.pending.length > 0) {
+      const bc = badgeCell();
+      if (bc && bc.row === r && bc.col === c) {
         const sc = computePendingScore();
         if (sc !== null) badge = `<span class="score-badge">${sc}</span>`;
       }
@@ -409,6 +410,20 @@ function renderInfo() {
   $("#sumNeg").textContent = state.sumNeg;
   renderChrono();
   renderMoveTimer();
+}
+
+// Case où placer le badge de score (rightmost en H, bottommost en V, sinon dernière posée)
+function badgeCell() {
+  if (!state.pending.length) return null;
+  const sameRow = state.pending.every(p => p.row === state.pending[0].row);
+  const sameCol = state.pending.every(p => p.col === state.pending[0].col);
+  if (sameRow) {
+    return state.pending.reduce((a, b) => a.col > b.col ? a : b);
+  }
+  if (sameCol) {
+    return state.pending.reduce((a, b) => a.row > b.row ? a : b);
+  }
+  return state.pending[state.pending.length - 1];
 }
 
 function computePendingScore() {
