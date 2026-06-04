@@ -492,7 +492,9 @@ function computePendingScore() {
 function renderMoveTimer() {
   const chip = $("#moveTimerChip");
   const el = $("#moveTimer");
+  const label = $("#moveTimerLabel");
   if (!el || !chip) return;
+  if (label) label.textContent = `Coup ${state.moveNo}`;
   if (state.settings.timePerMove > 0 && state.started && !state.chronoFinal) {
     el.textContent = `${state.moveTimeLeft}s`;
     chip.classList.toggle("danger", state.moveTimeLeft <= 10);
