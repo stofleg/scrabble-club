@@ -921,13 +921,25 @@ function validate() {
   }
   const mode = currentMode();
   const topMv = state.topMove?.move;
-  // Exception 1er coup : si le mot tapé est le top word, on accepte même si la
-  // position est invalide (par exemple ne passe pas par le centre).
-  if (state.moveNo === 1 && topMv && move.word === topMv.word) {
-    recordMove({ status: "top", playerScore: state.topMove.score, playedWord: move.word });
-    placeTopAndAdvance(state.topMove.score);
-    nextMove();
-    return;
+  // Exception 1er coup : on accepte tout mot du top OU isotop (même score que le top),
+  // peu importe la position de placement.
+  if (state.moveNo === 1 && topMv && state.topMove) {
+    const topScore = state.topMove.score;
+    const rackLetters = state.rack.map(t => t.letter);
+    const allMoves = findTop(state.board, rackLetters, state.dict, {
+      all: true,
+      maxTilesUsed: mode.maxPlayed,
+      bonuses: mode.bonuses,
+    }) || [];
+    const isotopWords = new Set(
+      allMoves.filter(c => c.score === topScore).map(c => c.move.word)
+    );
+    if (isotopWords.has(move.word)) {
+      recordMove({ status: "top", playerScore: topScore, playedWord: move.word });
+      placeTopAndAdvance(topScore);
+      nextMove();
+      return;
+    }
   }
   const result = scoreMove(state.board, move, state.dict, { bonuses: mode.bonuses });
   if (result.errors.length) {
