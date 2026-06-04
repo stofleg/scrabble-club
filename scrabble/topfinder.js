@@ -42,6 +42,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     _noJoker:   (c.move.blanks?.length || 0) === 0 ? 1 : 0,
     _playsQ:    c.move.word.includes("Q") ? 1 : 0,
     _qPos:      scoreQPosition(c.move),                 // -1 si Q en bout, 0 sinon
+    _dictExt:   scoreDictExtensibility(c.move.word, dict), // rallonges 1 lettre dans le dico
     _ext:       scoreExtensibility(board, c.move),
     _scrab:     scoreScrabbleOpenings(board, c.move),   // nb d'appuis pour scrabble perpendiculaire
     _open:      scoreOpenness(board, c.move),
@@ -52,15 +53,17 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   //   1. joker préservé (mode joker)
   //   2. joue le Q
   //   3. Q pas en bout de mot
-  //   4. rallongeabilité (les 2 côtés ouverts)
-  //   5. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
-  //   6. position à gauche (1er coup uniquement)
-  //   7. ouverture de la grille (générique)
-  //   8. qualité du reliquat
+  //   4. extensibilité dico (verbes & flexions : DEMARIE > ADMIREE)
+  //   5. rallongeabilité physique (les 2 côtés ouverts)
+  //   6. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
+  //   7. position à gauche (1er coup uniquement)
+  //   8. ouverture de la grille (générique)
+  //   9. qualité du reliquat
   scored.sort((a, b) =>
     (preserveJoker ? b._noJoker - a._noJoker : 0) ||
     b._playsQ - a._playsQ ||
     b._qPos - a._qPos ||
+    b._dictExt - a._dictExt ||
     b._ext - a._ext ||
     b._scrab - a._scrab ||
     (isFirstMove ? b._left - a._left : 0) ||
@@ -76,6 +79,19 @@ function scoreQPosition(move) {
   // Pénalité si Q est au début ou à la fin du mot (bloque l'extension d'un côté)
   if (qIdx === 0 || qIdx === move.word.length - 1) return -1;
   return 0;
+}
+
+function scoreDictExtensibility(word, dict) {
+  // Compte les rallonges valides d'1 lettre (suffixe ou préfixe) dans l'ODS.
+  // Une forme verbale conjuguable (DEMARIE → DEMARIES, DEMARIEE, DEMARIEZ…)
+  // ou un mot pluriélisable obtient un score élevé.
+  let count = 0;
+  for (let code = 65; code <= 90; code++) {
+    const L = String.fromCharCode(code);
+    if (dict.has(word + L)) count++;
+    if (dict.has(L + word)) count++;
+  }
+  return count;
 }
 
 function scoreScrabbleOpenings(board, move) {
