@@ -395,9 +395,16 @@ body.theme-duplijeu .board td.coord {
   z-index: 50;
   font-size: .85rem;
   width: 24px;
+  /* Hauteur égale à la largeur pour que les numériques (haut/bas) aient le
+     même écart vertical au bord du plateau que les alpha (gauche/droite)
+     n'ont d'écart horizontal. */
   height: 24px;
   min-width: 24px;
 }
+/* Lignes haut/bas des numériques : un peu plus hautes pour égaliser l'écart
+   visuel avec les alpha (le glyphe "A" est plus large que "1" en hauteur). */
+body.theme-duplijeu .board tr:first-child td.coord,
+body.theme-duplijeu .board tr:last-child td.coord { height: 28px; }
 
 .board td .bonus-label {
   display: inline-block;
