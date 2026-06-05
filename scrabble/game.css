@@ -265,6 +265,70 @@ main {
 .board td.has-tile::before { content: none !important; }
 .board td.has-tile { background: transparent; }
 
+/* ============================================================
+   Thème "Couleurs DupliJeu" — appliqué via body.theme-duplijeu
+   ============================================================ */
+body.theme-duplijeu {
+  --normal: #e8f3ec;            /* fond mint pâle */
+  --bonus-dl: #a4d8e1;
+  --bonus-tl: #3a8db5;
+  --bonus-dw: #f0a8a8;
+  --bonus-tw: #cc4040;
+  --tile-bg:   #d8b975;
+  --tile-bg-2: #d8b975;
+  --tile-text: #111;
+  --tile-border: #6b5217;
+}
+body.theme-duplijeu .board td.normal { background: #e8f3ec; }
+/* Cases bonus : fond mint, et un SVG "compas" coloré au centre qui déborde
+   un peu sur les côtés pour suggérer le motif DupliJeu. */
+body.theme-duplijeu .board td.dl,
+body.theme-duplijeu .board td.tl,
+body.theme-duplijeu .board td.dw,
+body.theme-duplijeu .board td.tw,
+body.theme-duplijeu .board td.center {
+  background-color: #e8f3ec;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 110% 110%;
+  color: var(--tile-text);
+}
+body.theme-duplijeu .board td.dl {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23a4d8e1'><rect x='18' y='18' width='64' height='64'/><polygon points='18,40 0,50 18,60'/><polygon points='82,40 100,50 82,60'/><polygon points='40,18 50,0 60,18'/><polygon points='40,82 50,100 60,82'/></g></svg>");
+}
+body.theme-duplijeu .board td.tl {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%233a8db5'><rect x='18' y='18' width='64' height='64'/><polygon points='18,40 0,50 18,60'/><polygon points='82,40 100,50 82,60'/><polygon points='40,18 50,0 60,18'/><polygon points='40,82 50,100 60,82'/></g></svg>");
+  color: #fff;
+}
+body.theme-duplijeu .board td.dw {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23f0a8a8'><rect x='18' y='18' width='64' height='64'/><polygon points='18,40 0,50 18,60'/><polygon points='82,40 100,50 82,60'/><polygon points='40,18 50,0 60,18'/><polygon points='40,82 50,100 60,82'/></g></svg>");
+}
+body.theme-duplijeu .board td.tw {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23cc4040'><rect x='18' y='18' width='64' height='64'/><polygon points='18,40 0,50 18,60'/><polygon points='82,40 100,50 82,60'/><polygon points='40,18 50,0 60,18'/><polygon points='40,82 50,100 60,82'/></g></svg>");
+  color: #fff;
+}
+body.theme-duplijeu .board td.center {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23f0a8a8'><rect x='18' y='18' width='64' height='64'/><polygon points='18,40 0,50 18,60'/><polygon points='82,40 100,50 82,60'/><polygon points='40,18 50,0 60,18'/><polygon points='40,82 50,100 60,82'/></g></svg>");
+}
+body.theme-duplijeu .board td.center::before { color: #111; }
+
+/* Jetons façon DupliJeu : couleur unie tan, sans dégradé, lettres noires */
+body.theme-duplijeu .tile {
+  background: #d8b975;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #111;
+  border: 1px solid #6b5217;
+  box-shadow: 0 1px 2px rgba(0,0,0,.22);
+}
+body.theme-duplijeu .tile .val {
+  opacity: .85;
+  font-weight: 700;
+}
+body.theme-duplijeu .board td .tile.pending {
+  background: linear-gradient(135deg, #e0f5e0, var(--tile-pending) 50%, var(--tile-pending-2));
+  border-color: #5a9a5a;
+}
+
 /* Coordonnées A-O / 1-15 */
 .board td.coord {
   background: var(--petrol);

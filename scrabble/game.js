@@ -95,6 +95,7 @@ function loadSettings() {
   const defaults = {
     rackPos: "bottom", sortRack: false, showCoords: true,
     timePerMove: 0, gameMode: "duplicate", withJoker: false,
+    colorTheme: "classic",
   };
   try {
     return Object.assign(defaults, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
@@ -109,6 +110,7 @@ async function loadSettingsFromSupabase() {
   Object.assign(state.settings, data.settings);
   saveSettings();              // miroir local
   applyRackPos();
+  applyColorTheme();
   renderRack();
   renderBoard();
   renderGameTitle();
@@ -122,6 +124,7 @@ async function saveSettingsToSupabase() {
     rackPos: state.settings.rackPos,
     sortRack: state.settings.sortRack,
     showCoords: state.settings.showCoords,
+    colorTheme: state.settings.colorTheme,
   };
   await window._sb.from("players").update({ settings: persisted }).eq("id", pid);
 }
@@ -595,6 +598,9 @@ function applyRackPos() {
   const wrap = $("#gameWrap");
   wrap.classList.toggle("rack-top", state.settings.rackPos === "top");
   wrap.classList.toggle("rack-bottom", state.settings.rackPos !== "top");
+}
+function applyColorTheme() {
+  document.body.classList.toggle("theme-duplijeu", state.settings.colorTheme === "duplijeu");
 }
 
 function renderGameTitle() {
@@ -1362,6 +1368,7 @@ window.openSettings = () => {
   $("#optRackPos").value = state.settings.rackPos;
   $("#optSortRack").checked = state.settings.sortRack;
   $("#optShowCoords").checked = state.settings.showCoords;
+  $("#optColorTheme").value = state.settings.colorTheme || "classic";
   $("#optTimePerMove").value = state.settings.timePerMove;
   $("#settings").hidden = false;
 };
@@ -1373,10 +1380,12 @@ window.closeSettings = () => {
   state.settings.rackPos = $("#optRackPos").value;
   state.settings.sortRack = $("#optSortRack").checked;
   state.settings.showCoords = $("#optShowCoords").checked;
+  state.settings.colorTheme = $("#optColorTheme").value || "classic";
   state.settings.timePerMove = +$("#optTimePerMove").value || 0;
   saveSettings();
   saveSettingsToSupabase().catch(() => {});   // sync compte (silencieux si pas connecté ou pas de colonne)
   applyRackPos();
+  applyColorTheme();
   renderRack();
   renderBoard();
   renderMoveTimer();
@@ -1442,6 +1451,7 @@ async function initGame() {
   renderBoard();
   renderRack();
   applyRackPos();
+  applyColorTheme();
   renderGameTitle();
   if (!state.dict) {
     showFeedback("", "Chargement du dictionnaire…", "");
