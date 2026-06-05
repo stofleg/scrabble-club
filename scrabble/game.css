@@ -349,7 +349,7 @@ body.theme-duplijeu .tile {
 body.theme-duplijeu .board td { position: relative; }
 body.theme-duplijeu .board td .tile {
   position: absolute;
-  inset: 1px;
+  inset: 0.25%;          /* jeton ≈ 99,5% de la taille de la case */
   width: auto;
   height: auto;
   border: 0.5px solid #000;
