@@ -217,6 +217,7 @@ function renderBoard() {
   div.querySelectorAll("td[data-r]").forEach(td => {
     const r = +td.dataset.r, c = +td.dataset.c;
     td.onclick = () => handleBoardClick(r, c);
+    td.addEventListener("contextmenu", (e) => { e.preventDefault(); handleBoardRightClick(r, c); });
     td.addEventListener("dragover", onCellDragOver);
     td.addEventListener("dragleave", onCellDragLeave);
     td.addEventListener("drop", onCellDrop);
@@ -650,6 +651,23 @@ function handleBoardClick(r, c) {
     // Nouvelle case : on repart toujours en horizontal (2e clic = bascule en V).
     state.cursor = { row: r, col: c, dir: "H" };
   }
+  renderBoard();
+}
+
+// Clic droit : place le curseur en vertical directement (sans nécessiter
+// un 2ème clic). N'agit que sur les cases libres, hors mode annotation/review.
+function handleBoardRightClick(r, c) {
+  if (review.active) return;
+  if (state.annotTool) return;
+  if (state.board[r][c]) return;
+  if (state.pending.length > 0) {
+    const clickedOnPending = state.pending.some(p => p.row === r && p.col === c);
+    if (!clickedOnPending) {
+      clearPending();
+      renderRack();
+    }
+  }
+  state.cursor = { row: r, col: c, dir: "V" };
   renderBoard();
 }
 
@@ -1211,9 +1229,10 @@ function placeTopAndAdvance(playerScore) {
   // Score
   state.totalScore += playerScore;
   state.sumNeg += (playerScore - tm.score);
-  // Nettoyage
+  // Nettoyage. On NE supprime PAS le curseur : il reste visible pour permettre
+  // une navigation 100% clavier sans avoir à recliquer après chaque validation.
+  // S'il atterrit sur une case maintenant occupée, on l'avance après nextMove.
   state.pending = [];
-  state.cursor = null;
   state.bestAttempt = null;
   state.moveNo++;
   if (state.prepared) state.preparedIdx++;
@@ -1296,6 +1315,7 @@ function nextMove() {
     computeTop();
     startMoveTimer();
     hideFeedback();
+    ensureCursorOnFreeCell();
     return;
   }
 
@@ -1334,6 +1354,30 @@ function nextMove() {
   computeTop();
   startMoveTimer();
   hideFeedback();
+  ensureCursorOnFreeCell();
+}
+
+// Garde le curseur sur le plateau et sur une case libre après l'avancement
+// d'un coup, pour permettre une navigation 100 % clavier.
+function ensureCursorOnFreeCell() {
+  if (!state.cursor) {
+    state.cursor = { row: CENTER, col: CENTER, dir: "H" };
+    renderBoard();
+    return;
+  }
+  if (!isOccupied(state.cursor.row, state.cursor.col)) return;
+  // Tenter d'avancer dans la direction du curseur
+  let guard = 0;
+  while (isOccupied(state.cursor.row, state.cursor.col) && guard++ < BOARD_SIZE * 2) {
+    const before = { row: state.cursor.row, col: state.cursor.col };
+    advanceCursor();
+    if (state.cursor.row === before.row && state.cursor.col === before.col) {
+      // bord atteint : on remet le curseur au centre par défaut
+      state.cursor = { row: CENTER, col: CENTER, dir: state.cursor.dir };
+      break;
+    }
+  }
+  renderBoard();
 }
 
 let nextTileIdCounter = 1;
