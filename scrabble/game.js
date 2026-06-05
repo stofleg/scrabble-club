@@ -171,7 +171,7 @@ function renderBoard() {
   if (showCoords) {
     html += `<tr><td class="coord corner"></td>`;
     for (let c = 0; c < BOARD_SIZE; c++) html += `<td class="coord">${c + 1}</td>`;
-    html += `</tr>`;
+    html += `<td class="coord corner"></td></tr>`;
   }
   for (let r = 0; r < BOARD_SIZE; r++) {
     html += "<tr>";
@@ -204,7 +204,13 @@ function renderBoard() {
       const annot = renderAnnotations(r, c);
       html += `<td class="${cls.join(" ")}" data-r="${r}" data-c="${c}">${tileHtmlStr}${badge}${annot}</td>`;
     }
+    if (showCoords) html += `<td class="coord">${ROW_LETTERS[r]}</td>`;
     html += "</tr>";
+  }
+  if (showCoords) {
+    html += `<tr><td class="coord corner"></td>`;
+    for (let c = 0; c < BOARD_SIZE; c++) html += `<td class="coord">${c + 1}</td>`;
+    html += `<td class="coord corner"></td></tr>`;
   }
   html += "</table>";
   div.innerHTML = html;

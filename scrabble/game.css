@@ -379,6 +379,10 @@ body.theme-duplijeu .board td .tile.pending {
   min-width: 18px;
 }
 .board td.coord.corner { background: transparent; }
+/* Les références A-O / 1-15 n'ont pas de quadrillage. */
+.board td.coord { border: 0; }
+/* En thème DupliJeu : fond transparent + texte sombre */
+body.theme-duplijeu .board td.coord { background: transparent; color: #002E44; }
 
 .board td .bonus-label {
   display: inline-block;
