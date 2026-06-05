@@ -21,6 +21,19 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Taille de cellule responsive : la grille remplit la hauteur disponible.
+   Sur desktop, on dérive du min(vh, vw) pour gérer les écrans larges.
+   Sur mobile (layout en colonne), on bascule sur la largeur. */
+:root {
+  --cell-size: clamp(32px, min(calc((100vh - 130px) / 17), calc((100vw - 360px) / 17)), 60px);
+}
+@media (max-width: 900px) {
+  :root {
+    --cell-size: clamp(22px, calc((100vw - 24px) / 16), 44px);
+  }
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--cream);
@@ -86,9 +99,9 @@ header .btn {
 header .btn:hover { background: #ffeb4d; transform: translateY(-1px); }
 
 main {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 16px 20px;
+  padding: 12px 16px;
 }
 
 .layout {
@@ -243,10 +256,10 @@ main {
   border-collapse: collapse;
 }
 .board td {
-  width: 40px; height: 40px;
+  width: var(--cell-size); height: var(--cell-size);
   text-align: center;
   font-family: 'Inter', sans-serif;
-  font-size: .55rem;
+  font-size: calc(var(--cell-size) * 0.14);
   font-weight: 700;
   letter-spacing: .04em;
   cursor: pointer;
@@ -374,13 +387,13 @@ body.theme-duplijeu .board td .tile.pending {
   background: var(--petrol);
   color: var(--yellow);
   font-family: 'Inter', sans-serif;
-  font-size: .72rem;
+  font-size: calc(var(--cell-size) * 0.32);
   font-weight: 700;
   cursor: default;
   letter-spacing: .02em;
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
+  width: calc(var(--cell-size) * 0.55);
+  height: calc(var(--cell-size) * 0.55);
+  min-width: calc(var(--cell-size) * 0.55);
 }
 .board td.coord.corner { background: transparent; }
 /* Les références A-O / 1-15 n'ont pas de quadrillage. */
@@ -393,18 +406,13 @@ body.theme-duplijeu .board td.coord {
   position: relative;
   isolation: isolate;
   z-index: 50;
-  font-size: .85rem;
-  width: 24px;
-  /* Hauteur égale à la largeur pour que les numériques (haut/bas) aient le
-     même écart vertical au bord du plateau que les alpha (gauche/droite)
-     n'ont d'écart horizontal. */
-  height: 24px;
-  min-width: 24px;
+  font-size: calc(var(--cell-size) * 0.36);
+  width: calc(var(--cell-size) * 0.6);
+  height: calc(var(--cell-size) * 0.6);
+  min-width: calc(var(--cell-size) * 0.6);
 }
-/* Lignes haut/bas des numériques : un peu plus hautes pour égaliser l'écart
-   visuel avec les alpha (le glyphe "A" est plus large que "1" en hauteur). */
 body.theme-duplijeu .board tr:first-child td.coord,
-body.theme-duplijeu .board tr:last-child td.coord { height: 28px; }
+body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size) * 0.7); }
 
 .board td .bonus-label {
   display: inline-block;
@@ -554,7 +562,7 @@ body.theme-duplijeu .board tr:last-child td.coord { height: 28px; }
 .board td .tile {
   width: 100%;
   height: 100%;
-  font-size: 1.4rem;
+  font-size: calc(var(--cell-size) * 0.55);
   border-radius: 0;
   border: none;
 }
@@ -576,9 +584,9 @@ body.theme-duplijeu .board tr:last-child td.coord { height: 28px; }
   min-height: 56px;
 }
 .rack .tile {
-  width: 40px;
-  height: 44px;
-  font-size: 1.6rem;
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 1.1);
+  font-size: calc(var(--cell-size) * 0.62);
   transition: transform .15s ease, opacity .15s ease;
 }
 .rack .tile.used {
@@ -1007,23 +1015,5 @@ body.theme-duplijeu .board tr:last-child td.coord { height: 28px; }
 .review-solutions tr.selected td { background: #e0eaff; box-shadow: inset 3px 0 0 #4a6bff; }
 .review-solutions h4 { margin: 12px 14px 6px; font-size: .85rem; color: #5a6a73; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 
-@media (max-width: 600px) {
-  .board td { width: 24px; height: 24px; }
-  .board td .tile { font-size: .75rem; }
-  .rack .tile { width: 38px; height: 42px; font-size: 1.3rem; }
-}
-
-/* ===== Mode PWA installée (Chrome standalone / fullscreen / minimal-ui) ===== */
-@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-  .board td { width: 48px; height: 48px; }
-  .board td .tile { font-size: 1.7rem; }
-  .board td.coord { width: 22px; height: 22px; font-size: .85rem; }
-  .rack .tile { width: 46px; height: 50px; font-size: 1.85rem; }
-  .layout { gap: 32px; }
-}
-/* Fallback : classe ajoutée en JS si on détecte un mode app */
-body.app-mode .board td { width: 48px; height: 48px; }
-body.app-mode .board td .tile { font-size: 1.7rem; }
-body.app-mode .board td.coord { width: 22px; height: 22px; font-size: .85rem; }
-body.app-mode .rack .tile { width: 46px; height: 50px; font-size: 1.85rem; }
-body.app-mode .layout { gap: 32px; }
+/* (Plus de tailles fixes : --cell-size gère le responsive sur tous les modes,
+   y compris PWA standalone et mobile.) */
