@@ -381,13 +381,20 @@ body.theme-duplijeu .board td .tile.pending {
 .board td.coord.corner { background: transparent; }
 /* Les références A-O / 1-15 n'ont pas de quadrillage. */
 .board td.coord { border: 0; }
-/* En thème DupliJeu : fond transparent + texte sombre */
+/* En thème DupliJeu : fond clair + texte sombre, au-dessus des triangles
+   ::after qui débordent des cases bonus voisines. */
 body.theme-duplijeu .board td.coord {
-  background: transparent;
+  background: #cfe2f0;       /* même bleu clair que le fond appli */
   color: #002E44;
   position: relative;
-  z-index: 3;   /* au-dessus des triangles ::after débordants des cases bonus voisines */
+  isolation: isolate;        /* crée un stacking context indépendant */
+  z-index: 50;
+  font-size: .85rem;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
 }
+body.theme-duplijeu .board td.coord.corner { background: transparent; }
 
 .board td .bonus-label {
   display: inline-block;
