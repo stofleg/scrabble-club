@@ -269,7 +269,7 @@ main {
    Thème "Couleurs DupliJeu" — appliqué via body.theme-duplijeu
    ============================================================ */
 body.theme-duplijeu {
-  --normal: #ffffff;
+  --normal: #e7eef4;             /* blanc à 70% de la nuance, légèrement teinté */
   --bonus-dl: #a4d8e1;
   --bonus-tl: #3a8db5;
   --bonus-dw: #f0a8a8;
@@ -280,7 +280,7 @@ body.theme-duplijeu {
   --tile-border: #6b5217;
   background: #cfe2f0;          /* fond appli bleu clair */
 }
-body.theme-duplijeu .board td.normal { background: #ffffff; }
+body.theme-duplijeu .board td.normal { background: #e7eef4; }
 /* Cases bonus : entièrement remplies par la couleur du bonus + 4 petits
    triangles débordant à l'extérieur du carré (un sur chaque côté). */
 body.theme-duplijeu .board td.dl,
@@ -338,20 +338,20 @@ body.theme-duplijeu .tile {
   background: #d8b975;
   font-family: 'Inter', system-ui, sans-serif;
   color: #111;
-  border: 1.5px solid #000;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.22);
+  border: 0.5px solid #000;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
 }
-/* Jeton sur la grille : légèrement plus petit que la case + coins arrondis,
-   cerné noir entièrement visible. */
+/* Jeton sur la grille : couvre quasi toute la case (~99%), cerné noir fin,
+   coins légèrement arrondis. */
 body.theme-duplijeu .board td { position: relative; }
 body.theme-duplijeu .board td .tile {
   position: absolute;
-  inset: 3px;
+  inset: 1px;
   width: auto;
   height: auto;
-  border: 1.5px solid #000;
-  border-radius: 4px;
+  border: 0.5px solid #000;
+  border-radius: 3px;
   z-index: 8;
 }
 body.theme-duplijeu .tile .val {
