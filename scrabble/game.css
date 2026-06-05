@@ -269,7 +269,7 @@ main {
    Thème "Couleurs DupliJeu" — appliqué via body.theme-duplijeu
    ============================================================ */
 body.theme-duplijeu {
-  --normal: #e7eef4;             /* blanc à 70% de la nuance, légèrement teinté */
+  --normal: #ffffff;
   --bonus-dl: #a4d8e1;
   --bonus-tl: #3a8db5;
   --bonus-dw: #f0a8a8;
@@ -280,7 +280,9 @@ body.theme-duplijeu {
   --tile-border: #6b5217;
   background: #cfe2f0;          /* fond appli bleu clair */
 }
-body.theme-duplijeu .board td.normal { background: #e7eef4; }
+body.theme-duplijeu .board td.normal { background: #ffffff; }
+/* Traits de la grille : 70% de l'intensité du petrol (≈ gris-bleu très clair) */
+body.theme-duplijeu .board td { border-color: #b3c1ce; }
 /* Cases bonus : entièrement remplies par la couleur du bonus + 4 petits
    triangles débordant à l'extérieur du carré (un sur chaque côté). */
 body.theme-duplijeu .board td.dl,
