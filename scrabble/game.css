@@ -338,8 +338,21 @@ body.theme-duplijeu .tile {
   background: #d8b975;
   font-family: 'Inter', system-ui, sans-serif;
   color: #111;
-  border: 1px solid #6b5217;
+  border: 1.5px solid #000;
+  border-radius: 4px;
   box-shadow: 0 1px 2px rgba(0,0,0,.22);
+}
+/* Jeton sur la grille : légèrement plus petit que la case + coins arrondis,
+   cerné noir entièrement visible. */
+body.theme-duplijeu .board td { position: relative; }
+body.theme-duplijeu .board td .tile {
+  position: absolute;
+  inset: 3px;
+  width: auto;
+  height: auto;
+  border: 1.5px solid #000;
+  border-radius: 4px;
+  z-index: 8;
 }
 body.theme-duplijeu .tile .val {
   opacity: .85;
