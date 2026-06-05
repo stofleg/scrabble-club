@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Test moteur Scrabble — La Garenna</title>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background:#faf7ed; color:#0e1a20; padding:24px; max-width:1100px; margin:0 auto; }
+  h1 { font-family: Georgia, serif; color:#002E44; }
+  h2 { color:#002E44; margin-top:32px; }
+  .row { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .panel { background:#fff; border-radius:10px; padding:16px; box-shadow:0 2px 8px rgba(0,46,68,.1); }
+  input, button, textarea { font-family: inherit; font-size:.95rem; padding:8px 12px; border-radius:6px; border:1px solid #ccc; }
+  button { background:#FFDD00; cursor:pointer; font-weight:600; border:none; padding:10px 16px; }
+  .result { font-family:'Courier New', monospace; white-space:pre-wrap; background:#001E2D; color:#FFDD00; padding:12px; border-radius:8px; max-height:300px; overflow:auto; }
+  table.board { border-collapse:collapse; }
+  table.board td { width:32px; height:32px; border:1px solid #888; text-align:center; font-weight:700; font-size:.85rem; font-family: Georgia, serif; }
+  td.normal{background:#f4ead0} td.dl{background:#a4d8e1} td.tl{background:#3a8db5;color:#fff} td.dw{background:#f0a8a8} td.tw{background:#cc4040;color:#fff} td.center{background:#ffdd00}
+  td.tile { background:#fff8dc; color:#002E44; }
+  .status { padding:8px 12px; border-radius:6px; background:#e6e2d3; }
+  .ok { background:#c8e6c9; color:#2c7a3b; }
+  .err { background:#ffe7e7; color:#a02525; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Test du moteur Scrabble</h1>
+<p id="status" class="status">Chargement du dictionnaire…</p>
+
+<div class="row">
+  <div class="panel">
+    <h2>Plateau</h2>
+    <div id="boardWrap"></div>
+    <p style="font-size:.8rem;color:#666">Clique sur une case pour y placer manuellement une lettre (sera traitée comme déjà jouée). Clic droit pour effacer.</p>
+    <button onclick="resetBoard()">Réinitialiser plateau</button>
+  </div>
+
+  <div class="panel" style="flex:1;min-width:300px">
+    <h2>Tirage</h2>
+    <div class="row" style="gap:8px">
+      <input id="rack" value="MUSIQUE" style="text-transform:uppercase;font-family:Georgia,serif;font-size:1.2rem;letter-spacing:.2em;flex:1" maxlength="7">
+      <button onclick="randomRack()">🎲</button>
+    </div>
+    <p style="font-size:.8rem;color:#666;margin-top:8px">Jokers : utilise <code>?</code>. Ex : <code>MAISON?</code></p>
+
+    <h2 style="margin-top:24px">Trouver le top</h2>
+    <button onclick="runFindTop()">🏆 Calculer le top</button>
+    <span id="timing" style="margin-left:12px;color:#666;font-size:.85rem"></span>
+
+    <h2 style="margin-top:24px">Résultat</h2>
+    <div id="result" class="result">—</div>
+  </div>
+</div>
+
+<h2>Tests rapides</h2>
+<div class="panel">
+  <button onclick="testHas('MUSIQUE')">MUSIQUE valide ?</button>
+  <button onclick="testHas('ZQXJK')">ZQXJK valide ?</button>
+  <button onclick="testHas('SCRABBLE')">SCRABBLE valide ?</button>
+  <button onclick="testPrefix('SCRAB')">Préfixe SCRAB ?</button>
+  <button onclick="testPrefix('ZZZ')">Préfixe ZZZ ?</button>
+  <button onclick="benchmark()">⏱ Benchmark : top finder × 5 tirages</button>
+  <div id="quickResult" style="margin-top:12px;font-family:monospace"></div>
+</div>
+
+<script type="module">
+import { Dictionary } from "./dictionary.js";
+import { emptyBoard, BOARD_BONUSES, BOARD_SIZE, LETTER_BAG, drawRack, scoreMove } from "./engine.js";
+import { findTop } from "./topfinder.js";
+
+const dict = new Dictionary();
+let board = emptyBoard();
+
+await dict.load("ods9.txt");
+document.getElementById("status").textContent = `✅ Dictionnaire chargé : ${dict.words.length.toLocaleString("fr-FR")} mots`;
+document.getElementById("status").classList.add("ok");
+
+window.dict = dict;
+window.board = board;
+
+// ---------- Rendu plateau ----------
+function classFor(ch) {
+  return { ".":"normal", "d":"dl", "t":"tl", "D":"dw", "T":"tw", "*":"center" }[ch] || "normal";
+}
+function symFor(ch) {
+  return { "d":"dl","t":"tl","D":"dw","T":"tw","*":"★"}[ch] || "";
+}
+function renderBoard() {
+  const div = document.getElementById("boardWrap");
+  let html = "<table class='board'>";
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    html += "<tr>";
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const b = BOARD_BONUSES[r][c];
+      const cell = board[r][c];
+      const cls = cell ? "tile" : classFor(b);
+      const txt = cell ? cell.letter : symFor(b);
+      html += `<td class="${cls}" data-r="${r}" data-c="${c}">${txt}</td>`;
+    }
+    html += "</tr>";
+  }
+  html += "</table>";
+  div.innerHTML = html;
+  div.querySelectorAll("td").forEach(td => {
+    td.onclick = () => {
+      const r = +td.dataset.r, c = +td.dataset.c;
+      const letter = prompt("Lettre à poser (A-Z, vide pour annuler) :", board[r][c]?.letter || "");
+      if (letter && /^[A-Z]$/.test(letter.toUpperCase())) {
+        board[r][c] = { letter: letter.toUpperCase(), isBlank: false };
+      } else if (letter === "") {
+        board[r][c] = null;
+      }
+      renderBoard();
+    };
+    td.oncontextmenu = (e) => { e.preventDefault(); const r=+td.dataset.r, c=+td.dataset.c; board[r][c]=null; renderBoard(); };
+  });
+}
+renderBoard();
+window.resetBoard = () => { board = emptyBoard(); window.board = board; renderBoard(); };
+
+// ---------- Tirage aléatoire ----------
+window.randomRack = () => {
+  const { rack } = drawRack({ ...LETTER_BAG }, 7, { minVowels: 2, minConsonants: 2 });
+  document.getElementById("rack").value = rack.join("");
+};
+
+// ---------- Top finder ----------
+window.runFindTop = () => {
+  const rackStr = document.getElementById("rack").value.toUpperCase().trim();
+  const rack = rackStr.split("").filter(l => /[A-Z?]/.test(l));
+  if (!rack.length) return;
+  const t0 = performance.now();
+  const top = findTop(board, rack, dict);
+  const t1 = performance.now();
+  document.getElementById("timing").textContent = `${(t1-t0).toFixed(0)} ms`;
+  const div = document.getElementById("result");
+  if (!top) { div.textContent = "Aucun coup trouvé."; return; }
+  const m = top.move;
+  const lines = [
+    `🏆 TOP : ${m.word} (${top.score} pts)`,
+    `   Position : ${m.dir} en (${m.row},${m.col})`,
+    `   Mots formés : ${top.words.map(w => `${w.word}(${w.score})`).join(" + ")}`,
+    "",
+    "Top 10 :",
+  ];
+  const all = findTop(board, rack, dict, { all: true }) || [];
+  all.slice(0, 10).forEach((cand, i) => {
+    lines.push(`${(i+1).toString().padStart(2)}. ${cand.move.word.padEnd(10)} ${String(cand.score).padStart(4)} pts  (${cand.move.dir} ${cand.move.row},${cand.move.col})`);
+  });
+  div.textContent = lines.join("\n");
+};
+
+// ---------- Tests dictionnaire ----------
+window.testHas = (w) => {
+  const ok = dict.has(w);
+  document.getElementById("quickResult").innerHTML += `<div>has("${w}") → ${ok ? "✅ oui" : "❌ non"}</div>`;
+};
+window.testPrefix = (w) => {
+  const ok = dict.hasPrefix(w);
+  document.getElementById("quickResult").innerHTML += `<div>hasPrefix("${w}") → ${ok ? "✅ oui" : "❌ non"}</div>`;
+};
+
+window.benchmark = () => {
+  const out = document.getElementById("quickResult");
+  out.innerHTML += "<div>--- Benchmark ---</div>";
+  const bag = { ...LETTER_BAG };
+  for (let i = 0; i < 5; i++) {
+    const { rack } = drawRack({ ...LETTER_BAG }, 7, { minVowels: 2, minConsonants: 2 });
+    const t0 = performance.now();
+    const top = findTop(emptyBoard(), rack, dict);
+    const t1 = performance.now();
+    const desc = top ? `${top.move.word} ${top.score}pts` : "rien";
+    out.innerHTML += `<div>${rack.join("")} → ${desc} en ${(t1-t0).toFixed(0)} ms</div>`;
+  }
+};
+</script>
+</body>
+</html>

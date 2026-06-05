@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond sombre profond -->
+  <rect width="192" height="192" rx="42" fill="#0d1a0f"/>
+  <!-- jeton beige classique -->
+  <rect x="26" y="16" width="140" height="158" rx="16" fill="#e5dcc8"/>
+  <!-- ♠ en or (couleur accent de l'app) -->
+  <text x="96" y="128"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="104" font-weight="900"
+        text-anchor="middle"
+        fill="#f0c040">♠</text>
+  <!-- 21 en bas à droite, couleur sombre sur beige -->
+  <text x="156" y="165"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="24" font-weight="900"
+        text-anchor="end"
+        fill="#5a4e3a">21</text>
+</svg>

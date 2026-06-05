@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Garenna — Jeu Scrabble</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+
+<main>
+
+  <div class="layout">
+    <div class="left-col">
+      <div class="game-wrap rack-bottom" id="gameWrap">
+        <div class="board" id="board"></div>
+        <div class="rack" id="rack"></div>
+      </div>
+    </div>
+
+    <aside class="right-col">
+      <div class="title-row">
+        <div class="game-title" id="gameTitle"></div>
+        <button class="btn small" onclick="openSettings()" title="Paramètres">⚙️</button>
+        <a href="../index.html" class="btn small" title="Retour">← Accueil</a>
+      </div>
+
+      <div class="info-bar two-sections">
+        <div class="info-section info-left">
+          <div class="item"><span class="label">Cumul</span><span class="value" id="totalScore">0</span></div>
+          <div class="item"><span class="label">Négatif</span><span class="value" id="sumNeg">0</span></div>
+          <div class="item"><span class="label">Temps</span><span class="value" id="chrono">0:00</span></div>
+        </div>
+        <div class="info-section info-right">
+          <div class="item"><span class="label">Coup</span><span class="value" id="prevMoveNo">—</span></div>
+          <div class="item"><span class="label">Négatif</span><span class="value" id="prevNeg">—</span></div>
+          <div class="item"><span class="label">Temps</span><span class="value" id="prevTime">—</span></div>
+        </div>
+      </div>
+      <span id="moveNo" hidden>1</span>
+
+      <div class="move-timer-chip" id="moveTimerChip" style="display:none">
+        <span class="label" id="moveTimerLabel">Coup —</span>
+        <span class="value move-timer" id="moveTimer">—</span>
+      </div>
+
+      <div class="action-row" id="actionRowPreStart">
+        <button class="btn" id="btnStart" style="background:var(--yellow);color:var(--petrol-dark);font-weight:700;font-size:1rem;padding:10px 20px">▶ Démarrer la partie</button>
+      </div>
+      <div class="action-row" id="actionRowInGame" hidden>
+        <button class="btn ghost small" id="btnGiveUp">Voir le top (−20s)</button>
+        <button class="btn ghost small" id="btnPause" hidden>⏸ Pause</button>
+        <button class="btn ghost small" id="btnAbandon">Abandonner</button>
+        <button class="btn ghost small" id="btnRestart">Nouvelle partie</button>
+      </div>
+
+      <div class="annot-toolbar" id="annotToolbar" hidden>
+        <span class="annot-label">Annoter :</span>
+        <button class="annot-btn" data-tool="" title="Mode jeu (curseur)">🎮</button>
+        <button class="annot-btn" data-tool="center" title="Inscrire du texte (3 caractères max)"><span class="badge-sample">ABC<br>123</span></button>
+        <button class="annot-btn" data-tool="arrow" title="Flèche (cliquer-glisser entre 2 cases)">↗</button>
+        <span class="annot-sep"></span>
+        <button class="annot-btn dot dot-red"    data-tool="dot-red"    title="Pastille rouge"></button>
+        <button class="annot-btn dot dot-orange" data-tool="dot-orange" title="Pastille orange"></button>
+        <button class="annot-btn dot dot-yellow" data-tool="dot-yellow" title="Pastille jaune"></button>
+        <button class="annot-btn dot dot-green"  data-tool="dot-green"  title="Pastille verte"></button>
+        <button class="annot-btn dot dot-blue"   data-tool="dot-blue"   title="Pastille bleue"></button>
+        <button class="annot-btn dot dot-purple" data-tool="dot-purple" title="Pastille violette"></button>
+        <span class="annot-sep"></span>
+        <button class="annot-btn" data-tool="erase" title="Effacer la case">🧽</button>
+        <button class="annot-btn" onclick="clearAllAnnotations()" title="Tout effacer">×</button>
+      </div>
+
+      <div class="feedback" id="feedback" hidden></div>
+
+      <!-- Panel pour le mode review (parcours coup par coup) -->
+      <div class="review-panel" id="reviewPanel" hidden>
+    <div class="review-nav">
+      <button class="btn small" id="rvFirst" title="Premier coup">⏮</button>
+      <button class="btn small" id="rvPrev" title="Précédent (←)">◀</button>
+      <span class="step-label" id="rvStep">—</span>
+      <button class="btn small" id="rvNext" title="Suivant (→)">▶</button>
+      <button class="btn small" id="rvLast" title="Dernier coup">⏭</button>
+    </div>
+    <div class="review-line top"><span class="label">Top</span><span class="val" id="rvTop">—</span></div>
+    <div class="review-line played"><span class="label">Toi</span><span class="val" id="rvPlayed">—</span></div>
+    <div class="review-line neg"><span class="label">Négatif</span><span class="val" id="rvNeg">—</span></div>
+    <h4 style="margin:14px 0 6px;font-size:.85rem;color:#5a6a73;text-transform:uppercase;letter-spacing:.05em">Autres solutions valides</h4>
+    <div class="review-solutions" id="rvSolutions"></div>
+      </div>
+
+      <div class="bag-display" id="bagDisplay" hidden>
+        <div class="bag-title">Sac — <span id="bagCount">0</span> lettres</div>
+        <div class="bag-tiles" id="bagTiles"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal paramètres -->
+<div id="settings" class="modal" hidden>
+  <div class="backdrop" onclick="closeSettings()"></div>
+  <div class="content">
+    <button class="close" onclick="closeSettings()">×</button>
+    <h2>Paramètres</h2>
+
+    <h3 class="settings-section">Préférences personnelles <span class="muted">(liées à ton compte)</span></h3>
+    <div class="setting">
+      <label for="optRackPos">Position du chevalet</label>
+      <select id="optRackPos">
+        <option value="bottom">En bas du plateau</option>
+        <option value="top">En haut du plateau</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label for="optSortRack">Trier le chevalet (A→Z)</label>
+      <input type="checkbox" id="optSortRack">
+    </div>
+    <div class="setting">
+      <label for="optShowCoords">Afficher les références A-O / 1-15</label>
+      <input type="checkbox" id="optShowCoords">
+    </div>
+    <div class="setting" style="display:block">
+      <label for="optColorTheme" style="margin-bottom:6px">Couleurs</label>
+      <select id="optColorTheme" style="width:100%">
+        <option value="classic">Thème Garenna</option>
+        <option value="duplijeu">Thème DupliJeu</option>
+      </select>
+    </div>
+
+    <h3 class="settings-section">Paramètres de jeu</h3>
+    <div class="setting" style="display:block">
+      <label for="optGameMode" style="margin-bottom:6px">Mode de partie</label>
+      <select id="optGameMode" style="width:100%">
+        <option value="duplicate">Duplicate classique (7 lettres)</option>
+        <option value="7sur8">7 sur 8 — tirage 8, max 7 jouables</option>
+        <option value="7et8">7 et 8 — primes 50/75</option>
+        <option value="789">7, 8 et 9 — primes 50/75/100</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label for="optWithJoker">Mode joker (6 lettres + 1 joker imposé)</label>
+      <input type="checkbox" id="optWithJoker">
+    </div>
+    <div class="setting">
+      <label for="optTimePerMove">Temps par coup (0 = illimité)</label>
+      <input type="number" id="optTimePerMove" min="0" max="600" step="5" value="0" style="width:80px"> s
+    </div>
+    <div class="setting">
+      <button class="btn secondary" onclick="restartGame()">Nouvelle partie</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pause -->
+<div id="pauseModal" class="modal" hidden>
+  <div class="backdrop"></div>
+  <div class="content" style="max-width:380px;text-align:center">
+    <h2 style="margin-top:0">⏸ Partie en pause</h2>
+    <p class="muted">Le chrono est arrêté. Reprends quand tu es prêt.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+      <button class="btn primary" id="btnResume" style="background:var(--yellow);color:var(--petrol-dark);font-weight:700">▶ Reprendre</button>
+      <a href="../index.html" class="btn ghost">Quitter la partie</a>
+    </div>
+  </div>
+</div>
+
+<!-- Modal fin de partie -->
+<div id="endModal" class="modal" hidden>
+  <div class="backdrop" onclick="closeEndModal()"></div>
+  <div class="content" style="max-width: 480px; text-align: center">
+    <button class="close" onclick="closeEndModal()">×</button>
+    <h2 style="font-size:1.4rem;margin-bottom:8px">🎉 Partie terminée</h2>
+    <div id="endSummary" style="font-size:.95rem;line-height:1.7;margin-bottom:18px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button class="btn" onclick="openSheet()">📋 Feuille de route</button>
+      <button class="btn" onclick="closeEndModal();enterLocalReview()">👁 Revoir la partie</button>
+      <button class="btn ghost" onclick="restartGame()">Nouvelle partie</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal feuille de route -->
+<div id="sheet" class="modal" hidden>
+  <div class="backdrop" onclick="closeSheet()"></div>
+  <div class="content" style="max-width: 900px">
+    <button class="close" onclick="closeSheet()">×</button>
+    <h2>📋 Feuille de route</h2>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>

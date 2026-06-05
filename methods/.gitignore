@@ -1,0 +1,4 @@
+wikt_todo.json
+wikt_cache.json
+__pycache__/
+*.pyc

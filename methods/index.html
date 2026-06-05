@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="METHODS"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>METHODS</title>
+<style>
+/* ══ VARIABLES ══ */
+:root{
+  --bg0:#070a12;--bg1:#0b1020;
+  --card:rgba(18,24,44,.92);--stroke:rgba(255,255,255,.12);
+  --txt:#eaf0ff;--muted:#8a9bbf;
+  --t1:#fff;--accent:#69a7ff;--ok:#2dd4d4;--warn:#b78af7;--danger:#ff6b6b;
+  --radius:18px;--shadow:0 18px 50px rgba(0,0,0,.55);
+  --focus:rgba(105,167,255,.4);--kb:#1a2235;
+}
+@media(prefers-color-scheme:light){:root{
+  --bg0:#dce8ff;--bg1:#eef3ff;
+  --card:rgba(255,255,255,.97);--stroke:rgba(16,24,80,.15);
+  --txt:#06101f;--muted:#4a607a;
+  --t1:#0a2a6e;--accent:#1a65d6;--ok:#0d8080;--warn:#6b35c2;--danger:#c0392b;
+  --kb:#cdd8f0;
+}}
+
+/* ══ RESET ══ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;height:100dvh;overflow:hidden;
+  font-family:ui-sans-serif,-apple-system,sans-serif;
+  background:var(--bg0);color:var(--txt);}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+
+/* ══ VUE SYSTÈME ══ */
+/* Chaque vue est position:fixed sur tout l'écran */
+.view{display:none;position:fixed;inset:0;flex-direction:column;overflow:hidden;
+  background:radial-gradient(900px 700px at 20% 0%,rgba(47,125,246,.18),transparent 50%),
+             linear-gradient(180deg,var(--bg0),var(--bg1));}
+.view.active{display:flex;}
+
+/* ══ COMMUNS ══ */
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);
+  box-shadow:var(--shadow);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.btn{border:1px solid var(--stroke);border-radius:10px;background:rgba(255,255,255,.08);
+  color:var(--txt);font-weight:700;font-size:13px;padding:7px 14px;transition:background .12s;}
+.btn:hover{background:rgba(255,255,255,.16);}
+.btn-primary{background:rgba(105,167,255,.18);border-color:rgba(105,167,255,.4);color:var(--accent);}
+.btn-danger{background:rgba(255,107,107,.18);border-color:rgba(255,107,107,.4);color:var(--danger);}
+.btn-ok{background:rgba(45,212,212,.18);border-color:rgba(45,212,212,.4);color:var(--ok);}
+.btn-warn{background:rgba(183,138,247,.18);border-color:rgba(183,138,247,.4);color:var(--warn);}
+.logo{font-size:22px;font-weight:950;letter-spacing:.1em;line-height:1;}
+.logo .l1{color:var(--t1);}.logo .l2{color:var(--accent);}
+.msg{font-size:12px;font-weight:700;min-height:16px;}
+.msg.ok{color:var(--ok);}.msg.warn{color:var(--warn);}.msg.err{color:var(--danger);}
+.prog-row{display:flex;gap:12px;}
+.prog{flex:1;}.prog label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px;}
+.prog-bar{height:4px;background:rgba(255,255,255,.1);border-radius:2px;}
+@media(prefers-color-scheme:light){.prog-bar{background:rgba(0,0,0,.1);}}
+.prog-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .4s;}
+
+/* Slot de mot */
+.slot{min-height:34px;border:1.5px dashed rgba(255,255,255,.2);border-radius:999px;
+  background:rgba(255,255,255,.04);
+  display:flex;align-items:center;padding:0 14px;gap:6px;
+  font-size:14px;font-weight:900;letter-spacing:.07em;transition:background .15s,border-color .15s;}
+@media(prefers-color-scheme:light){.slot{border-color:rgba(0,0,0,.15);background:rgba(0,0,0,.04);}}
+.slot.found{border-style:solid;border-color:rgba(45,212,212,.7);background:rgba(45,212,212,.18);color:var(--txt);}
+.slot.found-helped{border-style:solid;border-color:rgba(255,167,50,.8);background:rgba(255,167,50,.2);color:var(--txt);}
+.slot.revealed{border-style:solid;border-color:rgba(255,107,107,.7);background:rgba(255,107,107,.18);color:var(--txt);}
+.slot.clickable{cursor:pointer;}
+.cousin-link{cursor:pointer;opacity:.65;font-size:.85em;font-weight:700;letter-spacing:.04em;}
+.cousin-link:hover,.cousin-link:active{opacity:1;text-decoration:underline;}
+
+/* Clavier mobile */
+.keyboard{background:var(--kb);padding:4px 5px 10px;
+  display:none;flex-direction:column;gap:4px;flex-shrink:0;}
+@media(max-width:640px){.keyboard{display:flex;}}
+.kb-top{display:flex;align-items:center;gap:6px;padding:2px 2px 4px;}
+.kb-disp{flex:1;min-height:30px;background:var(--card);border:1px solid var(--stroke);
+  border-radius:8px;padding:0 10px;display:flex;align-items:center;
+  font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
+.kb-disp:empty::after{content:"…";color:var(--muted);font-weight:400;font-size:12px;}
+.kb-msg{font-size:11px;font-weight:700;min-height:14px;padding:0 4px;text-align:center;}
+.kb-rows{display:flex;flex-direction:column;gap:4px;}
+.kb-row{display:flex;justify-content:center;gap:3px;}
+.kk{flex:1;max-width:33px;height:34px;border-radius:7px;border:0;
+  background:#2d3a55;color:#eaf0ff;font-size:16px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 0 rgba(0,0,0,.4);user-select:none;-webkit-user-select:none;
+  transition:background .08s,transform .08s;}
+@media(prefers-color-scheme:light){.kk{background:#fff;color:#0b1220;box-shadow:0 2px 0 rgba(0,0,0,.18);}}
+.kk:active{background:var(--accent);color:#fff;transform:translateY(1px);box-shadow:none;}
+.kk.wide{max-width:48px;font-size:14px;}
+.kk.enter{background:var(--accent);color:#fff;}
+.kk.clr{background:rgba(192,57,43,.35);color:#ffaaaa;}
+
+/* Saisie desktop */
+.inp-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--stroke);}
+@media(max-width:640px){.inp-bar{display:none;}}
+.inp-bar input{flex:1;padding:8px 14px;border-radius:12px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.07);color:var(--txt);font-size:15px;
+  outline:none;font-family:inherit;letter-spacing:.05em;text-transform:uppercase;}
+@media(prefers-color-scheme:light){.inp-bar input{background:rgba(255,255,255,.8);}}
+.inp-bar input:focus{box-shadow:0 0 0 3px var(--focus);}
+
+/* Modale définition */
+.modal{display:none;position:fixed;inset:0;z-index:500;align-items:flex-end;justify-content:center;}
+.modal.open{display:flex;}
+.modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.modal-panel{position:relative;z-index:1;background:var(--card);border:1px solid var(--stroke);
+  border-radius:var(--radius) var(--radius) 0 0;box-shadow:var(--shadow);
+  padding:16px;width:100%;max-width:640px;max-height:80svh;overflow-y:auto;}
+.modal-panel h2{font-size:18px;font-weight:950;}
+.modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.modal-def{font-size:14px;line-height:1.4;color:var(--muted);}
+.modal-links{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.modal-sec{margin-top:12px;font-size:13px;line-height:1.5;}
+.modal-sec strong{color:var(--txt);display:block;margin-bottom:4px;}
+.modal-sec span{color:var(--muted);}
+a.def-link{color:var(--acc);text-decoration:none;}
+a.def-link:hover{text-decoration:underline;}
+
+/* Images inline */
+.img-strip{display:flex;gap:4px;padding:10px 12px 4px;flex-wrap:wrap;justify-content:center;}
+.img-strip-thumb{width:calc(50% - 2px);max-width:130px;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.04);border-radius:8px;}
+/* Zoom lightbox */
+#img-zoom-ol{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.85);align-items:center;justify-content:center;}
+#img-zoom-ol.open{display:flex;}
+#img-zoom-img{max-width:92vw;max-height:82vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+
+/* Settings overlay */
+.overlay{display:none;position:fixed;inset:0;z-index:400;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.overlay-panel{position:relative;z-index:1;background:var(--card);border:1px solid var(--stroke);
+  border-radius:var(--radius) var(--radius) 0 0;padding:18px;width:100%;max-width:380px;}
+.overlay-panel h3{font-size:16px;font-weight:900;margin-bottom:14px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;}
+.set-row label{font-size:14px;font-weight:700;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;position:absolute;width:0;height:0;}
+.tg-track{position:absolute;inset:0;border-radius:24px;background:var(--muted);cursor:pointer;transition:background .2s;}
+.toggle input:checked~.tg-track{background:var(--accent);}
+.tg-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;pointer-events:none;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.toggle input:checked~.tg-thumb{transform:translateX(20px);}
+input[type=range]{accent-color:var(--accent);}
+
+/* ══ AUTH ══ */
+#v-auth{align-items:center;justify-content:center;}
+.auth-card{width:90%;max-width:340px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.auth-tabs{display:flex;gap:6px;}
+.auth-tab{flex:1;padding:7px;font-size:13px;font-weight:700;border-radius:9px;
+  border:1px solid var(--stroke);background:transparent;color:var(--muted);}
+.auth-tab.active{background:rgba(105,167,255,.18);border-color:rgba(105,167,255,.4);color:var(--accent);}
+.auth-form{display:flex;flex-direction:column;gap:10px;}
+.auth-form input{padding:9px 14px;border-radius:11px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.07);color:var(--txt);font-size:14px;
+  outline:none;font-family:inherit;}
+@media(prefers-color-scheme:light){.auth-form input{background:rgba(255,255,255,.8);}}
+.auth-form input:focus{box-shadow:0 0 0 3px var(--focus);}
+.auth-form input::placeholder{color:var(--muted);}
+.auth-select{padding:9px 14px;border-radius:11px;border:1px solid var(--stroke);background:rgba(255,255,255,.07);color:var(--txt);font-size:14px;outline:none;font-family:inherit;width:100%;cursor:pointer;}
+@media(prefers-color-scheme:light){.auth-select{background:rgba(255,255,255,.8);}}
+.auth-question{font-size:13px;font-weight:700;padding:8px 14px;border-radius:11px;background:rgba(105,167,255,.12);border:1px solid rgba(105,167,255,.3);}
+.srs-prompt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;font-size:13px;}
+
+/* ══ SELECT ══ */
+#v-select{align-items:center;justify-content:center;gap:14px;}
+.sel-card{width:88%;max-width:340px;padding:16px 20px;
+  display:flex;flex-direction:row;align-items:center;gap:16px;
+  cursor:pointer;transition:background .15s;border-left:3px solid transparent;
+  touch-action:manipulation;}
+@media(hover:hover){.sel-card:hover{background:rgba(255,255,255,.1);}}
+.sel-icon{flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;}
+.sel-text{display:flex;flex-direction:column;gap:3px;}
+.sel-name{font-size:26px;font-weight:950;letter-spacing:.12em;}.sel-name .l1{color:var(--t1);}
+.sel-desc{font-size:13px;color:var(--muted);}
+#btn-go-entremods{border-left-color:#b78af7;}
+#btn-go-entremods .sel-icon{background:rgba(183,138,247,.15);color:#b78af7;}
+#btn-go-entremods .sel-name .l2{color:#b78af7;}
+#btn-go-themods{border-left-color:#2dd4d4;}
+#btn-go-themods .sel-icon{background:rgba(45,212,212,.15);color:#2dd4d4;}
+#btn-go-themods .sel-name .l2{color:#2dd4d4;}
+#btn-go-explods{border-left-color:#f59e0b;}
+#btn-go-explods .sel-icon{background:rgba(245,158,11,.15);color:#f59e0b;}
+#btn-go-explods .sel-name .l2{color:#f59e0b;}
+
+/* ══ METHODS ══ */
+#v-methods{flex-direction:column;}
+.m-card{flex:1;display:flex;flex-direction:column;overflow:hidden;margin:8px;}
+.m-hdr,.tm-shdr{display:flex;align-items:center;gap:6px;padding:7px 12px;
+  border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.m-hdr-logo,.tm-hdr-logo{flex:1;text-align:center;font-size:18px;}
+.user-chip{font-size:11px;font-weight:700;color:var(--muted);padding:3px 8px;
+  border-radius:20px;border:1px solid var(--stroke);}
+.m-prog{padding:5px 12px 4px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.bounds-row{display:flex;align-items:center;
+  padding:5px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;gap:6px;}
+.borne{flex:1;min-width:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:clamp(11px,3.8vw,16px);font-weight:900;letter-spacing:.03em;
+  background:none;border:none;border-radius:6px;padding:2px 4px;transition:background .12s;}
+.borne:hover{background:rgba(255,255,255,.1);}
+.chrono{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted);}
+.chrono.running{color:var(--accent);}.chrono.expired{color:var(--danger);}
+.word-list{flex:1;overflow-y:auto;padding:6px 10px;
+  display:flex;flex-direction:column;gap:4px;list-style:none;}
+.slot-tools{display:flex;gap:3px;margin-left:auto;}
+.tool-btn{font-size:11px;padding:2px 6px;border-radius:6px;
+  background:rgba(255,255,255,.08);border:1px solid var(--stroke);color:var(--muted);}
+.tool-btn:hover{background:rgba(255,255,255,.16);}
+.m-bottom{padding:5px 10px;border-top:1px solid var(--stroke);flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.counter{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;}
+
+/* ══ THEMODS ══ */
+#v-themods{flex-direction:column;}
+.tm-outer{flex:1;display:flex;flex-direction:column;overflow:hidden;margin:8px;}
+/* sous-vues THEMODS */
+.tmv{display:none;}
+.tmv.active{display:flex;flex:1;flex-direction:column;overflow:hidden;background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);}
+.tm-card{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.tm-hdr{padding:9px 14px 8px;border-bottom:1px solid var(--stroke);
+  display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+.tm-nav{display:flex;align-items:center;gap:8px;width:100%;}
+.tm-nav-title{font-size:15px;font-weight:900;color:var(--accent);letter-spacing:.06em;margin-left:auto;}
+.tm-body{flex:1;overflow-y:auto;padding:12px;}
+.tm-grid{display:flex;flex-direction:column;gap:8px;}
+.tm-subtitle{font-size:12px;color:var(--muted);font-weight:700;text-align:center;margin-bottom:10px;}
+.tm-msg{text-align:center;font-size:13px;font-weight:700;min-height:18px;margin-top:8px;}
+.tm-msg.ok{color:var(--ok);}
+/* cartes thème */
+.tc{border:1px solid var(--stroke);border-radius:14px;padding:14px 16px;cursor:pointer;
+  transition:background .15s;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.tc-lbl{font-size:20px;font-weight:950;letter-spacing:.06em;}
+.tc-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.tc-arr{font-size:20px;color:var(--muted);}
+.tc-f{background:rgba(105,167,255,.1);border-color:rgba(105,167,255,.28);}
+.tc-f:hover{background:rgba(105,167,255,.2);}
+.tc-f .tc-lbl,.tc-f .tc-arr{color:var(--accent);}
+.tc-g{background:rgba(45,212,212,.1);border-color:rgba(45,212,212,.28);}
+.tc-g:hover{background:rgba(45,212,212,.18);}
+.tc-g .tc-lbl,.tc-g .tc-arr{color:var(--ok);}
+.tc-v{background:rgba(183,138,247,.1);border-color:rgba(183,138,247,.28);}
+.tc-v:hover{background:rgba(183,138,247,.18);}
+.tc-v .tc-lbl,.tc-v .tc-arr{color:var(--warn);}
+@media(prefers-color-scheme:light){
+  .tc-f{background:#e8f0ff;border-color:rgba(26,101,214,.28);}
+  .tc-f:hover{background:#d4e4ff;}.tc-f .tc-lbl,.tc-f .tc-arr{color:#1a65d6;}
+  .tc-g{background:#e0f7f5;border-color:rgba(13,110,110,.28);}
+  .tc-g:hover{background:#c8f0ec;}.tc-g .tc-lbl,.tc-g .tc-arr{color:#0d6e6e;}
+  .tc-v{background:#f0eaff;border-color:rgba(107,53,194,.28);}
+  .tc-v:hover{background:#e4d8ff;}.tc-v .tc-lbl,.tc-v .tc-arr{color:#6b35c2;}
+}
+/* jeu themods */
+.tm-ghdr{padding:7px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;
+  display:flex;align-items:center;gap:8px;position:relative;}
+#tm-chrono{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;}
+.tm-ginfo{flex:1;display:flex;flex-direction:column;gap:1px;}
+.tm-gtitle{font-size:13px;font-weight:900;color:var(--accent);letter-spacing:.04em;white-space:nowrap;}
+.tm-session-label{text-align:center;font-size:20px;font-weight:950;color:var(--accent);letter-spacing:.08em;padding:8px 12px 4px;flex-shrink:0;}
+.tm-wlist{flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:4px;list-style:none;}
+/* Barre verdict GM/ODS */
+#tm-verdict-bar{display:none;flex-direction:column;gap:8px;padding:8px 12px 4px;flex-shrink:0;}
+#tm-verdict-btns{display:none;gap:8px;}
+#tm-btn-sol-quiz{padding:11px;font-size:14px;font-weight:700;}
+#tm-btn-found,#tm-btn-review{flex:1;padding:12px 0;font-size:15px;font-weight:800;}
+/* GM tuiles */
+.gm-def{text-align:center;padding:18px 16px 14px;font-size:16px;font-weight:800;line-height:1.5;border-bottom:1px solid var(--stroke);}
+.gm-tiles{padding:18px 16px;display:flex;flex-direction:column;gap:14px;}
+.gm-row{display:flex;gap:clamp(2px,1vw,5px);flex-wrap:nowrap;justify-content:center;}
+.gt{width:clamp(22px,7vw,36px);height:clamp(26px,8vw,40px);border-radius:6px;flex-shrink:1;
+  display:inline-flex;align-items:center;justify-content:center;font-size:clamp(12px,3.5vw,18px);font-weight:900;}
+.gt.init{background:var(--accent);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.3);}
+.gt.empty{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.3);}
+@media(prefers-color-scheme:light){.gt.empty{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.25);}}
+.gt.ok{background:var(--ok);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25);}
+.gt.miss{background:var(--danger);color:#fff;opacity:.7;}
+.gm-nav{padding:10px 16px;border-top:1px solid var(--stroke);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.gm-pos{font-size:12px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;}
+
+/* ══ iOS SAFE AREAS ══ */
+@supports(padding: env(safe-area-inset-top)){
+  body{
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ══ CLAVIER iOS OUVERT ══ */
+/* Quand le clavier iOS s'ouvre, on compacte l'interface */
+body.kb-open .m-hdr{ padding:4px 10px; }
+body.kb-open .m-prog{ display:none; }
+body.kb-open .bounds-row{ padding:3px 10px; }
+body.kb-open .chrono{ font-size:14px; }
+body.kb-open .slot{ min-height:28px;font-size:12px; }
+body.kb-open .tm-hdr .prog-row{ display:none; }
+
+/* ══ MOBILE : card sans border-radius, plein écran ══ */
+@media(max-width:640px){
+  .m-card{ margin:0;border-radius:0;border-left:none;border-right:none;border-top:none; }
+  .tm-outer{ margin:0;border-radius:0;border-left:none;border-right:none;border-top:none; }
+  .tm-card{ border-radius:0; }
+  .card.sel-card{ border-radius:var(--radius); }
+  .card.auth-card{ border-radius:var(--radius); }
+}
+
+/* ══ THEMODS CSS MANQUANT ══ */
+.tm-wlist{flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:4px;list-style:none;}
+.tm-ghdr{padding:7px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;display:flex;align-items:center;gap:8px;position:relative;}
+.tm-ginfo{flex:1;display:flex;flex-direction:column;gap:1px;}
+.tm-gtitle{font-size:13px;font-weight:900;color:var(--accent);letter-spacing:.04em;white-space:nowrap;}
+.tm-session-label{text-align:center;font-size:20px;font-weight:950;color:var(--accent);letter-spacing:.08em;padding:8px 12px 4px;flex-shrink:0;}
+.tm-hdr{padding:9px 14px 8px;border-bottom:1px solid var(--stroke);display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+.tm-nav{display:flex;align-items:center;gap:8px;width:100%;}
+.tm-nav-title{font-size:15px;font-weight:900;color:var(--accent);letter-spacing:.06em;margin-left:auto;}
+.tm-body{flex:1;overflow-y:auto;padding:12px;}
+.tm-grid{display:flex;flex-direction:column;gap:8px;}
+.tm-subtitle{font-size:12px;color:var(--muted);font-weight:700;text-align:center;margin-bottom:10px;}
+.tm-msg{text-align:center;font-size:13px;font-weight:700;min-height:18px;margin-top:8px;}
+.tm-msg.ok{color:var(--ok);}
+.tc{border:1px solid var(--stroke);border-radius:14px;padding:14px 16px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.tc-lbl{font-size:20px;font-weight:950;letter-spacing:.06em;}
+.tc-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.tc-arr{font-size:20px;color:var(--muted);}
+.tc-f{background:rgba(105,167,255,.1);border-color:rgba(105,167,255,.28);}
+.tc-f:hover{background:rgba(105,167,255,.2);}
+.tc-f .tc-lbl,.tc-f .tc-arr{color:var(--accent);}
+.tc-g{background:rgba(45,212,212,.1);border-color:rgba(45,212,212,.28);}
+.tc-g:hover{background:rgba(45,212,212,.18);}
+.tc-g .tc-lbl,.tc-g .tc-arr{color:var(--ok);}
+.tc-v{background:rgba(183,138,247,.1);border-color:rgba(183,138,247,.28);}
+.tc-v:hover{background:rgba(183,138,247,.18);}
+.tc-v .tc-lbl,.tc-v .tc-arr{color:var(--warn);}
+.tc-o{background:rgba(255,165,60,.1);border-color:rgba(255,165,60,.28);}
+.tc-o:hover{background:rgba(255,165,60,.18);}
+.tc-o .tc-lbl,.tc-o .tc-arr{color:#e07800;}
+@media(prefers-color-scheme:light){
+  .tc-f{background:#e8f0ff;border-color:rgba(26,101,214,.28);}
+  .tc-f:hover{background:#d4e4ff;}.tc-f .tc-lbl,.tc-f .tc-arr{color:#1a65d6;}
+  .tc-g{background:#e0f7f5;border-color:rgba(13,110,110,.28);}
+  .tc-g:hover{background:#c8f0ec;}.tc-g .tc-lbl,.tc-g .tc-arr{color:#0d6e6e;}
+  .tc-v{background:#f0eaff;border-color:rgba(107,53,194,.28);}
+  .tc-v:hover{background:#e4d8ff;}.tc-v .tc-lbl,.tc-v .tc-arr{color:#6b35c2;}
+  .tc-o{background:#fff3e0;border-color:rgba(200,100,0,.28);}
+  .tc-o:hover{background:#ffe0b2;}.tc-o .tc-lbl,.tc-o .tc-arr{color:#c05000;}
+}
+/* GM tiles */
+.gm-def{text-align:center;padding:18px 16px 14px;font-size:16px;font-weight:800;line-height:1.5;border-bottom:1px solid var(--stroke);}
+.gm-tiles{padding:18px 16px;display:flex;flex-direction:column;gap:14px;}
+.gm-row{display:flex;gap:clamp(2px,1vw,5px);flex-wrap:nowrap;justify-content:center;}
+.gt{width:clamp(22px,7vw,36px);height:clamp(26px,8vw,40px);border-radius:6px;flex-shrink:1;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(12px,3.5vw,18px);font-weight:900;}
+.gt.init{background:var(--accent);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.3);}
+.gt.empty{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.3);}
+@media(prefers-color-scheme:light){.gt.empty{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.25);}}
+.gt.ok{background:var(--ok);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25);}
+.gt.miss{background:var(--danger);color:#fff;opacity:.7;}
+.gt.also{background:rgba(105,167,255,.18);color:var(--accent);border:2px solid rgba(105,167,255,.4);}
+@media(prefers-color-scheme:light){.gt.also{background:#ddeeff;color:#1a65d6;border-color:rgba(26,101,214,.3);}}
+.gm-also-label{font-size:11px;color:var(--muted);margin:8px 0 4px;text-align:center;}
+.gm-nav{padding:10px 16px;border-top:1px solid var(--stroke);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.gm-pos{font-size:12px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;}
+.gm-row-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.gm-inflected{font-size:11px;color:var(--muted);letter-spacing:.4px;text-align:center;}
+/* sous-vues THEMODS */
+.tmv{display:none;}
+.tmv.active{display:flex;flex:1;flex-direction:column;overflow:hidden;background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);}
+.tm-outer{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.tm-card{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+/* METHODS layout */
+.m-card{flex:1;display:flex;flex-direction:column;overflow:hidden;margin:8px;}
+.m-hdr,.tm-shdr{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.m-hdr-logo,.tm-hdr-logo{flex:1;text-align:center;font-size:18px;}
+.user-chip{font-size:11px;font-weight:700;color:var(--muted);padding:3px 8px;border-radius:20px;border:1px solid var(--stroke);}
+.m-prog{padding:5px 12px 4px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.bounds-row{display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;gap:6px;}
+.borne{flex:1;min-width:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(11px,3.8vw,16px);font-weight:900;letter-spacing:.03em;background:none;border:none;border-radius:6px;padding:2px 4px;transition:background .12s;color:var(--txt);}
+.borne:hover{background:rgba(255,255,255,.1);}
+.chrono{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted);}
+.chrono.running{color:var(--accent);}.chrono.expired{color:var(--danger);}
+.word-list{flex:1;overflow-y:auto;padding:6px 10px;display:flex;flex-direction:column;gap:4px;list-style:none;}
+.slot-tools{display:flex;gap:3px;margin-left:auto;}
+.tool-btn{font-size:11px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.08);border:1px solid var(--stroke);color:var(--muted);cursor:pointer;font-family:inherit;}
+.tool-btn:hover{background:rgba(255,255,255,.16);}
+.m-bottom{padding:5px 10px;border-top:1px solid var(--stroke);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+@media(max-width:640px){.m-bottom{display:none;}}
+/* Select — voir bloc principal ci-dessus */
+/* Auth */
+#v-auth{align-items:center;justify-content:center;}
+.auth-card{width:90%;max-width:340px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.auth-tabs{display:flex;gap:6px;}
+.auth-tab{flex:1;padding:7px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--stroke);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;}
+.auth-tab.active{background:rgba(105,167,255,.18);border-color:rgba(105,167,255,.4);color:var(--accent);}
+.auth-form{display:flex;flex-direction:column;gap:10px;}
+.auth-form input{padding:9px 14px;border-radius:11px;border:1px solid var(--stroke);background:rgba(255,255,255,.07);color:var(--txt);font-size:14px;outline:none;font-family:inherit;}
+@media(prefers-color-scheme:light){.auth-form input{background:rgba(255,255,255,.8);}}
+.auth-form input:focus{box-shadow:0 0 0 3px var(--focus);}
+.auth-form input::placeholder{color:var(--muted);}
+.auth-select{padding:9px 14px;border-radius:11px;border:1px solid var(--stroke);background:rgba(255,255,255,.07);color:var(--txt);font-size:14px;outline:none;font-family:inherit;width:100%;cursor:pointer;}
+@media(prefers-color-scheme:light){.auth-select{background:rgba(255,255,255,.8);}}
+.auth-question{font-size:13px;font-weight:700;padding:8px 14px;border-radius:11px;background:rgba(105,167,255,.12);border:1px solid rgba(105,167,255,.3);}
+.srs-prompt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;font-size:13px;}
+/* iOS */
+
+
+
+body.kb-open .m-hdr .logo{font-size:15px;}
+body.kb-open .m-prog{display:none;}
+body.kb-open .bounds-row{padding:3px 10px;}
+body.kb-open .slot{min-height:28px;font-size:12px;}
+@media(max-width:640px){
+  .m-card{margin:0;border-radius:0;border-left:none;border-right:none;border-top:none;}
+  .tm-outer{margin:0;border-radius:0;border-left:none;border-right:none;border-top:none;}
+  .tm-card{border-radius:0;}
+}
+
+@media(max-width:640px){
+  #tm-btn-sol{ display:none; }
+  #tm-msg{ display:none; }
+}
+@media(min-width:641px){
+  #tm-btn-sol-kb{ display:none; }
+}
+
+/* ── GM responsive ── */
+.gm-row{ flex-wrap:nowrap; }
+.gt{ flex-shrink:1; }
+
+/* ══ RECHERCHE ══ */
+#v-recherche{flex-direction:column;}
+.rech-outer{flex:1;display:flex;flex-direction:column;overflow:hidden;margin:8px;max-width:640px;width:calc(100% - 16px);align-self:center;}
+@media(max-width:640px){.rech-outer{margin:0;border-radius:0;border-left:none;border-right:none;border-top:none;max-width:none;width:100%;}}
+.rech-hdr{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.rech-title{flex:1;text-align:center;font-size:15px;font-weight:950;letter-spacing:.08em;color:var(--accent);}
+.rech-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;}
+/* Admin stof2 */
+#rech-admin{border-top:1px solid var(--stroke);padding-top:14px;margin-top:6px;display:flex;flex-direction:column;gap:10px;}
+.rech-admin-title{font-size:10px;font-weight:900;color:var(--warn);letter-spacing:.1em;}
+.rech-admin-lbl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:3px;}
+#rech-modules{display:flex;flex-wrap:wrap;gap:5px;}
+.rech-mod-btn{font-size:11px!important;padding:4px 9px!important;}
+.rech-loading{font-size:12px;color:var(--muted);}
+.rech-textarea{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--stroke);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.5;min-height:80px;}
+@media(prefers-color-scheme:light){.rech-textarea{background:rgba(255,255,255,.8);}}
+.rech-textarea:focus{box-shadow:0 0 0 3px var(--focus);}
+.rech-actions{display:flex;gap:6px;}
+.rech-def-tabs{display:flex;gap:4px;margin-bottom:6px;}
+.rech-def-tab{flex:1;padding:4px 0;font-size:11px;font-weight:700;letter-spacing:.04em;border:1px solid var(--stroke);border-radius:6px;background:transparent;cursor:pointer;color:var(--muted);}
+.rech-def-tab.active{border-color:var(--accent);color:var(--accent);}
+
+/* ── Bouton dictionnaire flottant — désactivé (remplacé par EXPLODS) ── */
+#btn-dict{display:none !important;}
+/* ── Bouton menu PC ── */
+.btn-menu-pc{display:none;flex-shrink:0;}
+@media(min-width:641px){.btn-menu-pc{display:inline-flex;}}
+/* ── Couleurs boutons header ── */
+#em-btn-recherche,#btn-tm-recherche{background:#f59e0b;border-color:#f59e0b;color:#fff;}
+#em-btn-recherche:hover,#btn-tm-recherche:hover{background:#f59e0b;filter:brightness(1.12);}
+#em-btn-logout,#btn-tm-logout{background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.35);color:#ff6b6b;}
+#em-btn-settings,#btn-tm-settings{background:rgba(138,155,191,.1);border-color:rgba(138,155,191,.25);color:var(--muted);}
+#em-btn-menu{background:rgba(183,138,247,.15);border-color:rgba(183,138,247,.35);color:#b78af7;}
+#tm-btn-menu{background:rgba(45,212,212,.12);border-color:rgba(45,212,212,.3);color:#2dd4d4;}
+
+/* ── Modal dictionnaire ── */
+.dict-inp{width:100%;padding:9px 14px;border-radius:12px;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.07);
+  color:var(--txt);font-size:15px;outline:none;font-family:inherit;
+  letter-spacing:.05em;text-transform:uppercase;}
+@media(prefers-color-scheme:light){.dict-inp{background:rgba(255,255,255,.8);}}
+.dict-inp:focus{box-shadow:0 0 0 3px var(--focus);}
+.dict-sugg{list-style:none;margin-top:6px;display:flex;flex-direction:column;gap:1px;}
+.dict-sugg li{padding:7px 12px;border-radius:8px;cursor:pointer;
+  font-size:14px;font-weight:700;letter-spacing:.05em;color:var(--txt);
+  transition:background .1s;}
+.dict-sugg li:hover,.dict-sugg li:active{background:rgba(255,255,255,.1);}
+@media(prefers-color-scheme:light){
+  .dict-sugg li:hover,.dict-sugg li:active{background:rgba(0,0,0,.07);}
+}
+.dict-result-word{font-size:19px;font-weight:950;letter-spacing:.06em;margin:10px 0 3px;}
+.dict-no-result{font-size:13px;color:var(--danger);padding:4px 0;}
+
+/* ══ ENTREMODS ══ */
+#v-entremods{flex-direction:column;}
+.em-outer{flex:1;display:flex;flex-direction:column;overflow:hidden;margin:8px;}
+@media(max-width:640px){.em-outer{margin:0;border-radius:0;border-left:none;border-right:none;border-top:none;}}
+.emv{display:none;}
+.emv.active{display:flex;flex:1;flex-direction:column;overflow:hidden;}
+.em-shdr{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.em-hdr-logo{flex:1;text-align:center;font-size:18px;}
+.em-ghdr{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--stroke);flex-shrink:0;position:relative;}
+#em-chrono{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;}
+.em-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.em-new-btn{padding:13px;font-size:14px;font-weight:800;border-radius:13px;width:100%;}
+.em-list-card{border:1px solid var(--stroke);border-radius:14px;padding:14px 16px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px;}
+.em-list-card:hover{background:rgba(255,255,255,.08);}
+.em-list-info{flex:1;min-width:0;}
+.em-list-name{font-size:17px;font-weight:950;letter-spacing:.04em;color:var(--accent);}
+.em-list-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.em-prog-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;}
+@media(prefers-color-scheme:light){.em-prog-bar{background:rgba(0,0,0,.1);}}
+.em-prog-fill{height:100%;border-radius:2px;background:var(--accent);}
+.em-list-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.em-create-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--stroke);flex-shrink:0;}
+.em-field{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.em-label{font-size:14px;font-weight:700;}
+.em-num-input{width:72px;padding:8px;border-radius:10px;border:1px solid var(--stroke);background:rgba(255,255,255,.07);color:var(--txt);font-size:17px;text-align:center;font-weight:800;outline:none;font-family:inherit;}
+@media(prefers-color-scheme:light){.em-num-input{background:rgba(255,255,255,.8);}}
+.em-preview{text-align:center;font-size:13px;color:var(--muted);font-weight:700;padding:6px;}
+.em-create-btn{padding:13px;font-size:15px;font-weight:800;border-radius:13px;width:100%;}
+@media(max-width:640px){#em-btn-solutions{display:none;}#em-msg{display:none;}}
+@media(min-width:641px){#em-btn-solutions-kb{display:none;}}
+/* Clavier agrandi (confort iPhone 13 mini) */
+#em-kb{padding:5px 4px 14px;}
+#em-kb .kb-rows,#tm-kb .kb-rows,#rech-kb .kb-rows{gap:6px;}
+#em-kb .kb-row,#tm-kb .kb-row,#rech-kb .kb-row{gap:4px;}
+#em-kb .kk,#tm-kb .kk,#rech-kb .kk{height:46px;font-size:19px;border-radius:10px;}
+#em-kb .kk.wide,#tm-kb .kk.wide,#rech-kb .kk.wide{font-size:15px;}
+#em-kb .kb-top,#tm-kb .kb-top,#rech-kb .kb-top{padding:3px 3px 6px;}
+#em-kb .kb-disp,#tm-kb .kb-disp,#rech-kb .kb-disp{font-size:16px;min-height:34px;}
+#tm-kb{padding:5px 4px 14px;}
+#rech-kb{padding:5px 4px 14px;display:none;flex-shrink:0;}
+#rech-kb .kb-disp::after{content:'|';animation:rech-cur .8s step-end infinite;color:var(--accent);}
+@keyframes rech-cur{50%{opacity:0;}}
+@media(max-width:640px){
+  #rech-kb{display:block;}
+  #rech-kb-top{display:none;}
+}
+/* Caractères spéciaux PC (onglet Recherche) */
+#rech-pc-specials{display:flex;gap:8px;padding:8px 14px 4px;flex-shrink:0;flex-wrap:wrap;}
+@media(max-width:640px){#rech-pc-specials{display:none!important;}}
+.rss-btn{display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:5px 12px;border-radius:8px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer;font-family:inherit;
+  transition:background .12s,border-color .12s;}
+.rss-btn:hover{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);}
+.rss-c{font-size:16px;font-weight:900;color:#f59e0b;line-height:1.2;}
+.rss-l{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.03em;white-space:nowrap;text-transform:uppercase;}
+/* Onglets Recherche */
+.rech-tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--stroke);}
+.rech-tab{flex:1;padding:8px 0;font-size:12px;font-weight:700;letter-spacing:.06em;border:none;background:transparent;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;}
+.rech-tab.active{color:var(--fg);border-bottom-color:var(--accent);}
+/* Onglet Recherche (anagrammes) */
+.rech-search-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.rech-count{font-size:11px;color:var(--muted);}
+.rech-group-hdr{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-top:8px;}
+.rech-group{display:flex;flex-wrap:wrap;gap:5px;}
+.rech-res-word{font-size:14px;font-weight:700;padding:4px 8px;background:rgba(128,128,128,.12);border-radius:6px;cursor:pointer;letter-spacing:.05em;}
+.rech-res-word:active,.rech-res-word:hover{background:rgba(128,128,128,.25);}
+.rech-no-res{font-size:13px;color:var(--muted);padding:20px 0;text-align:center;}
+/* Slots ENTREMODS : trait plein, légèrement plus hauts */
+#v-entremods .slot{border-style:solid;min-height:40px;font-size:15px;}
+#v-entremods .slot.found{border-color:rgba(45,212,212,.7);background:rgba(45,212,212,.18);}
+#v-entremods .slot.found-helped{border-color:rgba(255,167,50,.8);background:rgba(255,167,50,.2);}
+#v-entremods .slot.revealed{border-color:rgba(255,107,107,.7);background:rgba(255,107,107,.18);}
+sup.ana{font-size:.75em;font-weight:900;color:var(--muted);vertical-align:super;line-height:1;}
+span.hook{color:var(--accent);font-size:.85em;font-weight:900;vertical-align:middle;line-height:1;}
+.wt{letter-spacing:.07em;}
+
+/* Les vues couvrent tout l'écran (position:fixed;inset:0)
+   On compense le notch avec du padding sur chaque vue */
+.view{
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
+}
+/* Sur les vues centrées (auth, select) le padding-top pousse le contenu vers le bas */
+#v-auth, #v-select{
+  padding-top: max(20px, env(safe-area-inset-top, 20px));
+}
+
+/* Slots courts (< 10 lettres) : trait plein au lieu de pointillé */
+.slot-short{ border-style: solid; }
+
+/* THEMODS : trait plein + couleurs explicites (spécificité ID force les overrides) */
+#v-themods .slot{ border-style: solid; }
+#v-themods .slot.found{ border-color:rgba(45,212,212,.7);background:rgba(45,212,212,.18); }
+#v-themods .slot.found-helped{ border-color:rgba(255,167,50,.8);background:rgba(255,167,50,.2); }
+#v-themods .slot.revealed{ border-color:rgba(255,107,107,.7);background:rgba(255,107,107,.18); }
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══ -->
+<div id="v-auth" class="view active">
+  <div class="card auth-card">
+    <div class="logo" style="text-align:center;font-size:28px;"><span class="l1">METH</span><span class="l2">ODS</span></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Connexion</button>
+      <button class="auth-tab" data-tab="register">Inscription</button>
+      <button class="auth-tab" data-tab="recover">Récupérer</button>
+    </div>
+    <div id="f-login" class="auth-form">
+      <input id="login-pseudo" type="text" placeholder="Pseudo" autocomplete="username" autocapitalize="none"/>
+      <input id="login-pass" type="password" placeholder="Mot de passe" autocomplete="current-password"/>
+      <button id="btn-login" class="btn btn-primary" style="padding:10px;font-size:14px;font-weight:800;border-radius:11px;">Se connecter</button>
+    </div>
+    <div id="f-register" class="auth-form" style="display:none;">
+      <input id="reg-pseudo" type="text" placeholder="Pseudo" autocomplete="username" autocapitalize="none"/>
+      <input id="reg-pass" type="password" placeholder="Mot de passe" autocomplete="new-password"/>
+      <input id="reg-pass2" type="password" placeholder="Confirmer" autocomplete="new-password"/>
+      <select id="reg-question" class="auth-select">
+        <option value="">— Question secrète —</option>
+        <option value="Prénom de votre meilleur(e) ami(e) d'enfance ?">Prénom de votre meilleur(e) ami(e) d'enfance ?</option>
+        <option value="Nom de jeune fille de votre mère ?">Nom de jeune fille de votre mère ?</option>
+        <option value="Nom de votre animal de compagnie ?">Nom de votre animal de compagnie ?</option>
+        <option value="Ville où vous êtes né(e) ?">Ville où vous êtes né(e) ?</option>
+        <option value="Titre de votre film préféré ?">Titre de votre film préféré ?</option>
+        <option value="Prénom de votre père ?">Prénom de votre père ?</option>
+      </select>
+      <input id="reg-answer" type="text" placeholder="Votre réponse secrète" autocapitalize="none"/>
+      <button id="btn-register" class="btn btn-primary" style="padding:10px;font-size:14px;font-weight:800;border-radius:11px;">S'inscrire</button>
+    </div>
+    <div id="f-recover" class="auth-form" style="display:none;">
+      <input id="rec-pseudo" type="text" placeholder="Pseudo" autocapitalize="none"/>
+      <button id="btn-find-question" class="btn" style="font-size:13px;padding:8px;border-radius:11px;">Trouver ma question →</button>
+      <div id="rec-question-display" class="auth-question" style="display:none;"></div>
+      <input id="rec-answer" type="text" placeholder="Votre réponse secrète" autocapitalize="none" style="display:none;"/>
+      <input id="rec-new" type="password" placeholder="Nouveau mot de passe" style="display:none;"/>
+      <button id="btn-recover" class="btn btn-primary" style="display:none;padding:10px;font-size:14px;font-weight:800;border-radius:11px;">Changer le mot de passe</button>
+    </div>
+    <div id="auth-err" class="msg"></div>
+  </div>
+</div>
+
+<!-- ══ SELECT ══ -->
+<div id="v-select" class="view">
+  <div class="card sel-card" id="btn-go-entremods">
+    <div class="sel-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></div>
+    <div class="sel-text">
+      <div class="sel-name"><span class="l1">METH</span><span class="l2">ODS</span></div>
+      <div class="sel-desc">Trouver les mots d'une longueur donnée entre deux bornes</div>
+    </div>
+  </div>
+  <div class="card sel-card" id="btn-go-themods">
+    <div class="sel-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+    <div class="sel-text">
+      <div class="sel-name"><span class="l1">THEM</span><span class="l2">ODS</span></div>
+      <div class="sel-desc">Réviser par thèmes et familles de mots</div>
+    </div>
+  </div>
+  <div class="card sel-card" id="btn-go-explods">
+    <div class="sel-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <div class="sel-text">
+      <div class="sel-name"><span class="l1">EXPL</span><span class="l2">ODS</span></div>
+      <div class="sel-desc">Explorer le dictionnaire ODS9</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ METHODS ══ -->
+<div id="v-entremods" class="view">
+  <div class="card em-outer">
+    <div class="em-shdr">
+      <span id="em-user-chip" class="user-chip"></span>
+      <button id="em-btn-logout" class="btn" style="padding:5px 9px;font-size:14px;">⏏</button>
+      <button id="em-btn-menu" class="btn btn-menu-pc" style="padding:5px 8px;flex-shrink:0;" aria-label="Menu"><svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/><rect x="0" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg></button>
+      <div class="logo em-hdr-logo"><span class="l1">METH</span><span class="l2">ODS</span></div>
+      <button id="em-btn-recherche" class="btn" style="font-size:16px;padding:5px 9px;">🔍</button>
+      <button id="em-btn-settings" class="btn" style="padding:5px 9px;font-size:14px;">⚙️</button>
+    </div>
+    <!-- ev-home -->
+    <div id="ev-home" class="emv active">
+      <div class="em-body">
+        <div id="em-lists"></div>
+        <button id="em-btn-new" class="btn btn-primary em-new-btn">+ Nouvelle liste</button>
+      </div>
+    </div>
+    <!-- ev-create -->
+    <div id="ev-create" class="emv">
+      <div class="em-create-hdr">
+        <button id="em-btn-back-create" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+        <span style="font-weight:800;font-size:16px;flex:1;text-align:center;">Nouvelle liste</span>
+      </div>
+      <div class="em-body">
+        <div class="em-field">
+          <span class="em-label">Longueur min</span>
+          <input id="em-min-len" class="em-num-input" type="number" min="2" max="15" value="7"/>
+        </div>
+        <div class="em-field">
+          <span class="em-label">Longueur max</span>
+          <input id="em-max-len" class="em-num-input" type="number" min="2" max="15" value="7"/>
+        </div>
+        <div class="em-field">
+          <span class="em-label">Mots max par session</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input id="em-max-cluster" type="range" min="1" max="5" value="2" style="width:90px;accent-color:var(--accent);"/>
+            <span id="em-cluster-lbl" style="font-size:19px;font-weight:800;min-width:1em;text-align:center;">2</span>
+          </div>
+        </div>
+        <div id="em-create-preview" class="em-preview"></div>
+        <button id="em-btn-create" class="btn btn-primary em-create-btn">Créer la liste</button>
+      </div>
+    </div>
+    <!-- ev-game -->
+    <div id="ev-game" class="emv">
+      <div class="em-ghdr">
+        <span id="em-game-title" style="font-size:13px;font-weight:800;color:var(--accent);flex:1;"></span>
+        <span id="em-chrono" class="chrono"></span>
+        <button id="em-btn-solutions" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">Jouer</button>
+        <button id="em-btn-restart" class="btn btn-primary" style="display:none;font-size:12px;padding:6px 12px;">↺ Recommencer</button>
+        <button id="em-btn-back-game" class="btn" style="font-size:12px;padding:6px 12px;white-space:nowrap;">← Listes</button>
+      </div>
+      <div class="bounds-row">
+        <button id="em-borne-a" class="borne">—</button>
+        <span id="em-compteur" style="font-size:14px;font-weight:800;color:var(--muted);"></span>
+        <button id="em-borne-b" class="borne">—</button>
+      </div>
+      <ul id="em-word-list" class="word-list"></ul>
+      <div class="m-bottom">
+        <div id="em-msg" class="msg"></div>
+      </div>
+      <div class="inp-bar">
+        <input id="em-saisie" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Saisie…"/>
+      </div>
+    </div>
+  </div>
+  <!-- Clavier mobile ENTREMODS -->
+  <div id="em-kb" class="keyboard">
+    <div class="kb-top">
+      <div id="em-kb-disp" class="kb-disp"></div>
+      <button id="em-btn-solutions-kb" class="btn btn-primary" style="font-size:12px;padding:5px 10px;">Jouer</button>
+    </div>
+    <div id="em-kb-msg" class="kb-msg"></div>
+    <div class="kb-rows">
+      <div class="kb-row"><button class="kk" data-k="A">A</button><button class="kk" data-k="Z">Z</button><button class="kk" data-k="E">E</button><button class="kk" data-k="R">R</button><button class="kk" data-k="T">T</button><button class="kk" data-k="Y">Y</button><button class="kk" data-k="U">U</button><button class="kk" data-k="I">I</button><button class="kk" data-k="O">O</button><button class="kk" data-k="P">P</button></div>
+      <div class="kb-row"><button class="kk" data-k="Q">Q</button><button class="kk" data-k="S">S</button><button class="kk" data-k="D">D</button><button class="kk" data-k="F">F</button><button class="kk" data-k="G">G</button><button class="kk" data-k="H">H</button><button class="kk" data-k="J">J</button><button class="kk" data-k="K">K</button><button class="kk" data-k="L">L</button><button class="kk" data-k="M">M</button></div>
+      <div class="kb-row"><button class="kk wide clr" data-k="CLR">✕</button><button class="kk" data-k="W">W</button><button class="kk" data-k="X">X</button><button class="kk" data-k="C">C</button><button class="kk" data-k="V">V</button><button class="kk" data-k="B">B</button><button class="kk" data-k="N">N</button><button class="kk wide" data-k="DEL">⌫</button><button class="kk wide enter" data-k="OK">OK</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ THEMODS ══ -->
+<div id="v-themods" class="view">
+  <div class="card tm-outer">
+    <!-- header partagé THEMODS -->
+    <div class="tm-shdr">
+      <span id="tm-user-chip" class="user-chip"></span>
+      <button id="btn-tm-logout" class="btn" style="padding:5px 9px;font-size:14px;">⏏</button>
+      <button id="tm-btn-menu" class="btn btn-menu-pc" style="padding:5px 8px;flex-shrink:0;" aria-label="Menu"><svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/><rect x="0" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg></button>
+      <div class="logo tm-hdr-logo"><span class="l1">THEM</span><span class="l2">ODS</span></div>
+      <button id="btn-tm-recherche" class="btn" style="font-size:16px;padding:5px 9px;">🔍</button>
+      <button id="btn-tm-settings" class="btn" style="padding:5px 9px;font-size:14px;">⚙️</button>
+    </div>
+    <!-- sous-vue : accueil -->
+    <div id="tv-home" class="tmv active">
+      <div class="tm-hdr">
+        <div id="tm-prog-row" class="prog-row" style="width:100%;max-width:320px;"></div>
+      </div>
+      <div class="tm-body">
+        <p class="tm-subtitle">Thèmes de révision · ODS9</p>
+        <div class="tm-grid">
+          <div class="tc tc-f" id="btn-finales">
+            <div><div class="tc-lbl">Finales</div><div class="tc-desc" id="finales-desc">4 finales · 2 488 mots</div></div>
+            <span class="tc-arr">›</span>
+          </div>
+          <div class="tc tc-g" data-theme="gm">
+            <div><div class="tc-lbl">Graphies multiples</div><div class="tc-desc" id="gm-desc">1 808 groupes</div></div>
+            <span class="tc-arr">›</span>
+          </div>
+
+          <div class="tc tc-v" id="btn-verbes">
+            <div><div class="tc-lbl">Verbes</div><div class="tc-desc" id="verbes-desc">3 thèmes · 5 539 verbes</div></div>
+            <span class="tc-arr">›</span>
+          </div>
+          <div class="tc tc-o" id="btn-ods">
+            <div><div class="tc-lbl">ODS 1 à 9</div><div class="tc-desc" id="ods-desc">9 éditions</div></div>
+            <span class="tc-arr">›</span>
+          </div>
+        </div>
+        <p id="tm-home-msg" class="tm-msg"></p>
+        <div id="tm-srs-prompt" class="srs-prompt" style="display:none;">
+          <span id="tm-srs-count"></span> à réviser —
+          <button id="tm-srs-ok" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">Jouer</button>
+          <button id="tm-srs-skip" class="btn" style="font-size:12px;padding:5px 10px;">Passer</button>
+        </div>
+      </div>
+    </div>
+    <!-- sous-vue : verbes -->
+    <div id="tv-verbes" class="tmv">
+      <div class="tm-hdr">
+        <div class="tm-nav">
+          <button id="btn-back-verbes" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+          <span class="tm-nav-title">Verbes</span>
+        </div>
+      </div>
+      <div class="tm-body">
+        <div class="tm-grid">
+          <div class="tc tc-v" data-theme="vi"><div><div class="tc-lbl">Intransitifs</div><div class="tc-desc" id="vi-desc2">575 verbes · 193 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-v" data-theme="vt"><div><div class="tc-lbl">Transitifs</div><div class="tc-desc" id="vt-desc">4 968 verbes · 1 580 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-v" data-theme="vd"><div><div class="tc-lbl">Défectifs</div><div class="tc-desc" id="vd-desc">66 verbes · 42 sessions</div></div><span class="tc-arr">›</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- sous-vue : finales -->
+    <div id="tv-finales" class="tmv">
+      <div class="tm-hdr">
+        <div class="tm-nav">
+          <button id="btn-back-finales" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+          <span class="tm-nav-title">Finales</span>
+        </div>
+      </div>
+      <div class="tm-body">
+        <div class="tm-grid">
+          <div class="tc tc-f" data-theme="able"><div><div class="tc-lbl">-ABLE</div><div class="tc-desc" id="able-desc">293 mots · 136 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="age"><div><div class="tc-lbl">-AGE</div><div class="tc-desc" id="age-desc">1 311 mots · 360 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ail"><div><div class="tc-lbl">-AIL</div><div class="tc-desc" id="ail-desc">44 mots · 34 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ais"><div><div class="tc-lbl">-AIS</div><div class="tc-desc" id="ais-desc">147 mots · 87 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="al"><div><div class="tc-lbl">-AL</div><div class="tc-desc" id="al-desc">665 mots · 199 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ant"><div><div class="tc-lbl">-ANT</div><div class="tc-desc" id="ant-desc">767 mots · 226 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ard"><div><div class="tc-lbl">-ARD</div><div class="tc-desc" id="ard-desc">233 mots · 79 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ase"><div><div class="tc-lbl">-ASE</div><div class="tc-desc" id="ase-desc">81 mots · 47 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="eau"><div><div class="tc-lbl">-EAU</div><div class="tc-desc" id="eau-desc">242 mots · 92 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="erie"><div><div class="tc-lbl">-ERIE</div><div class="tc-desc" id="erie-desc">278 mots · 100 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="et"><div><div class="tc-lbl">-ET</div><div class="tc-desc" id="et-desc">544 mots · 169 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ette"><div><div class="tc-lbl">-ETTE</div><div class="tc-desc" id="ette-desc">436 mots · 148 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="eur"><div><div class="tc-lbl">-EUR</div><div class="tc-desc" id="eur-desc">601 mots · 189 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="eux"><div><div class="tc-lbl">-EUX</div><div class="tc-desc" id="eux-desc">414 mots · 136 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ide"><div><div class="tc-lbl">-IDE</div><div class="tc-desc" id="ide-desc">446 mots · 142 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ien"><div><div class="tc-lbl">-IEN</div><div class="tc-desc" id="ien-desc">601 mots · 223 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ier"><div><div class="tc-lbl">-IER</div><div class="tc-desc" id="ier-desc">495 mots · 142 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="if"><div><div class="tc-lbl">-IF</div><div class="tc-desc" id="if-desc">293 mots · 130 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="in"><div><div class="tc-lbl">-IN</div><div class="tc-desc" id="in-desc">657 mots · 218 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ique"><div><div class="tc-lbl">-IQUE</div><div class="tc-desc" id="ique-desc">629 mots · 177 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="isme"><div><div class="tc-lbl">-ISME</div><div class="tc-desc" id="isme-desc">356 mots · 142 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="iste"><div><div class="tc-lbl">-ISTE</div><div class="tc-desc" id="iste-desc">218 mots · 115 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ite"><div><div class="tc-lbl">-ITE</div><div class="tc-desc" id="ite-desc">803 mots · 246 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="oir"><div><div class="tc-lbl">-OIR</div><div class="tc-desc" id="oir-desc">253 mots · 99 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ois"><div><div class="tc-lbl">-OIS</div><div class="tc-desc" id="ois-desc">180 mots · 89 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ose"><div><div class="tc-lbl">-OSE</div><div class="tc-desc" id="ose-desc">134 mots · 83 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ot"><div><div class="tc-lbl">-OT</div><div class="tc-desc" id="ot-desc">261 mots · 101 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="um"><div><div class="tc-lbl">-UM</div><div class="tc-desc" id="um-desc">267 mots · 117 sessions</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-f" data-theme="ure"><div><div class="tc-lbl">-URE</div><div class="tc-desc" id="ure-desc">455 mots · 152 sessions</div></div><span class="tc-arr">›</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- sous-vue : ODS 1 à 9 -->
+    <div id="tv-ods" class="tmv">
+      <div class="tm-hdr">
+        <div class="tm-nav">
+          <button id="btn-back-ods" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+          <span class="tm-nav-title">ODS 1 à 9</span>
+        </div>
+      </div>
+      <div class="tm-body">
+        <p class="tm-subtitle" style="font-size:12px;line-height:1.4;">Retrouvez les entrées de chaque ODS à partir de leurs définitions.</p>
+        <div class="tm-grid">
+          <div class="tc tc-o" data-theme="ods1"><div><div class="tc-lbl">ODS 1</div><div class="tc-desc" id="ods1-desc">3 403 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods2"><div><div class="tc-lbl">ODS 2</div><div class="tc-desc" id="ods2-desc">1 427 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods3"><div><div class="tc-lbl">ODS 3</div><div class="tc-desc" id="ods3-desc">1 471 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods4"><div><div class="tc-lbl">ODS 4</div><div class="tc-desc" id="ods4-desc">728 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods5"><div><div class="tc-lbl">ODS 5</div><div class="tc-desc" id="ods5-desc">1 654 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods6"><div><div class="tc-lbl">ODS 6</div><div class="tc-desc" id="ods6-desc">1 060 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods7"><div><div class="tc-lbl">ODS 7</div><div class="tc-desc" id="ods7-desc">1 166 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods8"><div><div class="tc-lbl">ODS 8</div><div class="tc-desc" id="ods8-desc">1 230 entrées</div></div><span class="tc-arr">›</span></div>
+          <div class="tc tc-o" data-theme="ods9"><div><div class="tc-lbl">ODS 9</div><div class="tc-desc" id="ods9-desc">788 entrées</div></div><span class="tc-arr">›</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- sous-vue : liste complétée -->
+    <div id="tv-done" class="tmv">
+      <div class="tm-hdr">
+        <div class="tm-nav">
+          <button id="btn-back-done" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+          <span id="tv-done-title" class="tm-nav-title"></span>
+        </div>
+      </div>
+      <div class="tm-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;">
+        <div style="font-size:52px;line-height:1;">🏆</div>
+        <div style="font-size:18px;font-weight:900;color:var(--ok);">Liste complétée !</div>
+        <div id="tv-done-completions" style="font-size:13px;color:var(--muted);min-height:18px;"></div>
+        <button id="btn-done-reset" class="btn btn-danger" style="padding:9px 22px;font-size:14px;">Réinitialiser</button>
+      </div>
+    </div>
+    <!-- sous-vue : jeu -->
+    <div id="tv-game" class="tmv">
+      <div class="tm-ghdr">
+        <div id="tm-gtitle" class="tm-gtitle" style="flex:1;"></div>
+        <span id="tm-chrono" class="chrono"></span>
+        <button id="tm-btn-sol" class="btn btn-danger" style="font-size:12px;padding:6px 12px;">Solutions</button>
+        <button id="btn-back-game" class="btn" style="font-size:12px;padding:6px 12px;white-space:nowrap;">← Thèmes</button>
+      </div>
+      <div id="tm-session-label" class="tm-session-label"></div>
+      <ul id="tm-wlist" class="tm-wlist"></ul>
+      <div id="tm-msg" class="msg" style="padding:3px 12px;min-height:20px;"></div>
+      <div id="tm-verdict-bar">
+        <button id="tm-btn-sol-quiz" class="btn btn-danger">Solutions</button>
+        <div id="tm-verdict-btns">
+          <button id="tm-btn-found" class="btn btn-ok">Trouvé</button>
+          <button id="tm-btn-review" class="btn btn-danger">À revoir</button>
+        </div>
+      </div>
+      <div id="tm-inp-bar" class="inp-bar">
+        <input id="tm-saisie" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Saisie…"/>
+      </div>
+    </div>
+  </div>
+  <!-- Clavier mobile THEMODS -->
+  <div id="tm-kb" class="keyboard">
+    <div class="kb-top">
+      <div id="tm-kb-disp" class="kb-disp"></div>
+      <button id="tm-btn-sol-kb" class="btn btn-danger" style="font-size:12px;padding:5px 10px;">Solutions</button>
+    </div>
+    <div id="tm-kb-msg" class="kb-msg"></div>
+    <div class="kb-rows">
+      <div class="kb-row"><button class="kk" data-k="A">A</button><button class="kk" data-k="Z">Z</button><button class="kk" data-k="E">E</button><button class="kk" data-k="R">R</button><button class="kk" data-k="T">T</button><button class="kk" data-k="Y">Y</button><button class="kk" data-k="U">U</button><button class="kk" data-k="I">I</button><button class="kk" data-k="O">O</button><button class="kk" data-k="P">P</button></div>
+      <div class="kb-row"><button class="kk" data-k="Q">Q</button><button class="kk" data-k="S">S</button><button class="kk" data-k="D">D</button><button class="kk" data-k="F">F</button><button class="kk" data-k="G">G</button><button class="kk" data-k="H">H</button><button class="kk" data-k="J">J</button><button class="kk" data-k="K">K</button><button class="kk" data-k="L">L</button><button class="kk" data-k="M">M</button></div>
+      <div class="kb-row"><button class="kk wide clr" data-k="CLR">✕</button><button class="kk" data-k="W">W</button><button class="kk" data-k="X">X</button><button class="kk" data-k="C">C</button><button class="kk" data-k="V">V</button><button class="kk" data-k="B">B</button><button class="kk" data-k="N">N</button><button class="kk wide" data-k="DEL">⌫</button><button class="kk wide enter" data-k="OK">OK</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE DÉFINITION ══ -->
+<div id="def-modal" class="modal">
+  <div class="modal-bd" id="def-bd"></div>
+  <div class="modal-panel">
+    <div class="modal-top">
+      <h2 id="def-title"></h2>
+      <button id="def-close" class="btn">Fermer</button>
+    </div>
+    <p id="def-body" class="modal-def"></p>
+    <div class="modal-links" id="def-links">
+      <a id="def-wikt" href="#" target="_blank" rel="noopener" class="btn btn-ok" style="font-size:12px;text-decoration:none;">📖 Wiktionnaire</a>
+      <a id="def-img" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="font-size:12px;text-decoration:none;">🔍 Image</a>
+    </div>
+    <div id="def-ana" class="modal-sec"></div>
+    <div id="def-rall" class="modal-sec"></div>
+    <div id="def-flechie"></div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div id="settings" class="overlay">
+  <div class="modal-bd" id="settings-bd"></div>
+  <div class="card overlay-panel">
+    <h3>Paramètres</h3>
+    <div class="set-row"><label>Indice ABC (tirage)</label>
+      <label class="toggle"><input type="checkbox" id="set-abc" checked/><span class="tg-track"></span><span class="tg-thumb"></span></label></div>
+    <div class="set-row"><label>Indice 📖 (définition)</label>
+      <label class="toggle"><input type="checkbox" id="set-def" checked/><span class="tg-track"></span><span class="tg-thumb"></span></label></div>
+    <div class="set-row"><label>Indice 123 (longueur)</label>
+      <label class="toggle"><input type="checkbox" id="set-len" checked/><span class="tg-track"></span><span class="tg-thumb"></span></label></div>
+    <div class="set-row"><label>Chronomètre</label>
+      <label class="toggle"><input type="checkbox" id="set-chrono" checked/><span class="tg-track"></span><span class="tg-thumb"></span></label></div>
+    <div class="set-row" id="row-dur">
+      <label>Durée : <span id="chrono-lbl">10 min</span></label>
+      <input type="range" id="set-dur" min="1" max="30" value="10" style="width:110px;"/>
+    </div>
+    <div class="set-row">
+      <label>Longueur max finales : <span id="finale-len-lbl">15 lettres</span></label>
+      <input type="range" id="set-finale-len" min="4" max="15" value="15" style="width:110px;"/>
+    </div>
+    <button id="btn-close-settings" class="btn" style="width:100%;margin-top:10px;">Fermer</button>
+  </div>
+</div>
+
+<!-- ══ ZOOM IMAGE ══ -->
+<div id="img-zoom-ol">
+  <img id="img-zoom-img" src="" alt=""/>
+</div>
+
+<!-- ══ BOUTON DICT FLOTTANT (desktop) ══ -->
+<button id="btn-dict" class="hidden" aria-label="Recherche">🔍</button>
+
+<!-- ══ VUE RECHERCHE ══ -->
+<div id="v-recherche" class="view" data-rech-tab="dict">
+  <div class="card rech-outer">
+    <div class="rech-hdr">
+      <button id="rech-btn-back" class="btn" style="font-size:14px;padding:5px 9px;">←</button>
+      <span class="rech-title"><span style="color:var(--t1)">EXPL</span><span style="color:#f59e0b">ODS</span></span>
+    </div>
+    <!-- Onglets -->
+    <div class="rech-tabs">
+      <button id="rech-tab-btn-dict" class="rech-tab active">Dictionnaire</button>
+      <button id="rech-tab-btn-search" class="rech-tab">Recherche</button>
+    </div>
+    <!-- Champ de saisie partagé (hors onglets) -->
+    <div id="rech-input-wrap" style="padding:10px 14px 0;flex-shrink:0;">
+      <input id="dict-input" class="dict-inp" type="text"
+        inputmode="none"
+        autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false"
+        placeholder="Saisir un mot…"/>
+    </div>
+    <div id="rech-pc-specials" style="display:none;">
+      <button class="rss-btn" data-ins="•" title="B•R → mots de 3 lettres avec B et R"><span class="rss-c">•</span><span class="rss-l">1 lettre</span></button>
+      <button class="rss-btn" data-ins="*" title="*TION → tout ce qui finit par TION"><span class="rss-c">✶</span><span class="rss-l">n lettres</span></button>
+      <button class="rss-btn" data-ins="?" title="ABC? → anagramme de ABC avec 1 lettre en plus"><span class="rss-c">?</span><span class="rss-l">+1 libre</span></button>
+      <button class="rss-btn" data-ins="/" title="*AIS/-IS → finit par AIS, sauf -IS"><span class="rss-c">/</span><span class="rss-l">variante</span></button>
+      <button class="rss-btn" data-ins="-" title="après / : exclure cette terminaison"><span class="rss-c">-</span><span class="rss-l">exclure</span></button>
+    </div>
+    <!-- Onglet Dictionnaire -->
+    <div id="rech-tab-dict" class="rech-body" style="padding-top:6px;">
+      <ul id="dict-sugg" class="dict-sugg"></ul>
+      <div id="dict-result" style="display:none;">
+        <p class="dict-result-word" id="dict-word"></p>
+        <p id="dict-def" class="modal-def"></p>
+        <div id="dict-ana" class="modal-sec"></div>
+        <div id="dict-rall" class="modal-sec"></div>
+        <div id="dict-conj" class="modal-sec"></div>
+        <div class="modal-links" style="margin-top:10px;">
+          <a id="dict-wikt" href="#" target="_blank" rel="noopener" class="btn btn-ok" style="font-size:12px;text-decoration:none;">📖 Wiktionnaire</a>
+          <a id="dict-img" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="font-size:12px;text-decoration:none;">🔍 Image</a>
+        </div>
+      </div>
+      <!-- ── Admin global (outils batch) ── -->
+      <div id="rech-admin-global" style="display:none;border-top:1px solid var(--stroke);padding-top:14px;margin-top:4px;">
+        <div class="rech-admin-title">ADMIN · OUTILS</div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+          <button id="gm-batch-wikt-btn" class="btn btn-ok" style="font-size:12px;padding:6px 10px;">Batch GM → Wiktionnaire</button>
+          <button id="gm-purge-wikt-btn" class="btn btn-warn" style="font-size:12px;padding:6px 10px;">Purger defs Wikt GM</button>
+          <button id="gm-purge-ods-doubles-btn" class="btn btn-warn" style="font-size:12px;padding:6px 10px;">Purger doubles ODS/Wikt GM</button>
+          <div id="gm-batch-progress" style="display:none;font-size:11px;color:var(--muted);line-height:1.5;white-space:pre-wrap;"></div>
+          <button id="ods-batch-wikt-btn" class="btn btn-ok" style="font-size:12px;padding:6px 10px;">Batch ODS → Wiktionnaire</button>
+          <div id="ods-batch-progress" style="display:none;font-size:11px;color:var(--muted);line-height:1.5;white-space:pre-wrap;"></div>
+        </div>
+      </div>
+      <!-- ── Admin stof2 ── -->
+      <div id="rech-admin" style="display:none;">
+        <div class="rech-admin-title">ADMIN · STOF2</div>
+        <div>
+          <div class="rech-admin-lbl">Modules :</div>
+          <div id="rech-modules"></div>
+        </div>
+        <div>
+          <div class="rech-def-tabs">
+            <button id="rech-def-tab-def" class="rech-def-tab active">Définition</button>
+            <button id="rech-def-tab-quiz" class="rech-def-tab">Quiz</button>
+          </div>
+          <textarea id="rech-edit-def" class="rech-textarea" placeholder="Définition…"></textarea>
+          <textarea id="rech-edit-defquiz" class="rech-textarea" placeholder="Définition quiz…" style="display:none;"></textarea>
+          <div class="rech-actions" style="margin-top:6px;">
+            <button id="rech-wikt-btn" class="btn btn-ok" style="font-size:12px;padding:6px 10px;flex:1;">Générer depuis Wiktionnaire</button>
+            <button id="rech-save-def" class="btn btn-primary" style="font-size:12px;padding:6px 10px;">Sauvegarder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Onglet Recherche (anagrammes / motifs) -->
+    <div id="rech-tab-search" class="rech-search-body" style="display:none;">
+      <div id="rech-search-res"></div>
+    </div>
+    <!-- Clavier mobile Recherche -->
+    <div id="rech-kb" class="keyboard">
+      <div id="rech-kb-top" class="kb-top">
+        <div id="rech-kb-disp" class="kb-disp"></div>
+      </div>
+      <div class="kb-rows">
+        <div id="rech-kb-specials" class="kb-row" style="display:none;">
+          <button class="kk" data-k="*" style="flex:1;font-size:16px;">✶</button>
+          <button class="kk" data-k="/" style="flex:1;font-size:18px;">/</button>
+          <button class="kk" data-k="-" style="flex:1;font-size:20px;">-</button>
+          <button class="kk" data-k="?" style="flex:1;font-size:16px;">?</button>
+          <button class="kk" data-k="•" style="flex:1;font-size:16px;">•</button>
+        </div>
+        <div class="kb-row"><button class="kk" data-k="A">A</button><button class="kk" data-k="Z">Z</button><button class="kk" data-k="E">E</button><button class="kk" data-k="R">R</button><button class="kk" data-k="T">T</button><button class="kk" data-k="Y">Y</button><button class="kk" data-k="U">U</button><button class="kk" data-k="I">I</button><button class="kk" data-k="O">O</button><button class="kk" data-k="P">P</button></div>
+        <div class="kb-row"><button class="kk" data-k="Q">Q</button><button class="kk" data-k="S">S</button><button class="kk" data-k="D">D</button><button class="kk" data-k="F">F</button><button class="kk" data-k="G">G</button><button class="kk" data-k="H">H</button><button class="kk" data-k="J">J</button><button class="kk" data-k="K">K</button><button class="kk" data-k="L">L</button><button class="kk" data-k="M">M</button></div>
+        <div class="kb-row"><button class="kk wide clr" data-k="CLR">✕</button><button class="kk" data-k="W">W</button><button class="kk" data-k="X">X</button><button class="kk" data-k="C">C</button><button class="kk" data-k="V">V</button><button class="kk" data-k="B">B</button><button class="kk" data-k="N">N</button><button class="kk wide" data-k="DEL">⌫</button><button class="kk wide enter" data-k="OK">OK</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TÉMOIN VERSION ══ -->
+<div id="version-badge" style="
+  position:fixed;bottom:4px;left:8px;z-index:9999;
+  font-size:9px;font-weight:700;color:rgba(255,255,255,.28);
+  font-family:ui-monospace,monospace;letter-spacing:.04em;
+  pointer-events:none;user-select:none;"></div>
+
+<script src="version.js"></script>
+<script>document.getElementById("version-badge").textContent="v"+APP_VER;</script>
+<script src="data.js"></script>
+<script src="themods_data.js"></script>
+<script src="ods_data.js"></script>
+<script src="shared/dict-core.js"></script>
+<script src="common.js"></script>
+<script src="themods.js"></script>
+<script src="entremods.js"></script>
+<script src="recherche.js"></script>
+<script src="app.js"></script>
+<script>
+if("serviceWorker" in navigator){
+  const CURRENT_CACHE="methods-v521";
+  function doRegister(){
+    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"})
+      .then(reg=>reg.update()).catch(()=>{});
+    // Skip controllerchange reload if we just did a nuclear purge reload (avoid double reload)
+    if(!sessionStorage.getItem("sw_reloaded")){
+      navigator.serviceWorker.addEventListener("controllerchange",()=>{
+        sessionStorage.setItem("sw_reloaded","1");
+        location.reload();
+      },{once:true});
+    }
+    sessionStorage.removeItem("sw_reloaded");
+  }
+  if("caches" in window){
+    caches.keys().then(keys=>{
+      const stale=keys.filter(k=>k.startsWith("methods-")&&k!==CURRENT_CACHE);
+      if(stale.length){
+        sessionStorage.setItem("sw_reloaded","1");
+        Promise.all([
+          navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))),
+          Promise.all(keys.map(k=>caches.delete(k)))
+        ]).then(()=>location.reload());
+      } else { doRegister(); }
+    }).catch(doRegister);
+  } else { doRegister(); }
+}
+</script>
+</body>
+</html>

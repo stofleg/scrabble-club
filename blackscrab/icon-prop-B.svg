@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond jaune-or plein (pas de cadre sombre) -->
+  <rect width="192" height="192" rx="42" fill="#f0c040"/>
+  <!-- légère ombre / relief sur le jeton -->
+  <rect x="28" y="18" width="136" height="154" rx="14" fill="#f7d060" opacity="0.5"/>
+  <!-- ♠ très grand, presque plein cadre -->
+  <text x="96" y="138"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="120" font-weight="900"
+        text-anchor="middle"
+        fill="#0d1a0f">♠</text>
+  <!-- 21 en bas à droite -->
+  <text x="166" y="174"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="28" font-weight="900"
+        text-anchor="end"
+        fill="#1e3820">21</text>
+</svg>

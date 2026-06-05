@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#f0c040"/>
+  <text x="96" y="158"
+        font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',FreeSerif,serif"
+        font-size="170"
+        font-weight="800"
+        text-anchor="middle"
+        fill="#111318">♠</text>
+  <text x="163" y="172"
+        font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif"
+        font-size="24" font-weight="900"
+        text-anchor="end"
+        fill="#111318">21</text>
+</svg>

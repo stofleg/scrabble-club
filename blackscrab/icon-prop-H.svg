@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="42" fill="#0d1a0f"/>
+  <!-- jeton jaune-or -->
+  <rect x="30" y="20" width="132" height="152" rx="14" fill="#f0c040"/>
+  <!-- ♠ identique à l'icône actuelle -->
+  <text x="96" y="130"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="100" font-weight="900"
+        text-anchor="middle"
+        fill="#111318">♠</text>
+  <!-- 21 centré sous le pied du pique, serif italic sombre -->
+  <text x="96" y="160"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="21" font-weight="700"
+        font-style="italic"
+        text-anchor="middle"
+        fill="#111318">21</text>
+</svg>

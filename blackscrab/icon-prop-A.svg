@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond sombre arrondi (style iOS) -->
+  <rect width="192" height="192" rx="42" fill="#0d1a0f"/>
+  <!-- jeton joker jaune-or, coins arrondis -->
+  <rect x="22" y="14" width="148" height="164" rx="18" fill="#f0c040"/>
+  <!-- ♠ centré sur le jeton -->
+  <text x="96" y="130"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="108" font-weight="900"
+        text-anchor="middle"
+        fill="#111318">♠</text>
+  <!-- 21 en bas à droite, style valeur Scrabble -->
+  <text x="160" y="168"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="26" font-weight="900"
+        text-anchor="end"
+        fill="#333a20">21</text>
+</svg>

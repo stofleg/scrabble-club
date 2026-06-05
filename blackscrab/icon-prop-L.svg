@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond jaune-or plein -->
+  <rect width="192" height="192" fill="#f0c040"/>
+
+  <!-- ♠ légèrement plus petit/centré, ailes plus élancées -->
+  <path fill="#111318" d="
+    M 96,16
+    C 128,16 160,54 160,88
+    C 160,112 140,126 108,128
+    C 116,129 130,133 136,140
+    L 136,156
+    C 136,160 132,163 128,163
+    L 64,163
+    C 60,163 56,160 56,156
+    L 56,140
+    C 62,133 76,129 84,128
+    C 52,126 32,112 32,88
+    C 32,54 64,16 96,16
+    Z
+  "/>
+
+  <!-- 21 coin bas-droit, un peu plus petit et discret -->
+  <text x="176" y="180"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="23" font-weight="700"
+        font-style="italic"
+        text-anchor="end"
+        fill="#1a2a10">21</text>
+</svg>

@@ -1,0 +1,16 @@
+{
+  "name": "Topissimo — Scrabble La Garenna",
+  "short_name": "Topissimo",
+  "description": "Tournois et entraînement Scrabble (mode topping FFSC)",
+  "start_url": "/topissimo/",
+  "scope": "/topissimo/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#002E44",
+  "theme_color": "#002E44",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

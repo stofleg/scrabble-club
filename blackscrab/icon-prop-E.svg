@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond sombre -->
+  <rect width="192" height="192" rx="42" fill="#0d1a0f"/>
+  <!-- jeton joker or -->
+  <rect x="22" y="14" width="148" height="164" rx="18" fill="#f0c040"/>
+  <!-- ♠ grand et centré, plus présent -->
+  <text x="96" y="134"
+        font-family="'Arial Black','Arial',sans-serif"
+        font-size="124" font-weight="900"
+        text-anchor="middle"
+        fill="#111318">♠</text>
+  <!-- 21 centré sous le pied du pique, serif élégant -->
+  <text x="96" y="166"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="22" font-weight="700"
+        font-style="italic"
+        text-anchor="middle"
+        fill="#2a3318">21</text>
+</svg>

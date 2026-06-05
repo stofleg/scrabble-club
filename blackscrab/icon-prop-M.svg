@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond jaune-or plein -->
+  <rect width="192" height="192" fill="#f0c040"/>
+
+  <!-- ♠ plus fin et élancé, ailes courtes -->
+  <path fill="#111318" d="
+    M 96,10
+    C 134,10 168,50 168,88
+    C 168,116 148,132 114,134
+    C 122,135 138,139 144,146
+    L 144,162
+    C 144,166 140,168 136,168
+    L 56,168
+    C 52,168 48,166 48,162
+    L 48,146
+    C 54,139 70,135 78,134
+    C 44,132 24,116 24,88
+    C 24,50 58,10 96,10
+    Z
+  "/>
+
+  <!-- 21 coin bas-droit, taille équilibrée -->
+  <text x="180" y="184"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="24" font-weight="700"
+        font-style="italic"
+        text-anchor="end"
+        fill="#111318">21</text>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- fond jaune-or plein -->
+  <rect width="192" height="192" fill="#f0c040"/>
+
+  <!-- ♠ tracé path (indépendant de la police) -->
+  <!-- corps: deux arcs symétriques, corps rétrécit vers la tige -->
+  <!-- ailes et manche en bas -->
+  <path fill="#111318" d="
+    M 96,12
+    C 132,12 166,52 166,88
+    C 166,114 144,130 110,132
+    C 120,132 138,136 144,144
+    L 144,158
+    C 144,162 140,165 136,165
+    L 58,165
+    C 54,165 48,162 48,158
+    L 48,144
+    C 54,136 72,132 82,132
+    C 48,130 26,114 26,88
+    C 26,52 60,12 96,12
+    Z
+  "/>
+
+  <!-- 21 coin bas-droit, serif italic sombre -->
+  <text x="178" y="181"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="26" font-weight="700"
+        font-style="italic"
+        text-anchor="end"
+        fill="#111318">21</text>
+</svg>

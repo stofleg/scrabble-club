@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BlackScrab">
+<title>BlackScrab</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1a0f;
+  --surface:#0f2212;
+  --surface2:#163019;
+  --border:#1e4025;
+  --gold:#f0c040;
+  --green:#3a9e74;
+  --green-dim:rgba(58,158,116,.18);
+  --red:#d94f5e;
+  --warn:#d98a20;
+  --token-bg:#e5dcc8;
+  --token-text:#1c1f2e;
+  --text:#d4d6f0;
+  --text-dim:#6a8080;
+  --kb:#0a1509;
+  --kk-bg:#142a17;
+  --kk-ok:#2d7a58;
+  --kk-clr:#6a2838;
+  --kk-del:#1e3821;
+}
+html,body{height:100%;height:100dvh;touch-action:manipulation;}
+html{background:#0d1a0f;}
+body{
+  background:radial-gradient(ellipse at 50% 30%,#1a3a20 0%,var(--bg) 65%);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+#header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;
+  background:linear-gradient(180deg,#2c1f0e 0%,#1e1508 100%);flex-shrink:0;
+  border-bottom:2px solid #8b6914;gap:8px;
+}
+#logo{display:flex;flex-direction:column;line-height:1;}
+#logo .logo-title{font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--gold);}
+#logo .logo-title span{color:var(--text-dim);font-weight:400;}
+#version-badge{font-size:9px;color:var(--text-dim);font-weight:400;letter-spacing:.5px;margin-top:2px;}
+#score{font-size:18px;font-weight:800;color:var(--gold);min-width:56px;text-align:right;}
+.hdr-btn{
+  background:var(--surface2);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;font-size:13px;cursor:pointer;flex-shrink:0;
+  white-space:nowrap;
+}
+.hdr-btn:active{opacity:.7;}
+
+/* ── Grid (vertical scroll) ─────────────────────────────────────────────── */
+#grid{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;gap:7px;padding:10px;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:10px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;
+}
+@keyframes cardComplete{
+  0%  {border-color:var(--green);background:var(--surface);}
+  40% {border-color:var(--green);background:var(--green-dim);}
+  100%{opacity:0;transform:scaleY(0);max-height:0;margin:0;padding:0;}
+}
+.card.completing{
+  animation:cardComplete .55s ease-in-out forwards;
+  transform-origin:top;overflow:hidden;
+}
+
+.card-main{flex:1;display:flex;flex-direction:column;gap:5px;}
+
+/* tokens */
+.card-tokens{display:flex;flex-wrap:wrap;gap:3px;}
+.token{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:32px;font-size:17px;font-weight:900;
+  border-radius:4px;background:var(--token-bg);color:var(--token-text);
+  flex-shrink:0;
+}
+.token-joker{background:var(--gold);color:var(--bg);}
+
+/* found words inline */
+.card-info{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.found-word{font-size:12px;font-weight:700;color:var(--green);letter-spacing:.5px;}
+.card-dots{font-size:12px;color:var(--text-dim);letter-spacing:1px;}
+
+/* badge */
+.card-badge{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--green);color:#fff;
+  font-size:15px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.card-circle{
+  width:36px;height:36px;border-radius:50%;
+  border:2px solid var(--border);flex-shrink:0;
+}
+
+/* ── Input area ───────────────────────────────────────────────────────── */
+#input-area{flex-shrink:0;background:var(--kb);border-top:1px solid var(--border);}
+.kb-top-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 14px 4px;min-height:34px;
+}
+#word-display{font-size:20px;font-weight:700;letter-spacing:3px;color:var(--text);min-width:40px;}
+.word-msg{font-size:13px;color:var(--text-dim);flex:1;}
+.word-msg.error{color:var(--red);font-weight:600;}
+.word-msg.warn{color:var(--warn);font-weight:600;}
+
+/* desktop */
+.desktop-row{display:flex;align-items:center;gap:8px;padding:6px 12px 10px;}
+#dt-input{
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:16px;font-weight:700;
+  letter-spacing:2px;padding:8px 12px;outline:none;caret-color:var(--gold);
+}
+#dt-input:focus{border-color:var(--gold);}
+#dt-ok{
+  background:var(--kk-ok);color:#fff;border:none;border-radius:8px;
+  padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;
+}
+#dt-ok:active{opacity:.75;}
+@media(max-width:640px){.desktop-row{display:none;}}
+
+/* mobile keyboard */
+.keyboard{display:none;flex-direction:column;background:var(--kb);padding:4px 4px 6px;gap:4px;}
+@media(max-width:640px){.keyboard{display:flex;}}
+.kb-rows{display:flex;flex-direction:column;gap:5px;}
+.kb-row{display:flex;gap:4px;justify-content:center;}
+.kk{
+  flex:1;max-width:38px;height:44px;
+  background:var(--kk-bg);color:var(--text);
+  border:none;border-radius:8px;font-size:17px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.kk:active{opacity:.65;}
+.kk.wide{max-width:52px;font-size:13px;}
+.kk.ok{background:var(--kk-ok);color:#fff;font-size:14px;font-weight:700;}
+.kk.clr{background:var(--kk-clr);}
+.kk.del{background:var(--kk-del);}
+
+/* ── Settings panel ───────────────────────────────────────────────────── */
+#settings-panel{
+  position:fixed;right:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px;z-index:150;width:min(300px,calc(100vw - 28px));
+  display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+#settings-panel.hidden{display:none!important;}
+.sett-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sett-label{font-size:13px;color:var(--text-dim);flex-shrink:0;}
+.sett-toggle{display:flex;gap:4px;}
+.sett-btn{
+  background:var(--surface2);color:var(--text-dim);
+  border:1px solid var(--border);border-radius:6px;
+  padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;
+}
+.sett-btn.active{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700;}
+.sett-stepper{display:flex;align-items:center;gap:10px;}
+.sett-step{
+  background:var(--surface2);color:var(--text);
+  border:1px solid var(--border);border-radius:6px;
+  width:28px;height:28px;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sett-step:active{opacity:.7;}
+.sett-val{font-size:18px;font-weight:800;color:var(--gold);min-width:22px;text-align:center;}
+.sett-apply{
+  background:var(--kk-ok);color:#fff;border:none;border-radius:8px;
+  padding:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:2px;
+}
+.sett-apply:active{opacity:.8;}
+
+/* ── Solution view ───────────────────────────────────────────────────────────────── */
+#solution-view{
+  position:fixed;inset:0;z-index:100;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#solution-view.hidden{display:none!important;}
+#solution-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;
+  border-bottom:1px solid var(--border);flex-shrink:0;gap:8px;
+}
+#solution-title{font-size:16px;font-weight:800;color:var(--gold);flex:1;}
+#solution-list{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;gap:8px;padding:12px;
+}
+#solution-replay{
+  flex-shrink:0;background:var(--kk-ok);color:#fff;border:none;
+  padding:14px;font-size:15px;font-weight:700;cursor:pointer;
+  margin:0 12px 12px;border-radius:10px;
+}
+#solution-replay:active{opacity:.8;}
+
+/* Tirage dans la vue solution */
+.sol-item{padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+.v-header{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:7px;}
+.v-token{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:26px;font-size:14px;font-weight:900;
+  border-radius:3px;background:var(--token-bg);color:var(--token-text);
+}
+.v-token-joker{background:var(--gold);color:var(--bg);}
+.v-solutions{display:flex;flex-direction:column;gap:4px;}
+.v-word-row{display:flex;flex-direction:column;gap:2px;}
+.v-word-row.v-found .v-word{color:var(--green);font-weight:700;}
+.v-word-row.v-missed .v-word{color:var(--red);font-weight:600;}
+.v-word{font-size:13px;letter-spacing:.4px;cursor:pointer;}
+.v-word:hover{text-decoration:underline;}
+
+.hidden{display:none!important;}
+
+/* ── Abandon button ────────────────────────────────────────────────────────── */
+.abandon-btn{
+  background:transparent;color:#e07060;
+  border:1px solid #6a3028;border-radius:8px;
+  padding:4px 10px;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;
+}
+.abandon-btn:active{opacity:.7;}
+
+/* ── Modale définition ─────────────────────────────────────────────────────────────────────── */
+#def-modal{display:none;position:fixed;inset:0;z-index:500;align-items:flex-end;justify-content:center;}
+#def-modal.open{display:flex;}
+#def-bd{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);}
+#def-panel{
+  position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:640px;
+  max-height:80svh;overflow-y:auto;
+}
+#def-panel h2{font-size:18px;font-weight:950;color:var(--text);}
+.def-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+#def-body{font-size:14px;line-height:1.4;color:var(--text-dim);}
+#def-links{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.def-ext-btn{
+  background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);
+  border-radius:8px;padding:5px 10px;font-size:12px;text-decoration:none;
+}
+.modal-sec{margin-top:12px;font-size:13px;line-height:1.5;}
+.modal-sec strong{color:var(--text);display:block;margin-bottom:4px;}
+.modal-sec span{color:var(--text-dim);}
+a.def-link{color:var(--gold);text-decoration:none;}
+a.def-link:hover{text-decoration:underline;}
+.found-word{cursor:pointer;}
+.found-word:hover{text-decoration:underline;}
+
+/* ── Chrono ─────────────────────────────────────────────────────────────────────── */
+.chrono{font-size:18px;font-weight:800;color:var(--text);min-width:48px;text-align:center;flex-shrink:0;}
+.chrono.chrono-warn{color:var(--red);}
+
+/* ── Boutons start/revoir ────────────────────────────────────────────────────────────── */
+.start-btn{
+  background:var(--gold);color:var(--bg);border:none;border-radius:12px;
+  padding:14px 36px;font-size:17px;font-weight:800;cursor:pointer;
+}
+.start-btn:active{opacity:.8;}
+.start-btn-secondary{
+  background:transparent;color:var(--text-dim);border:1px solid var(--border);
+  border-radius:12px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;
+}
+.start-btn-secondary:active{opacity:.7;}
+.revoir-btn{
+  font-size:12px;color:var(--gold);background:transparent;
+  border:1px solid var(--gold);border-radius:6px;
+  padding:4px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-start;
+}
+.revoir-btn:active{opacity:.7;}
+.revoir-btn.done{color:var(--green);border-color:var(--green);}
+.no-pool-msg{color:var(--text-dim);padding:30px 20px;text-align:center;line-height:1.6;}
+
+/* ── Home screen ───────────────────────────────────────────────────────────────── */
+.home-wrap{
+  width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:6px;
+}
+.home-settings{
+  width:100%;max-width:360px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:12px 16px;display:flex;flex-direction:column;gap:10px;
+}
+.pool-count{
+  font-size:11px;color:var(--text-dim);text-align:center;
+  width:100%;max-width:360px;
+}
+.home-sep{
+  font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;
+  width:100%;max-width:360px;padding-top:4px;border-top:1px solid var(--border);
+}
+
+/* swipe-to-delete */
+.swipe-wrap{
+  width:100%;max-width:360px;position:relative;overflow:hidden;border-radius:10px;
+}
+.swipe-del-btn{
+  position:absolute;right:0;top:0;bottom:0;width:90px;
+  background:var(--red);color:#fff;border:none;
+  font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.swipe-del-btn:active{opacity:.8;}
+
+.session-card{
+  width:100%;
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;gap:10px;
+}
+.session-info{display:flex;flex-direction:column;gap:3px;flex:1;}
+.preset-label{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.2px;}
+.session-actions{display:flex;gap:6px;align-items:center;}
+
+/* solution view — tirage + bouton alignés */
+.sol-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;}
+.sol-item-top .v-header{flex:1;margin-bottom:0;}
+
+/* score avec compteurs détaillés */
+#score-wrap{display:flex;flex-direction:column;align-items:flex-end;}
+#game-counters{display:flex;gap:6px;margin-top:1px;}
+#game-counters.hidden{display:none!important;}
+.gcnt{font-size:10px;font-weight:700;letter-spacing:.2px;}
+.gcnt-v{color:var(--green);}
+.gcnt-p{color:var(--warn);}
+.gcnt-r{color:var(--text-dim);}
+</style>
+</head>
+<body>
+
+<header id="header">
+  <div id="logo">
+    <div class="logo-title">♠ Black<span>Scrab</span></div>
+    <span id="version-badge"></span>
+  </div>
+  <span id="chrono-display" class="hidden chrono"></span>
+  <button id="btn-home" class="hdr-btn" aria-label="Accueil">⌂</button>
+  <button id="btn-settings" class="hdr-btn" aria-label="Chrono"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="12" r="7"/><line x1="8" y1="2" x2="12" y2="2"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="12" x2="10" y2="8.5"/><line x1="10" y1="12" x2="13" y2="12"/></svg></button>
+  <div id="score-wrap">
+    <div id="score"></div>
+    <div id="game-counters" class="hidden">
+      <span class="gcnt gcnt-v" data-cnt="v">✓0</span>
+      <span class="gcnt gcnt-p" data-cnt="p">↺0</span>
+      <span class="gcnt gcnt-r" data-cnt="r">○0</span>
+    </div>
+  </div>
+</header>
+
+<div id="settings-panel" class="hidden">
+  <div class="sett-row">
+    <span class="sett-label">Chrono</span>
+    <button class="sett-btn" id="sett-chrono">Désactivé</button>
+  </div>
+  <div class="sett-row hidden" id="row-chrono-dur">
+    <span class="sett-label">Durée</span>
+    <div class="sett-stepper">
+      <button class="sett-step" id="dec-chrono">−</button>
+      <span class="sett-val" id="val-chrono">10 min</span>
+      <button class="sett-step" id="inc-chrono">+</button>
+    </div>
+  </div>
+  <button class="sett-apply" id="btn-sett-apply">OK</button>
+</div>
+
+<main id="grid"></main>
+
+<div id="input-area" class="hidden">
+  <div class="kb-top-row">
+    <span id="word-display"></span>
+    <span id="word-msg" class="word-msg"></span>
+    <button id="btn-abandon" class="abandon-btn">⚑ Abandon</button>
+  </div>
+  <div class="desktop-row">
+    <input id="dt-input" type="text"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      placeholder="Entrer un mot…">
+    <button id="dt-ok">OK</button>
+  </div>
+  <div id="bs-kb" class="keyboard">
+    <div class="kb-rows">
+      <div class="kb-row">
+        <button class="kk" data-k="A">A</button><button class="kk" data-k="Z">Z</button>
+        <button class="kk" data-k="E">E</button><button class="kk" data-k="R">R</button>
+        <button class="kk" data-k="T">T</button><button class="kk" data-k="Y">Y</button>
+        <button class="kk" data-k="U">U</button><button class="kk" data-k="I">I</button>
+        <button class="kk" data-k="O">O</button><button class="kk" data-k="P">P</button>
+      </div>
+      <div class="kb-row">
+        <button class="kk" data-k="Q">Q</button><button class="kk" data-k="S">S</button>
+        <button class="kk" data-k="D">D</button><button class="kk" data-k="F">F</button>
+        <button class="kk" data-k="G">G</button><button class="kk" data-k="H">H</button>
+        <button class="kk" data-k="J">J</button><button class="kk" data-k="K">K</button>
+        <button class="kk" data-k="L">L</button><button class="kk" data-k="M">M</button>
+      </div>
+      <div class="kb-row">
+        <button class="kk wide clr" data-k="CLR">✕</button>
+        <button class="kk" data-k="W">W</button><button class="kk" data-k="X">X</button>
+        <button class="kk" data-k="C">C</button><button class="kk" data-k="V">V</button>
+        <button class="kk" data-k="B">B</button><button class="kk" data-k="N">N</button>
+        <button class="kk wide del" data-k="DEL">⌫</button>
+        <button class="kk wide ok" data-k="OK">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="solution-view" class="hidden">
+  <div id="solution-header">
+    <span id="solution-title"></span>
+    <button class="hdr-btn" id="btn-settings-sol" aria-label="Chrono"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="12" r="7"/><line x1="8" y1="2" x2="12" y2="2"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="12" x2="10" y2="8.5"/><line x1="10" y1="12" x2="13" y2="12"/></svg></button>
+    <button id="solution-replay" class="hdr-btn">⌂ Accueil</button>
+  </div>
+  <div id="solution-list"></div>
+</div>
+
+<!-- ── Modale définition ── -->
+<div id="def-modal">
+  <div id="def-bd"></div>
+  <div id="def-panel">
+    <div class="def-top">
+      <h2 id="def-title"></h2>
+      <button id="def-close" class="hdr-btn">Fermer</button>
+    </div>
+    <p id="def-body"></p>
+    <div id="def-links" style="display:none">
+      <a id="def-wikt" href="#" target="_blank" rel="noopener" class="def-ext-btn">📖 Wiktionnaire</a>
+      <a id="def-img"  href="#" target="_blank" rel="noopener" class="def-ext-btn">🔍 Image</a>
+    </div>
+    <div id="def-rall" class="modal-sec"></div>
+    <div id="def-flechie"></div>
+  </div>
+</div>
+
+<script src="./version.js"></script>
+<script>document.getElementById("version-badge").textContent="v"+BS_VER;</script>
+<script src="../methods/data.js"></script>
+<script src="./data.js"></script>
+<script src="../methods/shared/dict-core.js"></script>
+<script src="./dict.js"></script>
+<script src="./app.js"></script>
+<script>
+  const CURRENT_CACHE = BS_CACHE;
+  if ('serviceWorker' in navigator) navigator.serviceWorker.ready.then(r => r.update());
+</script>
+</body>
+</html>
