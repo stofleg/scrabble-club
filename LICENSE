@@ -1,0 +1,29 @@
+Copyright (c) 2026 Christophe Leguay
+All rights reserved.
+
+Ce dépôt rassemble trois applications web (Topissimo, METHODS, BlackScrab)
+et leur code source associé, propriété exclusive de Christophe Leguay.
+
+USAGE PERSONNEL UNIQUEMENT — Le code et les ressources de ce dépôt sont
+mis à disposition pour consultation. Toute utilisation, reproduction,
+modification, distribution, publication, ou exploitation commerciale,
+en tout ou partie, est strictement interdite sans autorisation écrite
+préalable de l'auteur.
+
+Aucune licence implicite ou tacite n'est concédée par cette publication.
+
+LICENCES ET DROITS DE TIERS
+Le dictionnaire ODS9 (Officiel Du Scrabble) inclus dans Topissimo
+(`topissimo/scrabble/ods9.txt`) demeure la propriété de Larousse, son
+éditeur, et est utilisé ici à des fins strictement non commerciales,
+dans le cadre d'une utilisation ludique amateur. Toute exploitation
+commerciale du dictionnaire est exclue.
+
+GARANTIES
+Le logiciel et le service sont fournis « tels quels », sans garantie
+d'aucune sorte, expresse ou implicite. En aucun cas l'auteur ne pourra
+être tenu responsable de tout dommage, direct ou indirect, résultant
+de l'utilisation ou de l'impossibilité d'utiliser le service.
+
+CONTACT
+christophe.leguay@gmail.com
