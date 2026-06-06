@@ -223,6 +223,9 @@ function renderBoard() {
     td.addEventListener("drop", onCellDrop);
     td.addEventListener("mousedown", (e) => onCellMouseDown(e, r, c));
     td.addEventListener("mouseup",   (e) => onCellMouseUp(e, r, c));
+    td.addEventListener("touchstart", (e) => onCellTouchStart(e, r, c), { passive: true });
+    td.addEventListener("touchend",   (e) => onCellTouchEnd(e, r, c));
+    td.addEventListener("touchcancel",() => { _swipeStart = null; });
   });
   // Tuiles "pending" sur le plateau : draggables pour déplacement
   div.querySelectorAll(".tile[data-pending-r]").forEach(el => {
@@ -768,6 +771,44 @@ window.clearAllAnnotations = function () {
 
 // ===== Dessin de flèches par cliquer-glisser =====
 let _arrowStart = null;
+// --- Swipe sur mobile : swipe → = curseur H, swipe ↓ = curseur V ---
+let _swipeStart = null;
+const SWIPE_MIN = 24;        // pixels minimum pour distinguer swipe vs tap
+const SWIPE_TIMEOUT = 700;   // ms : au-delà on ignore (probable hold)
+
+function onCellTouchStart(e, r, c) {
+  if (review.active || state.annotTool) return;
+  if (state.board[r][c]) return;
+  const t = e.touches[0];
+  _swipeStart = { r, c, x: t.clientX, y: t.clientY, t: Date.now() };
+}
+
+function onCellTouchEnd(e, r, c) {
+  if (!_swipeStart) return;
+  const start = _swipeStart;
+  _swipeStart = null;
+  if (Date.now() - start.t > SWIPE_TIMEOUT) return;
+  const t = (e.changedTouches && e.changedTouches[0]);
+  if (!t) return;
+  const dx = t.clientX - start.x;
+  const dy = t.clientY - start.y;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  if (adx < SWIPE_MIN && ady < SWIPE_MIN) return;   // tap : on laisse le click natif faire
+  if (adx > ady && dx > 0) {
+    // Swipe → : curseur en horizontal, départ = case touchée au début
+    e.preventDefault();
+    if (state.pending.length > 0) { clearPending(); renderRack(); }
+    state.cursor = { row: start.r, col: start.c, dir: "H" };
+    renderBoard();
+  } else if (ady > adx && dy > 0) {
+    // Swipe ↓ : curseur en vertical
+    e.preventDefault();
+    if (state.pending.length > 0) { clearPending(); renderRack(); }
+    state.cursor = { row: start.r, col: start.c, dir: "V" };
+    renderBoard();
+  }
+}
+
 function onCellMouseDown(e, r, c) {
   if (state.annotTool !== "arrow") return;
   _arrowStart = { r, c };
