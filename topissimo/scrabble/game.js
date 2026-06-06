@@ -2235,6 +2235,41 @@ window.jumpToReviewMove = (moveNo) => {
 };
 
 document.addEventListener("keydown", handleKey);
+
+// --- Raccourcis supplémentaires ---
+
+// Touche Shift seule (tap) : Pause / Reprendre. Détecté via paire keydown/keyup
+// SANS autre touche intermédiaire, pour ne pas se déclencher quand on tape une
+// majuscule (Shift + lettre).
+let shiftAloneFlag = false;
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "Shift") {
+    if (!e.repeat) shiftAloneFlag = true;
+  } else {
+    shiftAloneFlag = false;   // une autre touche est tombée → Shift sert de modificateur
+  }
+});
+document.addEventListener("keyup", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "Shift" && shiftAloneFlag) {
+    shiftAloneFlag = false;
+    // Seulement en entraînement actif, partie démarrée non terminée
+    if (state.started && !state.prepared && state.chronoFinal == null) {
+      if (state.paused) resumeGame(); else pauseGame();
+    }
+  }
+});
+
+// Ctrl+N (ou Cmd+N) : nouvelle partie (avec confirmation)
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "n" || e.key === "N")) {
+    e.preventDefault();
+    if (confirm("Démarrer une nouvelle partie ? La partie en cours sera perdue.")) {
+      restartGame();
+    }
+  }
+});
 $$(".annot-btn[data-tool]").forEach(b => {
   b.onclick = () => setAnnotTool(b.dataset.tool || "");
 });

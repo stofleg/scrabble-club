@@ -51,10 +51,10 @@
         <button class="btn" id="btnStart" style="background:var(--yellow);color:var(--petrol-dark);font-weight:700;font-size:1rem;padding:10px 20px">▶ Démarrer la partie</button>
       </div>
       <div class="action-row" id="actionRowInGame" hidden>
-        <button class="btn ghost small" id="btnGiveUp" title="Raccourci : touche 1">Voir le top (−20s)</button>
-        <button class="btn ghost small" id="btnPause" hidden>⏸ Pause</button>
-        <button class="btn ghost small" id="btnAbandon" title="Raccourci : touche 0">Abandonner</button>
-        <button class="btn ghost small" id="btnRestart">Nouvelle partie</button>
+        <button class="btn ghost small" id="btnGiveUp" data-tip="Raccourci : touche 1">Voir le top (−20s)</button>
+        <button class="btn ghost small" id="btnPause" hidden data-tip="Raccourci : touche Maj">⏸ Pause</button>
+        <button class="btn ghost small" id="btnAbandon" data-tip="Raccourci : touche 0">Abandonner</button>
+        <button class="btn ghost small" id="btnRestart" data-tip="Raccourci : Ctrl/Cmd + N">Nouvelle partie</button>
       </div>
 
       <div class="annot-toolbar" id="annotToolbar" hidden>
@@ -163,6 +163,8 @@
         <tr><td><kbd>Espace</kbd></td><td>Basculer le sens du curseur (H / V)</td></tr>
         <tr><td><kbd>1</kbd></td><td>Voir le top (−20 s)</td></tr>
         <tr><td><kbd>0</kbd></td><td>Abandonner (entraînement)</td></tr>
+        <tr><td><kbd>Maj</kbd></td><td>Pause / Reprendre (entraînement)</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>Nouvelle partie (<kbd>Cmd</kbd>+<kbd>N</kbd> sur Mac)</td></tr>
         <tr><td><kbd>F1</kbd></td><td>Mélanger le chevalet</td></tr>
         <tr><td><kbd>F2</kbd></td><td>Trier le chevalet (alpha)</td></tr>
       </table>

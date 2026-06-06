@@ -711,6 +711,33 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   color: #5a6a73;
 }
 
+/* Info-bulles instantanées (≈ 150 ms) via attribut data-tip,
+   plus rapides que les title= natifs (qui mettent ~1,5 s à apparaître). */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  background: var(--petrol);
+  color: #fff;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: .72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease .05s, transform .12s ease .05s;
+  z-index: 200;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 #settings .setting {
   display: flex;
   justify-content: space-between;
