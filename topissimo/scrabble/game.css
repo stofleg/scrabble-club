@@ -46,10 +46,10 @@
    ============================================================ */
 @media (max-width: 700px) {
   :root {
-    /* Pas de coords sur mobile → cellule = 100vw / 15 (toute la largeur).
-       Le board est ensuite contraint par flex (flex:1 + min-height:0) pour
-       remplir l'espace dispo entre les éléments fixes du haut et du bas. */
-    --cell-size: calc(100vw / 15);
+    /* Cellule limitée à la fois par la largeur dispo (100vw / 15) et par
+       la hauteur dispo (svh moins le chrome fixe : header 32 + info ~46 +
+       feedback 28 + pictos 32 + rack 54 + gaps/paddings ~20 ≈ 215). */
+    --cell-size: min(calc(100vw / 15), calc((100svh - 215px) / 15));
   }
   html, body {
     overflow: hidden;
@@ -74,8 +74,8 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    gap: 2px;                    /* compact */
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
   #actionRowPreStart { display: none !important; }
 
@@ -109,21 +109,28 @@
   .board table { margin: 0; }
 
   /* Info-bar ultra-compacte */
-  .info-bar.two-sections { border-radius: 8px; flex-shrink: 0; }
-  .info-bar.two-sections .info-section { padding: 4px 4px; gap: 8px; }
+  .info-bar, .info-bar.two-sections {
+    border-radius: 8px;
+    flex-shrink: 0;
+    padding: 0 !important;
+    box-shadow: none;
+    margin: 0 6px;
+  }
+  .info-bar.two-sections .info-section { padding: 3px 4px !important; gap: 6px; }
   .info-bar.two-sections .item .label { font-size: .5rem; }
-  .info-bar.two-sections .item .value { font-size: .85rem; }
+  .info-bar.two-sections .item .value { font-size: .82rem; }
 
-  /* Title row : titre + mode + ⚙ + Accueil sur UNE ligne, sans wrap, hauteur fixe */
+  /* Title row : titre + mode + ⚙ + Accueil sur UNE ligne, hauteur fixe compacte */
   .title-row {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     white-space: nowrap;
     overflow: hidden;
-    padding: 2px 6px;
-    height: 36px;
+    padding: 0 6px;
+    height: 32px !important;
+    min-height: 32px !important;
     flex-shrink: 0;
   }
   .game-title {
@@ -143,22 +150,30 @@
   /* Pas de sac de lettres sur mobile */
   .bag-display { display: none !important; }
 
-  /* Feedback : HAUTEUR FIXE, toujours visible — ainsi la grille ne se décale
-     pas selon le contenu. Seulement la ligne du meilleur essai (.title). */
+  /* Feedback : HAUTEUR FIXE (28px), ligne unique tronquée si trop longue */
   .feedback, .feedback[hidden] {
     display: flex !important;
     align-items: center;
-    padding: 4px 10px;
+    padding: 0 10px !important;
     font-size: .82rem;
-    border-radius: 8px;
-    height: 30px;                /* fixe */
+    border-radius: 6px;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     flex-shrink: 0;
     overflow: hidden;
+    box-shadow: none;
+    margin: 0 6px;
+    width: auto;
+    max-width: none;
   }
   .feedback .detail, .feedback .top-reveal { display: none; }
   .feedback .title {
-    font-size: .82rem;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-size: .8rem !important;
+    font-weight: 600;
     line-height: 1.1;
+    margin: 0 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
