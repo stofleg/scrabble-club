@@ -72,7 +72,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;                    /* ~1mm entre zones */
+    gap: 0;                      /* aucun gap, chaque zone gère sa marge */
     padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
   #actionRowPreStart { display: none !important; }
@@ -106,13 +106,13 @@
 
   /* Info-bar ultra-compacte */
   .info-bar, .info-bar.two-sections {
-    border-radius: 8px;
+    border-radius: 6px;
     flex-shrink: 0;
     padding: 0 !important;
     box-shadow: none;
-    margin: 0 6px;
+    margin: 0 4px !important;
   }
-  .info-bar.two-sections .info-section { padding: 3px 4px !important; gap: 6px; }
+  .info-bar.two-sections .info-section { padding: 1px 4px !important; gap: 6px; }
   .info-bar.two-sections .item .label { font-size: .5rem; }
   .info-bar.two-sections .item .value { font-size: .82rem; }
 
@@ -124,10 +124,11 @@
     gap: 4px;
     white-space: nowrap;
     overflow: hidden;
-    padding: 0 6px;
-    height: 32px !important;
-    min-height: 32px !important;
+    padding: 2px 6px;
+    height: 30px !important;
+    min-height: 30px !important;
     flex-shrink: 0;
+    margin: 0 !important;
   }
   .game-title {
     flex: 1 1 auto;
@@ -140,7 +141,8 @@
     gap: 6px;
     align-items: center;
   }
-  .game-title .badge { font-size: .65rem; padding: 2px 6px; flex-shrink: 0; }
+  .game-title .badge { font-size: .6rem; padding: 1px 6px; flex-shrink: 0; line-height: 1.3; }
+  .game-title { line-height: 1.1; }
   .title-row .btn { padding: 4px 8px; font-size: .75rem; flex-shrink: 0; }
 
   /* Pas de sac de lettres sur mobile */
