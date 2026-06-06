@@ -657,6 +657,60 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
 }
 .settings-section .muted { color: var(--ink-soft); font-weight: 400; font-size: .75rem; font-family: 'Inter', sans-serif; }
 
+/* Bloc dépliable « Raccourcis clavier » dans les réglages */
+.kbd-shortcuts {
+  margin-top: 22px;
+  border-top: 1px solid #e3eaee;
+  padding-top: 14px;
+}
+.kbd-shortcuts summary {
+  cursor: pointer;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: .95rem;
+  color: var(--petrol-dark);
+  padding: 4px 0;
+  list-style: none;
+  user-select: none;
+}
+.kbd-shortcuts summary::-webkit-details-marker { display: none; }
+.kbd-shortcuts summary::before { content: "▸ "; color: #97a4ab; }
+.kbd-shortcuts[open] summary::before { content: "▾ "; }
+.kbd-list {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+.kbd-list td {
+  padding: 6px 8px;
+  font-size: .88rem;
+  vertical-align: middle;
+}
+.kbd-list td:first-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.kbd-list kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--petrol-dark);
+  background: #f5f7f9;
+  border: 1px solid #cdd6dc;
+  border-radius: 4px;
+  box-shadow: 0 1px 0 #cdd6dc;
+  min-width: 22px;
+  text-align: center;
+}
+.kbd-tip {
+  margin: 12px 0 0;
+  font-size: .8rem;
+  color: #5a6a73;
+}
+
 #settings .setting {
   display: flex;
   justify-content: space-between;
