@@ -166,7 +166,9 @@ const ROW_LETTERS = "ABCDEFGHIJKLMNO";
 
 function renderBoard() {
   const div = $("#board");
-  const showCoords = state.settings.showCoords;
+  // Sur mobile (< 700 px) on supprime les coords pour gagner de la place
+  const isMobile = window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
+  const showCoords = state.settings.showCoords && !isMobile;
   let html = "<table>";
   if (showCoords) {
     html += `<tr><td class="coord corner"></td>`;
@@ -1616,8 +1618,8 @@ function applyMobileLayout() {
   const bag           = rightCol.querySelector(".bag-display");
   const board         = gameWrap.querySelector(".board");
   const rackRow       = gameWrap.querySelector(".rack-row");
-  // Ordre final : title → info → timer → preStart → board → inGame → rack → feedback → review → bag
-  [titleRow, infoBar, timerChip, preStartRow, board, inGameRow, rackRow, feedback, review, bag]
+  // Ordre final mobile : title → info → timer → preStart → feedback → board → inGame → rack → review → bag
+  [titleRow, infoBar, timerChip, preStartRow, feedback, board, inGameRow, rackRow, review, bag]
     .filter(Boolean)
     .forEach(el => layout.appendChild(el));
   document.body.dataset.mobileLayout = "1";
