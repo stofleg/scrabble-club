@@ -269,14 +269,67 @@ function renderRack() {
     const draggable = t.used ? "" : `draggable="true" data-rack-id="${t.id}"`;
     return `<div class="${cls.join(" ")}" ${draggable}>${t.letter || ""}<span class="val">${val ?? ""}</span></div>`;
   }).join("");
-  // Bind handlers DnD
+  // Bind handlers DnD + tap (mobile-friendly : tap = place la lettre au curseur,
+  // tap sur joker = ouvre le sélecteur A-Z).
   div.querySelectorAll(".tile[data-rack-id]").forEach(el => {
     el.addEventListener("dragstart", onRackTileDragStart);
     el.addEventListener("dragend", onDragEnd);
     el.addEventListener("dragover", onRackTileDragOver);
     el.addEventListener("drop", onRackTileDrop);
+    el.addEventListener("click", onRackTileTap);
   });
 }
+
+function onRackTileTap(e) {
+  if (review.active) return;
+  const el = e.currentTarget;
+  const id = +el.dataset.rackId;
+  const t = state.rack.find(x => x.id === id);
+  if (!t || t.used) return;
+  if (!state.cursor) {
+    flashFeedback("error", "Pas de curseur", "Touche d'abord une case du plateau.");
+    return;
+  }
+  if (t.letter === "?") {
+    openJokerPicker();
+  } else {
+    placeLetter(t.letter);
+  }
+}
+
+// --- Sélecteur de lettre pour joker (mobile + desktop) ---
+function openJokerPicker() {
+  let modal = document.getElementById("jokerPicker");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "jokerPicker";
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="backdrop" onclick="closeJokerPicker()"></div>
+      <div class="content" style="max-width:340px">
+        <button class="close" onclick="closeJokerPicker()">×</button>
+        <h2 style="margin-top:0;font-size:1.1rem">Joker : choisir la lettre</h2>
+        <div id="jokerPickerGrid" class="joker-picker-grid"></div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  const grid = modal.querySelector("#jokerPickerGrid");
+  grid.innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(L =>
+    `<button class="joker-pick" data-letter="${L}">${L}</button>`).join("");
+  grid.querySelectorAll(".joker-pick").forEach(b => {
+    b.onclick = () => {
+      const L = b.dataset.letter;
+      closeJokerPicker();
+      state.jokerPending = true;
+      placeLetter(L);
+    };
+  });
+  modal.hidden = false;
+}
+window.closeJokerPicker = () => {
+  const m = document.getElementById("jokerPicker");
+  if (m) m.hidden = true;
+};
 
 // ===== Drag & Drop : chevalet + tuiles posées =====
 let _dragRackId = null;

@@ -711,6 +711,30 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   color: #5a6a73;
 }
 
+/* Sélecteur joker : grille de 26 lettres (A–Z) en boutons tactiles */
+.joker-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 14px;
+}
+.joker-pick {
+  font-family: 'Georgia', serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  background: linear-gradient(135deg, #fce8a8 0%, var(--tile-bg) 50%, var(--tile-bg-2) 100%);
+  color: var(--tile-text);
+  border: 1px solid rgba(138,106,31,.5);
+  border-radius: 5px;
+  padding: 10px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .08s;
+  box-shadow: 0 2px 4px rgba(0,0,0,.18);
+}
+.joker-pick:hover, .joker-pick:focus-visible { transform: translateY(-1px); }
+.joker-pick:active { transform: translateY(1px); }
+
 /* Info-bulles instantanées (≈ 150 ms) via attribut data-tip,
    plus rapides que les title= natifs (qui mettent ~1,5 s à apparaître). */
 [data-tip] { position: relative; }
