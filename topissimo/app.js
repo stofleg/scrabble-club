@@ -887,11 +887,16 @@ async function loadTournamentDetail(tournamentId) {
   $("#pgName").value = $("#pgName").value || `Partie ${next}`;
 
   // Parties déjà jouées par le joueur courant
+  // → "jouée" = result présent ET détail coup par coup non vide (sinon c'est
+  //   un résultat importé sans partie réelle, donc rien à revoir).
   const playedIds = new Set();
   if (state.currentPlayerId) {
     const { data: results } = await sb.from("prepared_game_results")
-      .select("prepared_game_id").eq("player_id", +state.currentPlayerId);
-    (results || []).forEach(r => playedIds.add(r.prepared_game_id));
+      .select("prepared_game_id,details").eq("player_id", +state.currentPlayerId);
+    (results || []).forEach(r => {
+      const hasDetails = Array.isArray(r.details) && r.details.length > 0;
+      if (hasDetails) playedIds.add(r.prepared_game_id);
+    });
   }
 
   const { modeDisplayName } = await import("./scrabble/engine.js");
