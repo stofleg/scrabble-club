@@ -17,7 +17,10 @@
     <div class="left-col">
       <div class="game-wrap rack-bottom" id="gameWrap">
         <div class="board" id="board"></div>
-        <div class="rack" id="rack"></div>
+        <div class="rack-row">
+          <div class="rack" id="rack"></div>
+          <button class="btn-backspace" id="btnBackspace" data-tip="Effacer la dernière lettre">⌫</button>
+        </div>
       </div>
     </div>
 
@@ -51,10 +54,18 @@
         <button class="btn" id="btnStart" style="background:var(--yellow);color:var(--petrol-dark);font-weight:700;font-size:1rem;padding:10px 20px">▶ Démarrer la partie</button>
       </div>
       <div class="action-row" id="actionRowInGame" hidden>
-        <button class="btn ghost small" id="btnGiveUp" data-tip="Raccourci : touche 1">Voir le top (−20s)</button>
-        <button class="btn ghost small" id="btnPause" hidden data-tip="Raccourci : touche Maj">⏸ Pause</button>
-        <button class="btn ghost small" id="btnAbandon" data-tip="Raccourci : touche 0">Abandonner</button>
-        <button class="btn ghost small" id="btnRestart" data-tip="Raccourci : Ctrl/Cmd + N">Nouvelle partie</button>
+        <button class="btn ghost small" id="btnGiveUp" data-tip="Voir le top (−20 s)">
+          <span class="ico">👁</span><span class="lbl">Voir le top (−20s)</span>
+        </button>
+        <button class="btn ghost small" id="btnPause" hidden data-tip="Pause (Maj)">
+          <span class="ico">⏸</span><span class="lbl">Pause</span>
+        </button>
+        <button class="btn ghost small" id="btnAbandon" data-tip="Abandonner (0)">
+          <span class="ico">🏳️</span><span class="lbl">Abandonner</span>
+        </button>
+        <button class="btn ghost small" id="btnRestart" data-tip="Nouvelle partie (Ctrl/Cmd+N)">
+          <span class="ico">🔄</span><span class="lbl">Nouvelle partie</span>
+        </button>
       </div>
 
       <div class="annot-toolbar" id="annotToolbar" hidden>
