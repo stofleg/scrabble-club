@@ -2422,9 +2422,13 @@ $("#btnRestart").onclick = () => {
 // Backspace tactile (équivalent de la touche clavier Backspace)
 const _btnBack = $("#btnBackspace");
 if (_btnBack) _btnBack.onclick = () => { if (state.started) backspace(); };
-// Validation tactile (équivalent de Entrée)
+// Validation tactile (équivalent de Entrée). Sert aussi de "Démarrer" avant
+// le début de la partie : si la partie n'a pas commencé, lance startGame().
 const _btnVal = $("#btnValidate");
-if (_btnVal) _btnVal.onclick = () => { if (state.started) validate(); };
+if (_btnVal) _btnVal.onclick = () => {
+  if (!state.started) startGame();
+  else validate();
+};
 $("#btnAbandon").onclick = () => {
   if (!state.started || state.chronoFinal != null) return;
   if (!confirm("Abandonner la partie ? Les coups restants seront révélés automatiquement.")) return;
