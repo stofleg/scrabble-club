@@ -476,18 +476,45 @@ function renderBag() {
   }).join("");
 }
 
-// Case où placer le badge de score (rightmost en H, bottommost en V, sinon dernière posée)
+// Case où placer le badge de score (rightmost en H, bottommost en V, sinon dernière posée).
+// On essaie d'éviter une case déjà occupée par un jeton (mieux lisible) : on avance
+// d'une case dans la direction du mot vers une case libre ; à défaut on prend la case
+// avant le mot ; si rien de libre n'est trouvé, on retombe sur la dernière case pending.
 function badgeCell() {
   if (!state.pending.length) return null;
   const sameRow = state.pending.every(p => p.row === state.pending[0].row);
   const sameCol = state.pending.every(p => p.col === state.pending[0].col);
+  let endCell, dr, dc;
   if (sameRow) {
-    return state.pending.reduce((a, b) => a.col > b.col ? a : b);
+    endCell = state.pending.reduce((a, b) => a.col > b.col ? a : b);
+    dr = 0; dc = 1;
+  } else if (sameCol) {
+    endCell = state.pending.reduce((a, b) => a.row > b.row ? a : b);
+    dr = 1; dc = 0;
+  } else {
+    return state.pending[state.pending.length - 1];
   }
-  if (sameCol) {
-    return state.pending.reduce((a, b) => a.row > b.row ? a : b);
+  // Cherche la 1re case libre après la fin du mot
+  for (let i = 1; i < BOARD_SIZE; i++) {
+    const r = endCell.row + i * dr, c = endCell.col + i * dc;
+    if (r < 0 || c < 0 || r >= BOARD_SIZE || c >= BOARD_SIZE) break;
+    if (!state.board[r][c] && !state.pending.some(p => p.row === r && p.col === c)) {
+      return { row: r, col: c };
+    }
   }
-  return state.pending[state.pending.length - 1];
+  // Sinon : cherche avant le début du mot
+  const startCell = sameRow
+    ? state.pending.reduce((a, b) => a.col < b.col ? a : b)
+    : state.pending.reduce((a, b) => a.row < b.row ? a : b);
+  for (let i = 1; i < BOARD_SIZE; i++) {
+    const r = startCell.row - i * dr, c = startCell.col - i * dc;
+    if (r < 0 || c < 0 || r >= BOARD_SIZE || c >= BOARD_SIZE) break;
+    if (!state.board[r][c] && !state.pending.some(p => p.row === r && p.col === c)) {
+      return { row: r, col: c };
+    }
+  }
+  // Aucun emplacement libre adjacent : fallback sur la fin du mot
+  return endCell;
 }
 
 function computePendingScore() {
@@ -852,6 +879,15 @@ function handleKey(e) {
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
   if (e.key === "F1") { e.preventDefault(); shuffleRack(); return; }
   if (e.key === "F2") { e.preventDefault(); restoreRackSort(); return; }
+  // Touche "0" : raccourci Abandonner (mode entraînement uniquement)
+  if ((e.key === "0" || e.code === "Digit0" || e.code === "Numpad0")
+      && !state.prepared && state.started && state.chronoFinal == null) {
+    e.preventDefault();
+    if (confirm("Abandonner la partie ? Les coups restants seront révélés automatiquement.")) {
+      abandonRest();
+    }
+    return;
+  }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
   if (state.cursor && state.pending.length === 0 &&
       ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
