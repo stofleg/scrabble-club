@@ -92,8 +92,13 @@
   .board           { flex: 0 0 100vw; }
   #actionRowInGame { flex: 0 0 30px; }
   /* rack-row : 9 carrés parfaits (⌫ + 7 tuiles + ✓) avec 8 gaps de 1px.
-     Hauteur = côté du carré = (100vw - 8px) / 9 */
-  .rack-row        { flex: 0 0 calc((100vw - 8px) / 9); }
+     Hauteur = côté du carré = (100vw - 8px) / 9 (formule explicite, pas flex-basis) */
+  .rack-row {
+    flex: none !important;
+    height: calc((100vw - 8px) / 9) !important;
+    min-height: calc((100vw - 8px) / 9) !important;
+    max-height: calc((100vw - 8px) / 9) !important;
+  }
   #actionRowPreStart { display: none !important; }
 
   /* Le JS aplatit la hiérarchie DOM sur mobile (cf. applyMobileLayout).
@@ -233,17 +238,17 @@
     border-radius: 0 !important;
     overflow: visible;
   }
-  /* Chaque tuile : carré parfait via aspect-ratio + height:100% */
+  /* Chaque tuile : carré explicite (taille calculée en dur, pas via aspect-ratio) */
   .rack .tile {
-    flex: 0 0 auto !important;
-    width: auto !important;
-    height: 100% !important;
-    aspect-ratio: 1 / 1 !important;
+    flex: 0 0 calc((100vw - 8px) / 9) !important;
+    width: calc((100vw - 8px) / 9) !important;
+    height: calc((100vw - 8px) / 9) !important;
     min-width: 0;
     max-width: none;
     font-size: calc(100vw / 12);
     border-radius: 4px;
     touch-action: manipulation;
+    box-sizing: border-box;
   }
   .rack .tile .val { font-size: .28em; }
 
@@ -258,12 +263,11 @@
   body.theme-duplijeu .board td.tw::after,
   body.theme-duplijeu .board td.center::after { display: none; }
 
-  /* Boutons ⌫ et ✓ : carré parfait via aspect-ratio + height:100% */
+  /* Boutons ⌫ et ✓ : carré explicite, même taille qu'une tuile */
   .btn-backspace, .btn-validate {
-    flex: 0 0 auto;
-    width: auto;
-    height: 100%;
-    aspect-ratio: 1 / 1;
+    flex: 0 0 calc((100vw - 8px) / 9);
+    width: calc((100vw - 8px) / 9);
+    height: calc((100vw - 8px) / 9);
     border: none;
     border-radius: 6px;
     font-size: calc(100vw / 13);
@@ -274,6 +278,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
   }
   .btn-backspace { background: #002E44; color: #ffdd00; }
   .btn-backspace:active { background: #001E2D; }
