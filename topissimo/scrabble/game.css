@@ -627,7 +627,7 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
 .modal[hidden] { display: none !important; }
 [hidden] { display: none !important; }
 .modal .backdrop { position: absolute; inset: 0; background: rgba(0,30,45,.5); backdrop-filter: blur(4px); }
-.modal .content { position: relative; background: #fff; border-radius: 14px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px -10px rgba(0,30,45,.4); }
+.modal .content { position: relative; background: #fff; border-radius: 14px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px -10px rgba(0,30,45,.4); max-height: calc(100vh - 40px); overflow-y: auto; overscroll-behavior: contain; }
 .modal h2 { margin-top: 0; font-family: 'Fraunces', serif; color: var(--petrol); font-size: 1.4rem; }
 .modal .close { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 1.5rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; color: #5a6a73; }
 .modal .close:hover { background: var(--normal); }
