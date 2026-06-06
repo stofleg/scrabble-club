@@ -1595,6 +1595,35 @@ window.restartGame = () => {
 // ============================================================
 //  Init / démarrage / fin de partie
 // ============================================================
+// Sur mobile, on aplatit la hiérarchie DOM pour pouvoir contrôler l'ordre vertical
+// (display:contents ne fonctionne pas fiablement avec `order` sous Safari iOS).
+function applyMobileLayout() {
+  if (!window.matchMedia("(max-width: 700px)").matches) return;
+  if (document.body.dataset.mobileLayout === "1") return;
+  const layout = document.querySelector(".layout");
+  const leftCol = document.querySelector(".left-col");
+  const rightCol = document.querySelector(".right-col");
+  const gameWrap = document.querySelector(".game-wrap");
+  if (!layout || !leftCol || !rightCol || !gameWrap) return;
+  // Promouvoir les enfants au niveau .layout dans l'ordre souhaité
+  const titleRow      = rightCol.querySelector(".title-row");
+  const infoBar       = rightCol.querySelector(".info-bar");
+  const timerChip     = rightCol.querySelector(".move-timer-chip");
+  const preStartRow   = rightCol.querySelector("#actionRowPreStart");
+  const inGameRow     = rightCol.querySelector("#actionRowInGame");
+  const feedback      = rightCol.querySelector(".feedback");
+  const review        = rightCol.querySelector(".review-panel");
+  const bag           = rightCol.querySelector(".bag-display");
+  const board         = gameWrap.querySelector(".board");
+  const rackRow       = gameWrap.querySelector(".rack-row");
+  // Ordre final : title → info → timer → preStart → board → inGame → rack → feedback → review → bag
+  [titleRow, infoBar, timerChip, preStartRow, board, inGameRow, rackRow, feedback, review, bag]
+    .filter(Boolean)
+    .forEach(el => layout.appendChild(el));
+  document.body.dataset.mobileLayout = "1";
+}
+applyMobileLayout();
+
 async function initGame() {
   state.bag = { ...LETTER_BAG };
   state.preparedIdx = 0;
