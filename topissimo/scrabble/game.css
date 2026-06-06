@@ -223,18 +223,19 @@
   }
   .rack {
     flex: 1 1 auto;
-    background: transparent;
-    background-image: none;
-    box-shadow: none;
-    padding: 0;
-    gap: 1px;                       /* gap entre tuiles */
-    align-items: stretch;
-    min-height: 0;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    gap: 1px !important;
+    align-items: stretch !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
   }
   .rack .tile {
-    flex: 0 0 calc((100vw - 8px) / 9);   /* largeur = côté du carré */
-    width: calc((100vw - 8px) / 9);
-    height: 100%;
+    flex: 0 0 calc((100vw - 8px) / 9) !important;
+    width: calc((100vw - 8px) / 9) !important;
+    height: 100% !important;
     min-width: 0;
     max-width: none;
     font-size: calc(100vw / 12);
