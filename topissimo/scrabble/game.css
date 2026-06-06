@@ -231,11 +231,14 @@
     align-items: stretch !important;
     min-height: 0 !important;
     border-radius: 0 !important;
+    overflow: visible;
   }
+  /* Chaque tuile : carré parfait via aspect-ratio + height:100% */
   .rack .tile {
-    flex: 0 0 calc((100vw - 8px) / 9) !important;
-    width: calc((100vw - 8px) / 9) !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
     height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
     min-width: 0;
     max-width: none;
     font-size: calc(100vw / 12);
@@ -255,11 +258,12 @@
   body.theme-duplijeu .board td.tw::after,
   body.theme-duplijeu .board td.center::after { display: none; }
 
-  /* Boutons ⌫ et ✓ : EXACTEMENT la même taille qu'une tuile (carré parfait) */
+  /* Boutons ⌫ et ✓ : carré parfait via aspect-ratio + height:100% */
   .btn-backspace, .btn-validate {
-    flex: 0 0 calc((100vw - 8px) / 9);
-    width: calc((100vw - 8px) / 9);
+    flex: 0 0 auto;
+    width: auto;
     height: 100%;
+    aspect-ratio: 1 / 1;
     border: none;
     border-radius: 6px;
     font-size: calc(100vw / 13);
