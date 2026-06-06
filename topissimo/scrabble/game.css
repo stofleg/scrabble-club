@@ -36,32 +36,53 @@
 
 /* ============================================================
    Refonte mobile (< 700px) : layout vertical optimisé tactile
-   - Title-row + info-bar passent au-dessus du plateau
-   - Plateau remplit la largeur d'écran
+   - Plateau bord à bord, prend toute la largeur de l'écran
+   - Header (titre + accueil + info-bar) au-dessus du plateau
    - Boutons d'action en pictogrammes entre plateau et chevalet
-   - Chevalet + ⌫ prennent toute la largeur
+   - Chevalet sans fond, lettres aussi grosses que possible
+   - ⌫ à gauche, ✓ à droite du chevalet
+   - Annotations désactivées (pas pertinent en jeu mobile)
+   - Pas de zoom natif, pas de double-tap
    ============================================================ */
 @media (max-width: 700px) {
   :root {
-    /* Cellule basée sur la largeur d'écran : 15 cellules + 4 col coords ≈ 16 */
-    --cell-size: clamp(20px, calc((100vw - 12px) / 16), 38px);
+    /* La grille fait toute la largeur de l'écran : 15 cellules + 2 cols coords ≈ 17 */
+    --cell-size: calc(100vw / 17);
   }
-  main { padding: 6px 4px; max-width: 100vw; }
-  /* On promeut les enfants de left-col / right-col / game-wrap au niveau .layout
-     pour pouvoir tout réordonner. */
+  html, body { overflow-x: hidden; touch-action: manipulation; }
+  body { -webkit-text-size-adjust: 100%; }
+  main { padding: 4px 0 8px; max-width: 100vw; }
+
+  /* On promeut les enfants de left/right-col / game-wrap au niveau .layout
+     pour pouvoir tout réordonner via order:. */
   .layout { flex-direction: column; align-items: stretch; gap: 6px; }
   .left-col, .right-col, .game-wrap { display: contents; }
-  /* Ordre vertical sur mobile */
-  .title-row       { order: 1; padding: 0 4px; }
-  .info-bar        { order: 2; }
-  .move-timer-chip { order: 3; }
-  #actionRowPreStart, .feedback { order: 4; }
-  .board           { order: 5; align-self: center; }
-  #actionRowInGame { order: 6; }
-  .rack-row        { order: 7; }
-  .annot-toolbar, .review-panel, .bag-display { order: 8; }
 
-  /* Info-bar plus compacte */
+  /* Ordre vertical sur mobile */
+  .title-row       { order: 1; padding: 0 8px; }
+  .info-bar        { order: 2; margin: 0 6px; }
+  .move-timer-chip { order: 3; margin: 0 6px; }
+  #actionRowPreStart, .feedback { order: 4; margin: 0 6px; }
+  .board           { order: 5; align-self: stretch; }
+  #actionRowInGame { order: 6; margin: 4px 6px 0; }
+  .rack-row        { order: 7; }
+  .review-panel, .bag-display { order: 8; margin: 0 6px; }
+  .annot-toolbar { display: none !important; }   /* pas d'annotations sur mobile */
+
+  /* Plateau bord à bord */
+  .board {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);   /* casse le centrage pour aller bord à bord */
+    margin-right: calc(50% - 50vw);
+    display: block;
+  }
+  .board table { margin: 0 auto; }
+
+  /* Info-bar compacte */
+  .info-bar.two-sections { border-radius: 10px; }
   .info-bar.two-sections .info-section { padding: 6px 6px; gap: 10px; }
   .info-bar.two-sections .item .label { font-size: .55rem; }
   .info-bar.two-sections .item .value { font-size: .95rem; }
@@ -70,40 +91,56 @@
   .game-title { font-size: .95rem; }
   .title-row .btn { padding: 4px 8px; font-size: .8rem; }
 
-  /* Boutons d'action en pictogrammes (le texte est caché) */
+  /* Boutons d'action en pictogrammes (texte caché) */
   #actionRowInGame { gap: 6px; justify-content: center; }
   #actionRowInGame .btn .lbl { display: none; }
   #actionRowInGame .btn .ico { font-size: 1.2rem; }
-  #actionRowInGame .btn { padding: 6px 10px; min-width: 44px; }
+  #actionRowInGame .btn { padding: 6px 10px; min-width: 44px; touch-action: manipulation; }
 
-  /* Chevalet + ⌫ prennent toute la largeur */
+  /* Chevalet : fond transparent, lettres aussi grosses que possible.
+     7 tuiles + 2 boutons → ratio ~= 9. La cellule = 100vw/17, alors la tuile
+     du chevalet peut être largement plus grosse. */
   .rack-row {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: stretch;
-    width: 100%;
-    padding: 0 4px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding: 4px 4px 6px;
   }
   .rack {
     flex: 1 1 auto;
+    background: transparent;
+    background-image: none;
+    box-shadow: none;
+    padding: 0;
+    gap: 3px;
     justify-content: space-around;
-    padding: 6px 8px;
+    align-items: stretch;
     min-height: 0;
   }
   .rack .tile {
-    width: auto;
     flex: 1 1 0;
+    width: auto;
     min-width: 0;
-    max-width: 56px;
+    max-width: none;
+    height: calc(100vw / 9 + 4px);
+    font-size: calc(100vw / 16);
+    touch-action: manipulation;
   }
+  .rack .tile .val { font-size: .35em; }
+
   .btn-backspace, .btn-validate {
     flex: 0 0 auto;
     border: none;
-    border-radius: 8px;
-    font-size: 1.4rem;
+    border-radius: 10px;
+    font-size: calc(100vw / 18);
     padding: 0 12px;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,30,45,.25);
+    touch-action: manipulation;
+    min-width: 44px;
   }
   .btn-backspace { background: #002E44; color: #ffdd00; }
   .btn-backspace:active { background: #001E2D; }
