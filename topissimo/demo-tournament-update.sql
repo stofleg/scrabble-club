@@ -1,16 +1,42 @@
 -- ============================================================
---  Mise à jour des résultats du « 🏟 Tournoi démo — Juin 2026 sem 23 »
---  11 joueurs × 10 parties = 110 lignes
+--  Tournoi démo — Juin 2026 sem 23
+--  1. Crée les 10 parties (prepared_games) si elles n'existent pas encore
+--  2. Insère/remplace les résultats pour les 11 joueurs (110 lignes)
 --
---  Hypothèses :
---   - Le tournoi existe déjà sous ce nom exact
---   - 10 prepared_games rattachés, ordonnés par id ascending = Partie 1..10
---   - Les 11 pseudos existent dans la table players (orthographe exacte)
---
---  Comportement : UPSERT — remplace les résultats existants (par couple
---  prepared_game_id × player_id), insère si absent.
+--  Tournoi à mettre à jour : '🏟 Tournoi démo — Juin 2026 sem 23'
+--  Idempotent : relançable sans dupliquer.
 -- ============================================================
 
+-- ----------------------------------------------------------------
+--  1) Création des 10 prepared_games (si absentes)
+-- ----------------------------------------------------------------
+with t as (
+  select id from tournaments
+  where name = '🏟 Tournoi démo — Juin 2026 sem 23'
+  limit 1
+)
+insert into prepared_games (name, mode, with_joker, time_per_move, dictionary, moves, total_top_score, tournament_id)
+select v.name, v.mode, v.joker, v.tps, 'ODS9', '[]'::jsonb, 700, (select id from t)
+from (values
+  ('Partie 1 (2 min)',         'duplicate', false, 120),
+  ('Partie 2 (2 min)',         'duplicate', false, 120),
+  ('Partie 3 (2 min)',         'duplicate', false, 120),
+  ('Partie 4 (2 min)',         'duplicate', false, 120),
+  ('Partie 5 (Blitz 1 min)',   'duplicate', false,  60),
+  ('Partie 6 (Blitz 1 min)',   'duplicate', false,  60),
+  ('Partie 7 (Blitz 1 min)',   'duplicate', false,  60),
+  ('Partie 8 (Joker)',         'duplicate', true,  120),
+  ('Partie 9 (7sur8 + Joker)', '7sur8',     true,  120),
+  ('Partie 10 (7et8 + Joker)', '7et8',      true,  120)
+) as v(name, mode, joker, tps)
+where not exists (
+  select 1 from prepared_games pg
+  where pg.tournament_id = (select id from t) and pg.name = v.name
+);
+
+-- ----------------------------------------------------------------
+--  2) Insertion / remplacement des résultats
+-- ----------------------------------------------------------------
 with t as (
   select id from tournaments
   where name = '🏟 Tournoi démo — Juin 2026 sem 23'
@@ -83,7 +109,7 @@ insert into prepared_game_results
   (prepared_game_id, player_id, total_score, sum_neg, total_time_seconds, details, finished_at)
 select og.id,
        p.id,
-       coalesce(og.total_top_score, 0) - d.neg,
+       coalesce(og.total_top_score, 700) - d.neg,
        d.neg,
        d.time_s,
        '[]'::jsonb,
@@ -97,8 +123,14 @@ on conflict (prepared_game_id, player_id) do update
       total_time_seconds = excluded.total_time_seconds,
       finished_at        = excluded.finished_at;
 
--- Vérification rapide : 110 lignes attendues pour ce tournoi
-select count(*) as rows_inserted
+-- ----------------------------------------------------------------
+--  Vérification
+-- ----------------------------------------------------------------
+select 'parties créées' as type, count(*)
+from prepared_games
+where tournament_id = (select id from tournaments where name = '🏟 Tournoi démo — Juin 2026 sem 23')
+union all
+select 'résultats insérés', count(*)
 from prepared_game_results
 where prepared_game_id in (
   select id from prepared_games
