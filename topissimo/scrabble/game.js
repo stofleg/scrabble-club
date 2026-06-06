@@ -888,6 +888,13 @@ function handleKey(e) {
     }
     return;
   }
+  // Touche "1" : raccourci Voir le top (−20 s)
+  if ((e.key === "1" || e.code === "Digit1" || e.code === "Numpad1")
+      && state.started && state.chronoFinal == null) {
+    e.preventDefault();
+    revealTop();
+    return;
+  }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
   if (state.cursor && state.pending.length === 0 &&
       ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
