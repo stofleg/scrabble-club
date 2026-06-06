@@ -3,7 +3,7 @@
 --  1. Crée les 10 parties (prepared_games) si elles n'existent pas encore
 --  2. Insère/remplace les résultats pour les 11 joueurs (110 lignes)
 --
---  Tournoi à mettre à jour : '🏟 Tournoi démo — Juin 2026 sem 23'
+--  Tournoi à mettre à jour : 'Tournoi démo — Juin 2026 sem 23'
 --  Idempotent : relançable sans dupliquer.
 -- ============================================================
 
@@ -12,7 +12,7 @@
 -- ----------------------------------------------------------------
 with t as (
   select id from tournaments
-  where name = '🏟 Tournoi démo — Juin 2026 sem 23'
+  where name = 'Tournoi démo — Juin 2026 sem 23'
   limit 1
 )
 insert into prepared_games (name, mode, with_joker, time_per_move, dictionary, moves, total_top_score, tournament_id)
@@ -39,7 +39,7 @@ where not exists (
 -- ----------------------------------------------------------------
 with t as (
   select id from tournaments
-  where name = '🏟 Tournoi démo — Juin 2026 sem 23'
+  where name = 'Tournoi démo — Juin 2026 sem 23'
   limit 1
 ),
 ordered_games as (
@@ -128,11 +128,11 @@ on conflict (prepared_game_id, player_id) do update
 -- ----------------------------------------------------------------
 select 'parties créées' as type, count(*)
 from prepared_games
-where tournament_id = (select id from tournaments where name = '🏟 Tournoi démo — Juin 2026 sem 23')
+where tournament_id = (select id from tournaments where name = 'Tournoi démo — Juin 2026 sem 23')
 union all
 select 'résultats insérés', count(*)
 from prepared_game_results
 where prepared_game_id in (
   select id from prepared_games
-  where tournament_id = (select id from tournaments where name = '🏟 Tournoi démo — Juin 2026 sem 23')
+  where tournament_id = (select id from tournaments where name = 'Tournoi démo — Juin 2026 sem 23')
 );
