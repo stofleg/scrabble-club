@@ -96,10 +96,8 @@
     min-width: 0;
     max-width: 56px;
   }
-  .btn-backspace {
+  .btn-backspace, .btn-validate {
     flex: 0 0 auto;
-    background: #002E44;
-    color: #ffdd00;
     border: none;
     border-radius: 8px;
     font-size: 1.4rem;
@@ -107,22 +105,26 @@
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,30,45,.25);
   }
+  .btn-backspace { background: #002E44; color: #ffdd00; }
   .btn-backspace:active { background: #001E2D; }
+  .btn-validate  { background: #2c7a3b; color: #fff; }
+  .btn-validate:active { background: #1f5a2a; }
 }
 
 /* Sur desktop : structure rack-row reste un wrapper transparent autour du chevalet */
 @media (min-width: 701px) {
   .rack-row { display: flex; align-items: center; gap: 10px; }
-  .btn-backspace {
-    background: var(--petrol);
-    color: var(--yellow);
+  .btn-backspace, .btn-validate {
     border: none;
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 1.1rem;
     cursor: pointer;
   }
+  .btn-backspace { background: var(--petrol); color: var(--yellow); }
   .btn-backspace:hover { background: #003a55; }
+  .btn-validate { background: #2c7a3b; color: #fff; }
+  .btn-validate:hover { background: #246630; }
 }
 
 body {

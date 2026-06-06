@@ -2391,6 +2391,9 @@ $("#btnRestart").onclick = () => {
 // Backspace tactile (équivalent de la touche clavier Backspace)
 const _btnBack = $("#btnBackspace");
 if (_btnBack) _btnBack.onclick = () => { if (state.started) backspace(); };
+// Validation tactile (équivalent de Entrée)
+const _btnVal = $("#btnValidate");
+if (_btnVal) _btnVal.onclick = () => { if (state.started) validate(); };
 $("#btnAbandon").onclick = () => {
   if (!state.started || state.chronoFinal != null) return;
   if (!confirm("Abandonner la partie ? Les coups restants seront révélés automatiquement.")) return;
