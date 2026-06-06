@@ -91,7 +91,9 @@
   .feedback        { flex: 1 1 0; min-height: 0; }
   .board           { flex: 0 0 100vw; }
   #actionRowInGame { flex: 0 0 30px; }
-  .rack-row        { flex: 0 0 calc(100vw / 9); }
+  /* rack-row : 9 carrés parfaits (⌫ + 7 tuiles + ✓) avec 8 gaps de 1px.
+     Hauteur = côté du carré = (100vw - 8px) / 9 */
+  .rack-row        { flex: 0 0 calc((100vw - 8px) / 9); }
   #actionRowPreStart { display: none !important; }
 
   /* Le JS aplatit la hiérarchie DOM sur mobile (cf. applyMobileLayout).
@@ -213,7 +215,7 @@
      du chevalet peut être largement plus grosse. */
   .rack-row {
     display: flex;
-    gap: 0;
+    gap: 1px;                       /* gap entre rack et boutons */
     align-items: stretch;
     width: 100vw;
     margin: 0;
@@ -225,17 +227,17 @@
     background-image: none;
     box-shadow: none;
     padding: 0;
-    gap: 1px;
+    gap: 1px;                       /* gap entre tuiles */
     align-items: stretch;
     min-height: 0;
   }
   .rack .tile {
-    flex: 1 1 0;
-    width: auto;
+    flex: 0 0 calc((100vw - 8px) / 9);   /* largeur = côté du carré */
+    width: calc((100vw - 8px) / 9);
     height: 100%;
     min-width: 0;
     max-width: none;
-    font-size: calc(100vw / 11);
+    font-size: calc(100vw / 12);
     border-radius: 4px;
     touch-action: manipulation;
   }
@@ -252,14 +254,14 @@
   body.theme-duplijeu .board td.tw::after,
   body.theme-duplijeu .board td.center::after { display: none; }
 
-  /* Boutons ⌫ et ✓ : exactement la même largeur qu'une tuile (= 100vw/9),
-     hauteur 100% du rack-row, carrés parfaits. */
+  /* Boutons ⌫ et ✓ : EXACTEMENT la même taille qu'une tuile (carré parfait) */
   .btn-backspace, .btn-validate {
-    flex: 0 0 calc(100vw / 9);
+    flex: 0 0 calc((100vw - 8px) / 9);
+    width: calc((100vw - 8px) / 9);
     height: 100%;
     border: none;
     border-radius: 6px;
-    font-size: calc(100vw / 14);
+    font-size: calc(100vw / 13);
     padding: 0;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,30,45,.2);
