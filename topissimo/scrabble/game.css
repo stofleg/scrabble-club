@@ -49,7 +49,7 @@
     /* Pas de coords sur mobile → cellule = 100vw / 15 (toute la largeur),
        mais limitée par la hauteur dispo (svh = small viewport, URL bar visible)
        pour ne JAMAIS dépasser et garder le chevalet visible. */
-    --cell-size: min(calc(100vw / 15), calc((100svh - 280px) / 15));
+    --cell-size: min(calc(100vw / 15), calc((100svh - 340px) / 15));
   }
   html, body {
     overflow: hidden;            /* pas de scroll vertical, ni horizontal */
@@ -148,6 +148,8 @@
   #actionRowInGame .btn .lbl { display: none; }
   #actionRowInGame .btn .ico { font-size: 1rem; }
   #actionRowInGame .btn { padding: 4px 8px; min-width: 36px; touch-action: manipulation; }
+  /* "Nouvelle partie" est remplacée par le ✓ (qui lance aussi la partie) */
+  #btnRestart { display: none !important; }
 
   /* Chevalet : fond transparent, lettres aussi grosses que possible.
      7 tuiles + 2 boutons → ratio ~= 9. La cellule = 100vw/17, alors la tuile
