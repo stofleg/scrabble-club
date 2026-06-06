@@ -1626,6 +1626,31 @@ function applyMobileLayout() {
 }
 applyMobileLayout();
 
+// Calcule la taille de cellule en mesurant la zone du board (flex item) après
+// layout. Garantit que les 15 rangées tiennent dans l'espace dispo sur mobile.
+function adjustCellSizeMobile() {
+  if (!window.matchMedia("(max-width: 700px)").matches) return;
+  const board = document.querySelector(".board");
+  if (!board) return;
+  // 1) Reset à 1px pour ne pas influencer la mesure
+  const root = document.documentElement;
+  root.style.setProperty("--cell-size", "1px");
+  // 2) Measure dans la frame suivante
+  requestAnimationFrame(() => {
+    const r = board.getBoundingClientRect();
+    const w = r.width, h = r.height;
+    // 15 cellules dans la dimension la plus contrainte
+    const sz = Math.max(18, Math.floor(Math.min(w, h) / 15));
+    root.style.setProperty("--cell-size", `${sz}px`);
+  });
+}
+window.addEventListener("resize", adjustCellSizeMobile);
+window.addEventListener("orientationchange", adjustCellSizeMobile);
+window.addEventListener("load", adjustCellSizeMobile);
+// Recalcule aussi après le 1er rendu du board (quand les autres zones se sont stabilisées)
+setTimeout(adjustCellSizeMobile, 50);
+setTimeout(adjustCellSizeMobile, 300);
+
 async function initGame() {
   state.bag = { ...LETTER_BAG };
   state.preparedIdx = 0;
