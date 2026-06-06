@@ -46,10 +46,8 @@
    ============================================================ */
 @media (max-width: 700px) {
   :root {
-    /* Cellule limitée à la fois par la largeur dispo (100vw / 15) et par
-       la hauteur dispo (svh moins le chrome fixe : header 32 + info ~46 +
-       feedback 28 + pictos 32 + rack 54 + gaps/paddings ~20 ≈ 215). */
-    --cell-size: min(calc(100vw / 15), calc((100svh - 215px) / 15));
+    /* La grille EST un carré qui prend toute la largeur de l'écran. */
+    --cell-size: calc(100vw / 15);
   }
   html, body {
     overflow: hidden;
@@ -74,7 +72,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;                    /* compact */
+    gap: 1px;                    /* ~1mm entre zones */
     padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
   #actionRowPreStart { display: none !important; }
@@ -83,30 +81,28 @@
      Les enfants de .layout sont donc directement title-row, info-bar, ..., board, etc. */
   .layout { flex-direction: column; align-items: stretch; gap: 6px; }
   .left-col, .right-col, .game-wrap { display: contents; }
-  .title-row       { padding: 0 8px; }
-  .info-bar        { margin: 0 6px; }
-  .move-timer-chip { margin: 0 6px; }
-  #actionRowPreStart, .feedback { margin: 0 6px; }
-  #actionRowInGame { margin: 4px 6px 0; }
-  .review-panel, .bag-display { margin: 0 6px; }
+  .title-row       { padding: 0 6px; margin: 0; }
+  .info-bar        { margin: 0 4px; }
+  .move-timer-chip { margin: 0 4px; }
+  #actionRowPreStart, .feedback { margin: 0 4px; }
+  #actionRowInGame { margin: 0 4px; }
+  .review-panel, .bag-display { margin: 0 4px; }
   .annot-toolbar { display: none !important; }   /* pas d'annotations sur mobile */
 
-  /* Plateau : flex-grow pour absorber l'espace dispo, bord à bord, sans cadre */
+  /* Grille = carré 100vw × 100vw, bord à bord, sans cadre. Pas flexible —
+     priorité absolue à la largeur d'écran. */
   body .board, body.theme-duplijeu .board {
     padding: 0;
     border-radius: 0;
     box-shadow: none;
     background: transparent;
     width: 100vw;
+    height: 100vw;
     margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+    display: block;
+    flex: 0 0 auto;
   }
-  .board table { margin: 0; }
+  .board table { margin: 0; width: 100vw; height: 100vw; }
 
   /* Info-bar ultra-compacte */
   .info-bar, .info-bar.two-sections {
