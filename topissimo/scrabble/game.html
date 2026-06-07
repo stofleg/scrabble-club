@@ -145,6 +145,13 @@
         <option value="duplijeu">Thème DupliJeu</option>
       </select>
     </div>
+    <div class="setting" style="display:block">
+      <label for="optChronoType" style="margin-bottom:6px">Type de chrono</label>
+      <select id="optChronoType" style="width:100%">
+        <option value="challenge">Chrono Challenge (rouge dans les 10 dernières s)</option>
+        <option value="zen">Chrono Zen (sans changement de couleur)</option>
+      </select>
+    </div>
 
     <h3 class="settings-section">Paramètres de jeu</h3>
     <div class="setting" style="display:block">
@@ -163,13 +170,6 @@
     <div class="setting">
       <label for="optTimePerMove">Temps par coup (0 = illimité)</label>
       <input type="number" id="optTimePerMove" min="0" max="600" step="5" value="0" style="width:80px"> s
-    </div>
-    <div class="setting" style="display:block">
-      <label for="optChronoType" style="margin-bottom:6px">Type de chrono</label>
-      <select id="optChronoType" style="width:100%">
-        <option value="challenge">Chrono Challenge (rouge dans les 10 dernières s)</option>
-        <option value="zen">Chrono Zen (sans changement de couleur)</option>
-      </select>
     </div>
     <div class="setting">
       <button class="btn secondary" onclick="restartGame()">Nouvelle partie</button>

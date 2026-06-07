@@ -278,18 +278,9 @@
 
 /* Sur desktop : structure rack-row reste un wrapper transparent autour du chevalet */
 @media (min-width: 701px) {
+  /* Sur desktop, ⌫ et ✓ ne sont pas nécessaires (Backspace + Entrée au clavier) */
   .rack-row { display: flex; align-items: center; gap: 10px; }
-  .btn-backspace, .btn-validate {
-    border: none;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 1.1rem;
-    cursor: pointer;
-  }
-  .btn-backspace { background: var(--petrol); color: var(--yellow); }
-  .btn-backspace:hover { background: #003a55; }
-  .btn-validate { background: #2c7a3b; color: #fff; }
-  .btn-validate:hover { background: #246630; }
+  .btn-backspace, .btn-validate { display: none !important; }
 }
 
 body {
