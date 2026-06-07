@@ -1347,18 +1347,9 @@ function setAuthMode(mode) {
   $("#authPseudo").disabled = mode !== "signup";
   $("#authClub").disabled   = mode !== "signup";
   $("#authPassword").disabled = mode === "forgot";
-  // Label + placeholder du champ email selon le mode :
-  // - inscription / mot de passe oublié : email seul
-  // - connexion : email ou pseudo
-  const emailLabelEl = $("#authEmailLabel");
-  const emailInputEl = $("#authEmail");
-  if (mode === "login") {
-    emailLabelEl.textContent = "Email ou pseudo";
-    emailInputEl.placeholder = "alice@exemple.fr ou alice";
-  } else {
-    emailLabelEl.textContent = "Email";
-    emailInputEl.placeholder = "alice@exemple.fr";
-  }
+  // Champ email — toujours "Email" (la connexion par pseudo n'est plus proposée)
+  $("#authEmailLabel").textContent = "Email";
+  $("#authEmail").placeholder = "alice@exemple.fr";
   const labels = { login: "Se connecter", signup: "Créer mon compte", forgot: "Recevoir un email" };
   $("#authSubmit").textContent = labels[mode];
   $("#authMsg").className = "auth-msg";
