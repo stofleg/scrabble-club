@@ -700,7 +700,14 @@ function showFeedback(kind, title, detail = "", topReveal = "") {
     ${topReveal ? `<div class="top-reveal">${topReveal}</div>` : ""}
   `;
 }
-function hideFeedback() { $("#feedback").hidden = true; }
+function hideFeedback() {
+  const div = $("#feedback");
+  div.hidden = true;
+  // Sur mobile la zone est forcée visible par CSS (espace réservé) ; on vide
+  // donc explicitement le contenu pour que rien ne traîne d'un coup à l'autre.
+  div.innerHTML = "";
+  div.className = "feedback";
+}
 
 function applyRackPos() {
   const wrap = $("#gameWrap");
