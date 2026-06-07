@@ -43,6 +43,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     _noJoker:   (c.move.blanks?.length || 0) === 0 ? 1 : 0,
     _playsQ:    c.move.word.includes("Q") ? 1 : 0,
     _qPos:      scoreQPosition(c.move),                 // -1 si Q en bout, 0 sinon
+    _extBoth:   isFirstMove ? scoreExtBothSides(c.move.word, dict) : 0, // 1 si rallongeable des 2 côtés (1er coup)
     _dictExt:   scoreDictExtensibility(c.move.word, dict), // rallonges 1 lettre dans le dico
     _ext:       scoreExtensibility(board, c.move),
     _scrab:     scoreScrabbleOpenings(board, c.move),   // nb d'appuis pour scrabble perpendiculaire
@@ -54,16 +55,18 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   //   1. joker préservé (mode joker)
   //   2. joue le Q
   //   3. Q pas en bout de mot
-  //   4. extensibilité dico (verbes & flexions : DEMARIE > ADMIREE)
-  //   5. rallongeabilité physique (les 2 côtés ouverts)
-  //   6. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
-  //   7. position à gauche (1er coup uniquement)
-  //   8. ouverture de la grille (générique)
-  //   9. qualité du reliquat
+  //   4. (1er coup) rallongeable des 2 côtés en 1 lettre (TETAI > ETAIT)
+  //   5. extensibilité dico globale (nb total de rallonges 1 lettre)
+  //   6. rallongeabilité physique (les 2 côtés ouverts sur le plateau)
+  //   7. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
+  //   8. position à gauche (1er coup uniquement)
+  //   9. ouverture de la grille (générique)
+  //  10. qualité du reliquat
   scored.sort((a, b) =>
     (preserveJoker ? b._noJoker - a._noJoker : 0) ||
     b._playsQ - a._playsQ ||
     b._qPos - a._qPos ||
+    b._extBoth - a._extBoth ||
     b._dictExt - a._dictExt ||
     b._ext - a._ext ||
     b._scrab - a._scrab ||
@@ -79,6 +82,20 @@ function scoreQPosition(move) {
   if (qIdx === -1) return 0;
   // Pénalité si Q est au début ou à la fin du mot (bloque l'extension d'un côté)
   if (qIdx === 0 || qIdx === move.word.length - 1) return -1;
+  return 0;
+}
+
+// Renvoie 1 si le mot peut être rallongé d'une lettre AVANT (préfixe valide L+word)
+// ET d'une lettre APRÈS (suffixe valide word+L). Sinon 0.
+// Utile au 1er coup pour privilégier les mots ouverts des 2 côtés.
+function scoreExtBothSides(word, dict) {
+  let frontOK = false, backOK = false;
+  for (let code = 65; code <= 90; code++) {
+    const L = String.fromCharCode(code);
+    if (!frontOK && dict.has(L + word)) frontOK = true;
+    if (!backOK  && dict.has(word + L)) backOK  = true;
+    if (frontOK && backOK) return 1;
+  }
   return 0;
 }
 
