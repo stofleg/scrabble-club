@@ -33,6 +33,7 @@
 
   main {
     padding: 0;
+    padding-top: env(safe-area-inset-top);   /* respecte l'encoche / Dynamic Island */
     max-width: 100vw;
     height: 100svh;
     height: 100dvh;
@@ -90,10 +91,10 @@
   }
   .title-row .btn { padding: 4px 8px; font-size: .75rem; flex-shrink: 0; }
 
-  /* ----- B : info-bar (pleine largeur, sans marges latérales) ----- */
+  /* ----- B : info-bar (pleine largeur, 2 lignes de texte → ~80 px) ----- */
   .info-bar, .info-bar.two-sections {
-    flex: 0 0 40px !important;
-    height: 40px !important;
+    flex: 0 0 80px !important;
+    height: 80px !important;
     border-radius: 0;
     box-shadow: none;
     padding: 0 !important;
@@ -101,9 +102,9 @@
     width: 100vw;
     max-width: none;
   }
-  .info-bar.two-sections .info-section { padding: 2px 4px !important; gap: 6px; }
-  .info-bar.two-sections .item .label { font-size: .5rem; }
-  .info-bar.two-sections .item .value { font-size: .82rem; }
+  .info-bar.two-sections .info-section { padding: 6px 8px !important; gap: 10px; }
+  .info-bar.two-sections .item .label { font-size: .65rem; }
+  .info-bar.two-sections .item .value { font-size: 1.15rem; }
 
   /* ----- C : feedback (pleine largeur, 2 lignes max) ----- */
   .feedback, .feedback[hidden] {
@@ -241,12 +242,12 @@
   }
   .rack .tile {
     width: auto !important;
-    height: auto !important;
-    aspect-ratio: 1 / 1;
+    /* Hauteur 20 % plus grande que la largeur d'1 colonne (= jetons +grands) */
+    height: calc(100vw / var(--rack-size, 7) * 1.2) !important;
     min-width: 0;
     max-width: none;
     flex: none !important;
-    font-size: calc(100vw / var(--rack-size, 7) * 0.55);
+    font-size: calc(100vw / var(--rack-size, 7) * 0.7);
     border-radius: 4px;
     touch-action: manipulation;
     box-sizing: border-box;

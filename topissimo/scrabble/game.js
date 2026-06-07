@@ -1685,7 +1685,7 @@ async function initGame() {
   applyColorTheme();
   renderGameTitle();
   if (!state.dict) {
-    showFeedback("", "Chargement du dictionnaire…", "");
+    // (Pas de feedback "Chargement du dictionnaire" — UX silencieuse)
     state.dict = await new Dictionary().load("ods9.txt");
   }
   // Charger les préférences perso depuis Supabase (asynchrone, silencieux)
