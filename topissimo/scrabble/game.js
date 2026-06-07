@@ -249,6 +249,10 @@ function cellTile(r, c) {
 
 function renderRack() {
   const div = $("#rack");
+  // Met à jour la variable CSS --rack-size pour que le mobile sache combien
+  // de tuiles afficher en grid-template-columns (varie selon le mode : 7/8/9).
+  const rackSize = state.rack.length || currentMode().rackSize;
+  document.documentElement.style.setProperty("--rack-size", String(rackSize));
   if (state.rack.length === 0 && !state.started) {
     const size = currentMode().rackSize;
     div.innerHTML = Array.from({ length: size }, () => `<div class="tile empty"></div>`).join("");
@@ -1624,9 +1628,11 @@ function applyMobileLayout() {
   const review        = rightCol.querySelector(".review-panel");
   const bag           = rightCol.querySelector(".bag-display");
   const board         = gameWrap.querySelector(".board");
+  const rackControls  = gameWrap.querySelector(".rack-controls");
   const rackRow       = gameWrap.querySelector(".rack-row");
-  // Ordre final mobile : title → info → timer → preStart → feedback → board → inGame → rack → review → bag
-  [titleRow, infoBar, timerChip, preStartRow, feedback, board, inGameRow, rackRow, review, bag]
+  // Ordre mobile : title → info → timer → preStart → feedback → board → pictos
+  //              → rack-controls (⌫ + ✓) → rack-row → review → bag
+  [titleRow, infoBar, timerChip, preStartRow, feedback, board, inGameRow, rackControls, rackRow, review, bag]
     .filter(Boolean)
     .forEach(el => layout.appendChild(el));
   document.body.dataset.mobileLayout = "1";
