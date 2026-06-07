@@ -855,13 +855,42 @@ const SWIPE_MIN = 24;        // pixels minimum pour distinguer swipe vs tap
 const SWIPE_TIMEOUT = 700;   // ms : au-delà on ignore (probable hold)
 
 function onCellTouchStart(e, r, c) {
-  if (review.active || state.annotTool) return;
+  if (review.active) return;
+  // En mode annotation "arrow" : start = case touchée, on enregistrera la flèche
+  // sur le touchend (peu importe si le doigt termine sur une autre case).
+  if (state.annotTool === "arrow") {
+    _arrowStart = { r, c };
+    return;
+  }
+  if (state.annotTool) return;
   if (state.board[r][c]) return;
   const t = e.touches[0];
   _swipeStart = { r, c, x: t.clientX, y: t.clientY, t: Date.now() };
 }
 
 function onCellTouchEnd(e, r, c) {
+  // Mode annotation "arrow" : on calcule la case d'arrivée à partir des
+  // coordonnées de touchend (le finger peut avoir glissé hors de la case
+  // de départ, mais aussi être resté dans la même → on filtre ce cas).
+  if (state.annotTool === "arrow" && _arrowStart) {
+    const start = _arrowStart;
+    _arrowStart = null;
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const td = el && el.closest("td[data-r]");
+    if (!td) return;
+    const endR = +td.dataset.r, endC = +td.dataset.c;
+    if (start.r === endR && start.c === endC) return;  // pas de flèche sur un simple tap
+    const dr = Math.abs(endR - start.r), dc = Math.abs(endC - start.c);
+    let toR = endR, toC = endC;
+    if (dr > dc) toC = start.c; else toR = start.r;   // aligne sur l'axe dominant
+    state.arrowAnnotations = state.arrowAnnotations || [];
+    state.arrowAnnotations.push({ fromR: start.r, fromC: start.c, toR, toC });
+    e.preventDefault();
+    renderBoard();
+    return;
+  }
   if (!_swipeStart) return;
   const start = _swipeStart;
   _swipeStart = null;
