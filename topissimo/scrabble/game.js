@@ -2010,8 +2010,10 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
     const cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const ctx = cv.getContext("2d");
+    // Thème actif (Garenna ou DupliJeu)
+    const duplijeu = state.settings.colorTheme === "duplijeu";
     // Fond
-    ctx.fillStyle = "#f7f8fa";
+    ctx.fillStyle = duplijeu ? "#cfe2f0" : "#f7f8fa";
     ctx.fillRect(0, 0, W, H);
     // Titre
     ctx.fillStyle = "#002E44";
@@ -2019,8 +2021,15 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(`${opts.gameName || "Partie"} — Coup ${opts.moveNo || ""}`, PAD, PAD + TITLE_H / 2);
-    // Plateau
-    const COLORS = {
+    // Couleurs du plateau adaptées au thème
+    const COLORS = duplijeu ? {
+      normal: "#ffffff",
+      dl:     "#a4d8e1",
+      tl:     "#3a8db5",
+      dw:     "#f0a8a8",
+      tw:     "#cc4040",
+      center: "#f0a8a8",   // rose comme DupliJeu (étoile sur fond rose)
+    } : {
       normal: "#ede4ce",
       dl:     "#a4d8e1",
       tl:     "#3a8db5",
@@ -2043,13 +2052,13 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
         const x = boardX + c * CELL, y = boardY + r * CELL;
         ctx.fillStyle = COLORS[cls];
         ctx.fillRect(x, y, CELL, CELL);
-        ctx.strokeStyle = "#cbd2d8";
+        ctx.strokeStyle = duplijeu ? "#b3c1ce" : "#cbd2d8";
         ctx.lineWidth = 1;
         ctx.strokeRect(x + .5, y + .5, CELL - 1, CELL - 1);
         // Étoile sur le centre
         if (isCenter) {
-          ctx.fillStyle = "#002E44";
-          ctx.font = "20px serif";
+          ctx.fillStyle = "#111";
+          ctx.font = `${Math.round(CELL * 0.5)}px serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText("★", x + CELL / 2, y + CELL / 2);
@@ -2057,23 +2066,28 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
         // Lettre posée
         const cell = board[r][c];
         if (cell) {
-          // Fond jeton
-          ctx.fillStyle = "#f5d97a";
-          const m = 3;
+          // Fond jeton (selon thème)
+          const tileBg     = duplijeu ? "#d8b975" : "#f5d97a";
+          const tileBorder = duplijeu ? "#000"    : "#8a6a1f";
+          const tileText   = duplijeu ? "#111"    : "#1f2a2e";
+          const tileValue  = duplijeu ? "#5a4a1f" : "#5a4a1f";
+          const tileFontFamily = duplijeu ? "'Inter', system-ui, sans-serif" : "Georgia, serif";
+          ctx.fillStyle = tileBg;
+          const m = duplijeu ? 1 : 3;
           ctx.fillRect(x + m, y + m, CELL - 2 * m, CELL - 2 * m);
-          ctx.strokeStyle = "#8a6a1f";
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = tileBorder;
+          ctx.lineWidth = duplijeu ? 0.5 : 1.5;
           ctx.strokeRect(x + m + .5, y + m + .5, CELL - 2 * m - 1, CELL - 2 * m - 1);
           // Lettre
-          ctx.fillStyle = cell.isBlank ? "#c8202a" : "#1f2a2e";
-          ctx.font = "700 28px Georgia, serif";
+          ctx.fillStyle = cell.isBlank ? "#c8202a" : tileText;
+          ctx.font = `700 28px ${tileFontFamily}`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(cell.letter, x + CELL / 2, y + CELL / 2 + 2);
           // Valeur en exposant
           if (!cell.isBlank) {
-            ctx.fillStyle = "#5a4a1f";
-            ctx.font = "600 10px Georgia, serif";
+            ctx.fillStyle = tileValue;
+            ctx.font = `600 10px ${tileFontFamily}`;
             ctx.textAlign = "right";
             ctx.textBaseline = "bottom";
             ctx.fillText(String(LETTER_VALUE[cell.letter] ?? ""), x + CELL - 6, y + CELL - 4);
@@ -2093,22 +2107,27 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText("Tirage", PAD, rackY + TH / 2);
+    // Jetons du tirage (selon thème)
+    const tileBg     = duplijeu ? "#d8b975" : "#f5d97a";
+    const tileBorder = duplijeu ? "#000"    : "#8a6a1f";
+    const tileText   = duplijeu ? "#111"    : "#1f2a2e";
+    const tileFontFamily = duplijeu ? "'Inter', system-ui, sans-serif" : "Georgia, serif";
     letters.forEach((L, i) => {
       const x = tilesX + i * (TW + TGAP);
       const y = rackY;
-      ctx.fillStyle = "#f5d97a";
+      ctx.fillStyle = tileBg;
       ctx.fillRect(x, y, TW, TH);
-      ctx.strokeStyle = "#8a6a1f";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = tileBorder;
+      ctx.lineWidth = duplijeu ? 0.5 : 1.5;
       ctx.strokeRect(x + .5, y + .5, TW - 1, TH - 1);
-      ctx.fillStyle = L === "?" ? "#c8202a" : "#1f2a2e";
-      ctx.font = "700 34px Georgia, serif";
+      ctx.fillStyle = L === "?" ? "#c8202a" : tileText;
+      ctx.font = `700 34px ${tileFontFamily}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(L === "?" ? "?" : L, x + TW / 2, y + TH / 2);
       if (L !== "?") {
         ctx.fillStyle = "#5a4a1f";
-        ctx.font = "600 11px Georgia, serif";
+        ctx.font = `600 11px ${tileFontFamily}`;
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
         ctx.fillText(String(LETTER_VALUE[L] ?? ""), x + TW - 6, y + TH - 5);
