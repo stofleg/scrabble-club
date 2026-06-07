@@ -1388,7 +1388,11 @@ function placeTopAndAdvance(playerScore) {
 }
 
 function revealTop() {
-  if (!state.started || !state.topMove) return;
+  if (!state.started) {
+    flashFeedback("error", "Partie non démarrée", "Appuie sur ✓ ou « Démarrer » pour lancer la partie.");
+    return;
+  }
+  if (!state.topMove) return;
   state.chronoPenalty += 20;
   // Évaluer le pending courant
   let pendingScore = 0;
@@ -1636,6 +1640,21 @@ function applyMobileLayout() {
   document.body.dataset.mobileLayout = "1";
 }
 applyMobileLayout();
+
+// Empêcher le double-tap zoom sur iOS Safari (qui ignore parfois user-scalable=no).
+// On preventDefault sur le 2e touchend si moins de 350 ms s'est écoulé.
+if (window.matchMedia("(max-width: 700px)").matches) {
+  let _lastTap = 0;
+  document.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - _lastTap < 350) e.preventDefault();
+    _lastTap = now;
+  }, { passive: false });
+  // Désactiver le gesture pinch-to-zoom de Safari iOS
+  document.addEventListener("gesturestart", (e) => e.preventDefault());
+  document.addEventListener("gesturechange", (e) => e.preventDefault());
+  document.addEventListener("gestureend", (e) => e.preventDefault());
+}
 
 
 async function initGame() {

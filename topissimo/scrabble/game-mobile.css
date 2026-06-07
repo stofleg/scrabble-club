@@ -109,10 +109,13 @@
   .info-bar.two-sections .item .label { font-size: .65rem; }
   .info-bar.two-sections .item .value { font-size: 1.15rem; }
 
-  /* ----- C : feedback (pleine largeur, 2 lignes max) ----- */
+  /* ----- C : feedback (pleine largeur, HAUTEUR FIXE → layout stable) ----- */
   .feedback, .feedback[hidden] {
     display: flex !important;
-    flex: 0 0 auto;
+    flex: 0 0 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
     align-items: center;
     padding: 4px 10px !important;
     margin: 0 !important;
@@ -121,9 +124,6 @@
     border-radius: 0;
     box-shadow: none;
     overflow: hidden;
-    /* hauteur max = 2 lignes de texte (~ 1.2rem × 2 + padding) */
-    max-height: calc(2 * 1.1em + 8px);
-    min-height: 0 !important;
   }
   .feedback .detail, .feedback .top-reveal { display: none; }
   .feedback .title {
