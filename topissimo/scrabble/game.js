@@ -1156,6 +1156,10 @@ function validate() {
       nextMove();
       return;
     }
+    // DEBUG : trace si le mot ressemble au top mais isotop n'a pas matché
+    console.log("[isotop check] move.word =", JSON.stringify(move.word),
+                "| isotopWords =", JSON.stringify(isotopWords),
+                "| topScore =", topScore);
   }
   // Règle FFSC : si le joker a un homonyme (même lettre) dans le mot, on permute
   // automatiquement vers la combinaison la plus avantageuse en points.
