@@ -2680,12 +2680,12 @@ window.openSheet = () => {
   const clickable = review.active;   // permettre le saut à un coup en mode review
   const rows = state.history.map((h, i) => {
     const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
-    // Surbrillance des tops ratés (giveup ou timeout)
+    // Surbrillance des tops non-trouvés (timeout = temps écoulé OU abandon)
     const isMiss = h.status === "giveup" || h.status === "timeout";
     const rowClass = isMiss ? "sheet-miss" : "";
-    // Pas d'icône timeout ni de mention "timeout" → on les regroupe avec "raté"
-    const statusIcon = { top: "🏆", giveup: "🏳️" }[h.status] || (isMiss ? "🏳️" : "");
-    const statusLabel = h.status === "top" ? "top" : isMiss ? "raté" : h.status;
+    // Icônes distinctes : timeout = ⏱ chrono · giveup (voir le coup / abandon) = 🏳️ drapeau blanc
+    const statusIcon = { top: "🏆", giveup: "🏳️", timeout: "⏱" }[h.status] || "";
+    const statusLabel = { top: "top", giveup: "abandon", timeout: "temps écoulé" }[h.status] || h.status;
     const played = h.played
       ? `${h.played} (${h.playerScore})`
       : `<em>—</em>`;
