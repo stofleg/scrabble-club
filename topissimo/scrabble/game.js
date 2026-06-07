@@ -1944,7 +1944,7 @@ async function shareReviewSnapshot() {
       await navigator.share({
         files: [file],
         title: `${gameName} — Coup ${moveNo}`,
-        text: `Tirage : ${rack}  —  Quel est ton meilleur coup ?`,
+        text: `Quel est le top sur ce coup ?`,
       });
       return;
     } catch (e) { /* user a annulé : on retombe sur le téléchargement */ }
