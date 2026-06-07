@@ -100,6 +100,9 @@
     <div class="review-line top"><span class="label">Top</span><span class="val" id="rvTop">—</span></div>
     <div class="review-line played"><span class="label">Toi</span><span class="val" id="rvPlayed">—</span></div>
     <div class="review-line neg"><span class="label">Négatif</span><span class="val" id="rvNeg">—</span></div>
+    <div style="margin-top:10px">
+      <button class="btn small" id="rvShare" data-tip="Partage la position + le tirage (sans le top)">📤 Partager</button>
+    </div>
     <h4 style="margin:14px 0 6px;font-size:.85rem;color:#5a6a73;text-transform:uppercase;letter-spacing:.05em">Autres solutions valides</h4>
     <div class="review-solutions" id="rvSolutions"></div>
       </div>
@@ -160,6 +163,13 @@
     <div class="setting">
       <label for="optTimePerMove">Temps par coup (0 = illimité)</label>
       <input type="number" id="optTimePerMove" min="0" max="600" step="5" value="0" style="width:80px"> s
+    </div>
+    <div class="setting" style="display:block">
+      <label for="optChronoType" style="margin-bottom:6px">Type de chrono</label>
+      <select id="optChronoType" style="width:100%">
+        <option value="challenge">Chrono Challenge (rouge dans les 10 dernières s)</option>
+        <option value="zen">Chrono Zen (sans changement de couleur)</option>
+      </select>
     </div>
     <div class="setting">
       <button class="btn secondary" onclick="restartGame()">Nouvelle partie</button>

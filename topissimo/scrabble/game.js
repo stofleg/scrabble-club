@@ -24,7 +24,7 @@
 // ============================================================
 
 import {
-  emptyBoard, BOARD_BONUSES, BOARD_SIZE, LETTER_VALUE, LETTER_BAG,
+  emptyBoard, BOARD_BONUSES, BOARD_SIZE, CENTER, LETTER_VALUE, LETTER_BAG,
   VOWELS, drawForDuplicate, scoreMove, applyMove,
   bagTotalVowels, bagTotalConsonants, GAME_MODES, modeDisplayName,
 } from "./engine.js";
@@ -96,6 +96,7 @@ function loadSettings() {
     rackPos: "bottom", sortRack: false, showCoords: true,
     timePerMove: 0, gameMode: "duplicate", withJoker: false,
     colorTheme: "classic",
+    chronoType: "challenge",   // "challenge" (rouge dans les 10 dernières s) | "zen" (pas de changement)
   };
   try {
     return Object.assign(defaults, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
@@ -125,6 +126,7 @@ async function saveSettingsToSupabase() {
     sortRack: state.settings.sortRack,
     showCoords: state.settings.showCoords,
     colorTheme: state.settings.colorTheme,
+    chronoType: state.settings.chronoType,
   };
   await window._sb.from("players").update({ settings: persisted }).eq("id", pid);
 }
@@ -592,7 +594,10 @@ function renderMoveTimer() {
   if (label) label.textContent = `Coup ${state.moveNo}`;
   if (state.settings.timePerMove > 0 && state.started && !state.chronoFinal) {
     el.textContent = `${state.moveTimeLeft}s`;
-    chip.classList.toggle("danger", state.moveTimeLeft <= 10);
+    // Chrono Challenge : la chip passe en rouge dans les 10 dernières secondes.
+    // Chrono Zen : pas de changement de couleur, même apparence du début à la fin.
+    const zen = state.settings.chronoType === "zen";
+    chip.classList.toggle("danger", !zen && state.moveTimeLeft <= 10);
     chip.style.display = "";
   } else {
     chip.style.display = "none";
@@ -1558,6 +1563,7 @@ window.openSettings = () => {
   $("#optSortRack").checked = state.settings.sortRack;
   $("#optShowCoords").checked = state.settings.showCoords;
   $("#optColorTheme").value = state.settings.colorTheme || "classic";
+  $("#optChronoType").value = state.settings.chronoType || "challenge";
   $("#optTimePerMove").value = state.settings.timePerMove;
   $("#settings").hidden = false;
 };
@@ -1570,6 +1576,7 @@ window.closeSettings = () => {
   state.settings.sortRack = $("#optSortRack").checked;
   state.settings.showCoords = $("#optShowCoords").checked;
   state.settings.colorTheme = $("#optColorTheme").value || "classic";
+  state.settings.chronoType = $("#optChronoType").value || "challenge";
   state.settings.timePerMove = +$("#optTimePerMove").value || 0;
   saveSettings();
   saveSettingsToSupabase().catch(() => {});   // sync compte (silencieux si pas connecté ou pas de colonne)
@@ -1912,6 +1919,171 @@ function computeLastPlacedCells(boardBefore, mv) {
   return cells;
 }
 
+// Génère une capture (canvas) de la position au coup courant — SANS le top
+// visible sur la grille — avec le tirage en-dessous. Tente d'utiliser
+// navigator.share (mobile / desktop compatible), sinon télécharge l'image.
+async function shareReviewSnapshot() {
+  if (!review.active || !review.game) return;
+  const moves = review.game.moves;
+  const idx = review.step - 1;
+  const m = moves[idx];
+  if (!m) return;
+  // État du plateau AVANT le coup courant (donc sans la solution du coup en review)
+  let board = emptyBoard();
+  for (let i = 0; i < idx; i++) board = applyMove(board, moves[i].top);
+  const rack = m.rack || "";
+  const moveNo = m.moveNo || review.step;
+  const gameName = review.game.name || "Partie";
+
+  const blob = await renderSnapshotToBlob(board, rack, { moveNo, gameName });
+  if (!blob) return;
+  const file = new File([blob], `topissimo-coup-${moveNo}.png`, { type: "image/png" });
+  // Web Share Level 2 (mobile + Safari/Chrome desktop récents)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: `${gameName} — Coup ${moveNo}`,
+        text: `Tirage : ${rack}  —  Quel est ton meilleur coup ?`,
+      });
+      return;
+    } catch (e) { /* user a annulé : on retombe sur le téléchargement */ }
+  }
+  // Fallback : téléchargement
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `topissimo-coup-${moveNo}.png`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+function renderSnapshotToBlob(board, rack, opts = {}) {
+  return new Promise((resolve) => {
+    const CELL = 56;          // px par case dans la capture
+    const PAD = 16;
+    const TITLE_H = 40;
+    const RACK_H = 80;
+    const W = PAD * 2 + CELL * BOARD_SIZE;
+    const H = PAD + TITLE_H + CELL * BOARD_SIZE + 16 + RACK_H + PAD;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d");
+    // Fond
+    ctx.fillStyle = "#f7f8fa";
+    ctx.fillRect(0, 0, W, H);
+    // Titre
+    ctx.fillStyle = "#002E44";
+    ctx.font = "600 18px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${opts.gameName || "Partie"} — Coup ${opts.moveNo || ""}`, PAD, PAD + TITLE_H / 2);
+    // Plateau
+    const COLORS = {
+      normal: "#ede4ce",
+      dl:     "#a4d8e1",
+      tl:     "#3a8db5",
+      dw:     "#f0a8a8",
+      tw:     "#cc4040",
+      center: "#FFDD00",
+    };
+    const boardX = PAD;
+    const boardY = PAD + TITLE_H;
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const bonus = BOARD_BONUSES[r][c];
+        const isCenter = r === CENTER && c === CENTER;
+        let cls = "normal";
+        if (isCenter) cls = "center";
+        else if (bonus === 2) cls = "dl";
+        else if (bonus === 3) cls = "tl";
+        else if (bonus === 22) cls = "dw";
+        else if (bonus === 33) cls = "tw";
+        const x = boardX + c * CELL, y = boardY + r * CELL;
+        ctx.fillStyle = COLORS[cls];
+        ctx.fillRect(x, y, CELL, CELL);
+        ctx.strokeStyle = "#cbd2d8";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + .5, y + .5, CELL - 1, CELL - 1);
+        // Étoile sur le centre
+        if (isCenter) {
+          ctx.fillStyle = "#002E44";
+          ctx.font = "20px serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("★", x + CELL / 2, y + CELL / 2);
+        }
+        // Lettre posée
+        const cell = board[r][c];
+        if (cell) {
+          // Fond jeton
+          ctx.fillStyle = "#f5d97a";
+          const m = 3;
+          ctx.fillRect(x + m, y + m, CELL - 2 * m, CELL - 2 * m);
+          ctx.strokeStyle = "#8a6a1f";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x + m + .5, y + m + .5, CELL - 2 * m - 1, CELL - 2 * m - 1);
+          // Lettre
+          ctx.fillStyle = cell.isBlank ? "#c8202a" : "#1f2a2e";
+          ctx.font = "700 28px Georgia, serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(cell.letter, x + CELL / 2, y + CELL / 2 + 2);
+          // Valeur en exposant
+          if (!cell.isBlank) {
+            ctx.fillStyle = "#5a4a1f";
+            ctx.font = "600 10px Georgia, serif";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(String(LETTER_VALUE[cell.letter] ?? ""), x + CELL - 6, y + CELL - 4);
+          }
+        }
+      }
+    }
+    // Tirage (rack) en dessous
+    const rackY = boardY + CELL * BOARD_SIZE + 16;
+    const letters = rack.split("");
+    const TW = 60, TH = 70, TGAP = 6;
+    const tilesTotalW = letters.length * TW + (letters.length - 1) * TGAP;
+    const tilesX = (W - tilesTotalW) / 2;
+    // Label "Tirage :"
+    ctx.fillStyle = "#5a6a73";
+    ctx.font = "500 14px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Tirage", PAD, rackY + TH / 2);
+    letters.forEach((L, i) => {
+      const x = tilesX + i * (TW + TGAP);
+      const y = rackY;
+      ctx.fillStyle = "#f5d97a";
+      ctx.fillRect(x, y, TW, TH);
+      ctx.strokeStyle = "#8a6a1f";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x + .5, y + .5, TW - 1, TH - 1);
+      ctx.fillStyle = L === "?" ? "#c8202a" : "#1f2a2e";
+      ctx.font = "700 34px Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(L === "?" ? "?" : L, x + TW / 2, y + TH / 2);
+      if (L !== "?") {
+        ctx.fillStyle = "#5a4a1f";
+        ctx.font = "600 11px Georgia, serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(String(LETTER_VALUE[L] ?? ""), x + TW - 6, y + TH - 5);
+      }
+    });
+    // Filigrane
+    ctx.fillStyle = "#97a4ab";
+    ctx.font = "500 12px Inter, system-ui, sans-serif";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillText("gamestof.fr · Topissimo", W - PAD, H - PAD / 2);
+    cv.toBlob((blob) => resolve(blob), "image/png", 0.95);
+  });
+}
+
 function renderReviewSolutions(idx) {
   const div = $("#rvSolutions");
   const moves = review.game.moves;
@@ -1966,6 +2138,8 @@ $("#rvFirst").onclick = () => { review.step = 1; renderReviewStep(); };
 $("#rvPrev").onclick  = () => { review.step--;     renderReviewStep(); };
 $("#rvNext").onclick  = () => { review.step++;     renderReviewStep(); };
 $("#rvLast").onclick  = () => { review.step = review.game?.moves.length || 1; renderReviewStep(); };
+const _btnShare = $("#rvShare");
+if (_btnShare) _btnShare.onclick = () => shareReviewSnapshot();
 document.addEventListener("keydown", (e) => {
   if (!review.active) return;
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
