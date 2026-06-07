@@ -193,6 +193,7 @@ function renderBoard() {
         const tcls = ["tile"];
         if (tile.isBlank) tcls.push("blank");
         if (tile.pending) tcls.push("pending");
+        if (tile.invalid) tcls.push("invalid");
         const tval = tile.isBlank ? "" : LETTER_VALUE[tile.letter];
         // Les tuiles "pending" sont draggables (pour les déplacer)
         const dragAttr = tile.pending ? `draggable="true" data-pending-r="${r}" data-pending-c="${c}"` : "";
@@ -247,7 +248,7 @@ function renderBoard() {
 function cellTile(r, c) {
   const pending = state.pending.find(p => p.row === r && p.col === c);
   if (pending) {
-    return { letter: pending.letter, isBlank: pending.isBlank, pending: true };
+    return { letter: pending.letter, isBlank: pending.isBlank, pending: true, invalid: !!pending.invalid };
   }
   return state.board[r][c];
 }
@@ -1213,7 +1214,9 @@ function validate() {
   const result = bestJokerVariant(state.board, move, state.dict, { bonuses: mode.bonuses });
   // bestJokerVariant peut avoir modifié move.blanks ; on relit ici.
   if (result.errors.length) {
-    showFeedback("error", "Coup invalide", result.errors.join("<br>"));
+    // Coup invalide : on flash le mot en rouge sur le plateau (1s), puis on
+    // renvoie les tuiles au chevalet et on restaure le message précédent.
+    flashInvalidWord(result.errors.join("<br>"));
     return;
   }
   // Vérification mode 7sur8 / 7et8 / 789 : nb de tuiles posées
@@ -1305,6 +1308,31 @@ function bestJokerVariant(board, move, dict, opts) {
   }
   move.blanks = bestBlanks;
   return best;
+}
+
+// Coup invalide : fait clignoter les tuiles posées en rouge pendant 1s puis les
+// renvoie au chevalet et restaure le feedback précédent (meilleur essai ou vide).
+function flashInvalidWord(detail) {
+  // 1) Snapshot du feedback courant AVANT d'écraser
+  const prevTitle  = state.bestAttempt
+    ? `Meilleur essai : <strong>${state.bestAttempt.word}</strong> = ${state.bestAttempt.score} pts`
+    : "";
+  const prevKind = state.bestAttempt ? "miss" : "";
+
+  // 2) Marquer les pending tiles comme invalides → CSS les passe en rouge
+  state.pending.forEach(p => p.invalid = true);
+  renderBoard();
+  showFeedback("error", "Coup invalide", detail);
+
+  // 3) Au bout d'1 seconde : retirer les pending et restaurer le feedback
+  setTimeout(() => {
+    state.pending.forEach(p => delete p.invalid);
+    clearPending();
+    renderRack();
+    renderBoard();
+    if (prevTitle) showFeedback(prevKind, prevTitle);
+    else hideFeedback();
+  }, 1000);
 }
 
 function buildMoveFromPending() {

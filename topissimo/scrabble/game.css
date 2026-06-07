@@ -592,6 +592,17 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   background: linear-gradient(135deg, #e0f5e0, var(--tile-pending) 50%, var(--tile-pending-2));
   border-color: #5a9a5a;
 }
+/* Coup invalide : tuiles posées passent en rouge avant d'être retirées */
+.board td .tile.pending.invalid {
+  background: linear-gradient(135deg, #ffd0d0, #ff8888 50%, #d04040) !important;
+  border-color: #a02525 !important;
+  color: #fff !important;
+  animation: invalid-pulse 0.4s ease-in-out 2;
+}
+@keyframes invalid-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
 
 /* ---------- CHEVALET ---------- */
 .rack {
