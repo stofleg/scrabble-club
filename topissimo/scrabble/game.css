@@ -785,8 +785,28 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* (Le hover persistant des tooltips a été retiré au profit du système
-   click+timeout géré en JS et de la classe .show-tip ci-dessus, plus propre.) */
+/* PC (souris) : info-bulle au survol — uniquement sur devices avec hover réel
+   (les mobiles ont (hover: none) donc cette règle ne s'applique pas pour eux). */
+@media (hover: hover) {
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--petrol);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: .78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,30,45,.35);
+  }
+  [data-tip]:hover { position: relative; }
+}
 
 #settings .setting {
   display: flex;

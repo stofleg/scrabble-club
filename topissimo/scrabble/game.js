@@ -2676,6 +2676,24 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
+
+// Ctrl+F (ou Cmd+F) : ouvrir la feuille de route
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "f" || e.key === "F")) {
+    e.preventDefault();
+    const btn = document.getElementById("btnSheet");
+    if (btn) btn.click();
+  }
+});
+
+// Ctrl+P (ou Cmd+P) : partager la capture
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "p" || e.key === "P")) {
+    e.preventDefault();
+    const btn = document.getElementById("btnShare");
+    if (btn) btn.click();
+  }
+});
 $$(".annot-btn[data-tool]").forEach(b => {
   b.onclick = () => setAnnotTool(b.dataset.tool || "");
 });
