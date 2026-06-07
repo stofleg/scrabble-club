@@ -170,7 +170,7 @@
     gap: 0;
     align-items: stretch;
     justify-content: space-between;
-    margin: 0 !important;
+    margin: 6px 0 6px !important;   /* léger gap au-dessus (grille) et en-dessous (rack) */
     padding: 0 !important;
     width: 100vw;
   }
