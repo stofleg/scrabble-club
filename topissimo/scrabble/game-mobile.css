@@ -68,17 +68,21 @@
     gap: 6px;
     padding: 8px 10px;
     background: #fff;
-    border: 1px solid #cdd6dc;
-    border-radius: 10px;
+    border-top: 1px solid #cdd6dc;
+    border-bottom: 1px solid #cdd6dc;
     align-items: center;
+    justify-content: center;
+    /* Overlay POSITIONNÉ SUR LE CHEVALET (zone G), juste sous la rangée
+       de pictos (F). On part du bas et on s'étend vers le haut autant que
+       nécessaire — les pictos restent au-dessus, donc cliquables à nouveau
+       pour fermer la palette. */
     position: fixed;
-    left: 6px;
-    right: 6px;
-    /* juste au-dessus du rack-row (≈ 60px de hauteur en bas + safe-area) */
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
     margin: 0;
     z-index: 1000;
-    box-shadow: 0 6px 24px rgba(0,30,45,.3);
+    box-shadow: 0 -4px 16px rgba(0,30,45,.25);
   }
   body.show-annot .annot-toolbar .annot-label { font-size: .75rem; margin-right: 4px; }
   /* Bouton Annoter actif : fond jaune persistant */
