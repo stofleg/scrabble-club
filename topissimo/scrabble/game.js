@@ -1670,6 +1670,7 @@ async function initGame() {
   if (moveTimer) { clearInterval(moveTimer); moveTimer = null; }
   // Reset UI review s'il était activé
   review.active = false;
+  document.body.classList.remove("in-review");
   review.game = null;
   review.result = null;
   review.historyByMove = {};
@@ -1796,6 +1797,7 @@ async function enterTrainingReviewMode(id) {
     total_time_seconds: t.total_time_seconds, details: t.history,
   };
   review.active = true;
+  document.body.classList.add("in-review");
   review.game = fakeGame;
   review.result = fakeResult;
   review.historyByMove = {};
@@ -1829,6 +1831,7 @@ async function enterReviewMode(id) {
   }
   // Init du mode review
   review.active = true;
+  document.body.classList.add("in-review");
   review.game = game;
   review.result = result;
   review.historyByMove = {};
@@ -2404,6 +2407,7 @@ window.enterLocalReview = function() {
     details: state.history,
   };
   review.active = true;
+  document.body.classList.add("in-review");
   review.game = fakeGame;
   review.result = fakeResult;
   review.historyByMove = {};
