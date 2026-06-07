@@ -161,61 +161,59 @@
   body.theme-duplijeu .board td.tw::after,
   body.theme-duplijeu .board td.center::after { display: none; }
 
-  /* ----- F : pictos (toujours visibles) ----- */
+  /* ----- F : ⌫ + pictos + ✓ sur une seule ligne ----- */
   #actionRowInGame, #actionRowInGame[hidden] {
     display: flex !important;
-    flex: 0 0 30px !important;
-    height: 30px !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
     gap: 4px;
+    align-items: stretch;
     justify-content: center;
     margin: 0 !important;
+    padding: 0 4px;
+  }
+  #actionRowInGame .picto-group {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    align-items: stretch;
+    min-width: 0;
   }
   #actionRowInGame .btn, #actionRowInGame .btn[hidden] {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    padding: 4px 8px;
-    min-width: 36px;
+    padding: 4px 6px;
+    min-width: 32px;
+    height: 36px;
     touch-action: manipulation;
   }
   #actionRowInGame .btn .lbl { display: none; }
-  #actionRowInGame .btn .ico { font-size: 1rem; }
-
-  /* ----- Nouvelle zone : rack-controls (⌫ + ✓ alignés sur 1re / dernière tuile) ----- */
-  /* Variable --rack-size mise à jour par JS (7, 8 ou 9 selon le mode) */
-  .rack-controls {
-    flex: 0 0 30px;
-    width: 100vw;
-    margin: 0;
+  #actionRowInGame .btn .ico { font-size: 1.05rem; }
+  /* ⌫ et ✓ : carrés colorés, conservent leur look */
+  #actionRowInGame .btn-backspace,
+  #actionRowInGame .btn-validate {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2rem;
     padding: 0;
-    display: grid !important;
-    grid-template-columns: repeat(var(--rack-size, 7), 1fr);
-    gap: 1px;
-  }
-  .rack-controls .btn-backspace { grid-column: 1; }
-  .rack-controls .btn-validate  { grid-column: -2 / -1; }
-  .rack-controls .btn-backspace,
-  .rack-controls .btn-validate {
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,30,45,.2);
+    touch-action: manipulation;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    border: none;
-    border-radius: 6px 6px 0 0;   /* arrondis seulement en haut (collés au rack) */
-    font-size: 1.1rem;
-    padding: 0;
-    margin: 0;
-    width: auto;
-    height: 30px;
-    cursor: pointer;
-    box-shadow: 0 -1px 4px rgba(0,30,45,.15);
-    touch-action: manipulation;
   }
-  .btn-backspace { background: #002E44; color: #ffdd00; }
-  .btn-backspace:active { background: #001E2D; }
-  .btn-validate  { background: #2c7a3b; color: #fff; }
-  .btn-validate:active { background: #1f5a2a; }
+  #actionRowInGame .btn-backspace { background: #002E44; color: #ffdd00; }
+  #actionRowInGame .btn-backspace:active { background: #001E2D; }
+  #actionRowInGame .btn-validate  { background: #2c7a3b; color: #fff; }
+  #actionRowInGame .btn-validate:active { background: #1f5a2a; }
 
-  /* ----- G : rack = N tuiles carrées qui remplissent 100vw ----- */
+  /* ----- G : rack = N tuiles carrées qui remplissent 100vw (gap 1px) ----- */
   .rack-row {
     flex: none !important;
     width: 100vw;

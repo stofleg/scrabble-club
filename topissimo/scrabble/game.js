@@ -1628,11 +1628,9 @@ function applyMobileLayout() {
   const review        = rightCol.querySelector(".review-panel");
   const bag           = rightCol.querySelector(".bag-display");
   const board         = gameWrap.querySelector(".board");
-  const rackControls  = gameWrap.querySelector(".rack-controls");
   const rackRow       = gameWrap.querySelector(".rack-row");
-  // Ordre mobile : title → info → timer → preStart → feedback → board → pictos
-  //              → rack-controls (⌫ + ✓) → rack-row → review → bag
-  [titleRow, infoBar, timerChip, preStartRow, feedback, board, inGameRow, rackControls, rackRow, review, bag]
+  // Ordre mobile : title → info → timer → preStart → feedback → board → pictos+⌫+✓ → rack
+  [titleRow, infoBar, timerChip, preStartRow, feedback, board, inGameRow, rackRow, review, bag]
     .filter(Boolean)
     .forEach(el => layout.appendChild(el));
   document.body.dataset.mobileLayout = "1";
