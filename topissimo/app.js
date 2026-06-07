@@ -1425,13 +1425,20 @@ $("#authForm").addEventListener("submit", async (e) => {
   }
 });
 
-// Gestion du clic sur le lien de reset (hash dans l'URL)
-window.addEventListener("hashchange", checkRecoveryHash);
+// Gestion du clic sur le lien de reset (hash OU query dans l'URL).
+// 1) Au chargement : on regarde si l'URL contient un token de recovery
+// 2) En cours de session : on écoute l'événement PASSWORD_RECOVERY
+// 3) hashchange : au cas où l'URL change après le 1er rendu
 function checkRecoveryHash() {
-  if (location.hash.includes("type=recovery")) {
+  const h = location.hash || "";
+  const q = location.search || "";
+  if (h.includes("type=recovery") || q.includes("type=recovery")) {
     $("#resetPwModal").hidden = false;
   }
 }
+window.addEventListener("hashchange", checkRecoveryHash);
+window.addEventListener("DOMContentLoaded", checkRecoveryHash);
+checkRecoveryHash();   // dès l'import du script (au cas où DOMContentLoaded déjà fired)
 $("#setNewPasswordBtn").onclick = async () => {
   const pw = $("#newPassword").value;
   if (!pw || pw.length < 6) { $("#resetPwMsg").textContent = "Mot de passe trop court (min 6)."; return; }
@@ -1452,6 +1459,12 @@ window.logout = async () => {
 // Réagir aux changements de session
 sb.auth.onAuthStateChange((event, sess) => {
   session = sess;
+  // Supabase déclenche cet event quand l'utilisateur arrive depuis le lien
+  // de reset password → on ouvre directement la modale "définir nouveau mdp".
+  if (event === "PASSWORD_RECOVERY") {
+    $("#resetPwModal").hidden = false;
+    return;
+  }
   if (sess) onSignedIn();
   else onSignedOut();
 });
