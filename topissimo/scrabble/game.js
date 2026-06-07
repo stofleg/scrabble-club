@@ -1995,11 +1995,11 @@ function renderSnapshotToBlob(board, rack, opts = {}) {
         const bonus = BOARD_BONUSES[r][c];
         const isCenter = r === CENTER && c === CENTER;
         let cls = "normal";
-        if (isCenter) cls = "center";
-        else if (bonus === 2) cls = "dl";
-        else if (bonus === 3) cls = "tl";
-        else if (bonus === 22) cls = "dw";
-        else if (bonus === 33) cls = "tw";
+        if (isCenter)         cls = "center";
+        else if (bonus === "d") cls = "dl";
+        else if (bonus === "t") cls = "tl";
+        else if (bonus === "D") cls = "dw";
+        else if (bonus === "T") cls = "tw";
         const x = boardX + c * CELL, y = boardY + r * CELL;
         ctx.fillStyle = COLORS[cls];
         ctx.fillRect(x, y, CELL, CELL);
