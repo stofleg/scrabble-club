@@ -757,10 +757,12 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
 .joker-pick:hover, .joker-pick:focus-visible { transform: translateY(-1px); }
 .joker-pick:active { transform: translateY(1px); }
 
-/* Info-bulles non-persistantes : apparaissent au clic (classe .show-tip),
-   z-index très haut pour passer au-dessus de tout (grille, badges, etc.) */
+/* Info-bulles non-persistantes : apparaissent au clic (classe .show-tip).
+   On lève AUSSI le bouton parent à z-index très haut pendant l'affichage
+   pour qu'il batte les cases bonus (z-index:1) dans le contexte global. */
 [data-tip].show-tip {
   position: relative;
+  z-index: 9999;
 }
 [data-tip].show-tip::after {
   content: attr(data-tip);
@@ -788,6 +790,10 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
 /* PC (souris) : info-bulle au survol — uniquement sur devices avec hover réel
    (les mobiles ont (hover: none) donc cette règle ne s'applique pas pour eux). */
 @media (hover: hover) {
+  [data-tip]:hover {
+    position: relative;
+    z-index: 9999;
+  }
   [data-tip]:hover::after {
     content: attr(data-tip);
     position: absolute;

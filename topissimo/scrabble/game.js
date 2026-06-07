@@ -1656,6 +1656,20 @@ function applyMobileLayout() {
 }
 applyMobileLayout();
 
+// Détection plateforme : Mac (Cmd) vs Windows/Linux (Ctrl)
+const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || "");
+// Remplace dynamiquement les libellés "Ctrl/Cmd+X" en "Cmd+X" ou "Ctrl+X"
+// dans tous les attributs data-tip pour qu'ils collent à la plateforme du visiteur.
+document.querySelectorAll("[data-tip]").forEach(el => {
+  const tip = el.getAttribute("data-tip");
+  if (!tip) return;
+  // Pattern "Ctrl/Cmd+K" → "Ctrl+K" ou "Cmd+K" selon plateforme
+  const adapted = tip
+    .replace(/Ctrl\/Cmd\+/g, IS_MAC ? "Cmd+" : "Ctrl+")
+    .replace(/Cmd\/Ctrl\+/g, IS_MAC ? "Cmd+" : "Ctrl+");
+  if (adapted !== tip) el.setAttribute("data-tip", adapted);
+});
+
 // Info-bulles non-persistantes : sur clic d'un élément [data-tip], ajoute
 // .show-tip pendant 1 s puis l'enlève. Compatible avec l'action native du
 // bouton (les deux se produisent au même clic).
