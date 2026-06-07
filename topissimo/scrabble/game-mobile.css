@@ -161,16 +161,17 @@
   body.theme-duplijeu .board td.tw::after,
   body.theme-duplijeu .board td.center::after { display: none; }
 
-  /* ----- F : ⌫ + pictos + ✓ sur une seule ligne ----- */
+  /* ----- F : ⌫ ferré à gauche + pictos centrés + ✓ ferré à droite ----- */
   #actionRowInGame, #actionRowInGame[hidden] {
     display: flex !important;
     flex: 0 0 auto !important;
     height: auto !important;
-    gap: 4px;
+    gap: 0;
     align-items: stretch;
-    justify-content: center;
+    justify-content: space-between;
     margin: 0 !important;
-    padding: 0 4px;
+    padding: 0 !important;
+    width: 100vw;
   }
   #actionRowInGame .picto-group {
     flex: 1 1 auto;
