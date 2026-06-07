@@ -91,15 +91,21 @@ const state = {
   settings: loadSettings(),
 };
 
+// Préférences personnelles : 2 couches de persistance
+//  1. localStorage (navigateur, survit aux mises à jour de l'app et du SW)
+//  2. Supabase `players.settings` (source de vérité, restaurée à chaque login)
+// Toute nouvelle préférence ajoutée plus tard prend sa valeur par défaut
+// sans écraser les choix existants (Object.assign sur defaults).
 function loadSettings() {
   const defaults = {
     rackPos: "bottom", sortRack: false, showCoords: true,
     timePerMove: 0, gameMode: "duplicate", withJoker: false,
     colorTheme: "classic",
-    chronoType: "challenge",   // "challenge" (rouge dans les 10 dernières s) | "zen" (pas de changement)
+    chronoType: "challenge",
   };
   try {
-    return Object.assign(defaults, JSON.parse(localStorage.getItem("scrabbleSettings") || "{}"));
+    const local = JSON.parse(localStorage.getItem("scrabbleSettings") || "{}");
+    return Object.assign({}, defaults, local);
   } catch { return defaults; }
 }
 async function loadSettingsFromSupabase() {
@@ -108,6 +114,8 @@ async function loadSettingsFromSupabase() {
   if (!window._sb) await loadSupabaseClient();
   const { data, error } = await window._sb.from("players").select("settings").eq("id", pid).maybeSingle();
   if (error || !data?.settings) return;
+  // Merge sans écraser les nouvelles clés introduites par une mise à jour de l'app
+  // (les defaults de loadSettings ont déjà été appliqués).
   Object.assign(state.settings, data.settings);
   saveSettings();              // miroir local
   applyRackPos();
@@ -120,10 +128,11 @@ async function saveSettingsToSupabase() {
   const pid = +(localStorage.getItem("currentPlayerId") || 0);
   if (!pid) return;
   if (!window._sb) await loadSupabaseClient();
-  // On ne pousse que les préférences UI (pas la durée/mode imposés par un tournoi)
+  // Persiste UNIQUEMENT les préférences personnelles (pas les params de jeu
+  // qui peuvent être imposés par un tournoi : mode / joker / temps par coup).
   const persisted = {
-    rackPos: state.settings.rackPos,
-    sortRack: state.settings.sortRack,
+    rackPos:    state.settings.rackPos,
+    sortRack:   state.settings.sortRack,
     showCoords: state.settings.showCoords,
     colorTheme: state.settings.colorTheme,
     chronoType: state.settings.chronoType,
