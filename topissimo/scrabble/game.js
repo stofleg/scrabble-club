@@ -1926,6 +1926,7 @@ async function enterTrainingReviewMode(id) {
   };
   review.active = true;
   document.body.classList.add("in-review");
+  $("#bagDisplay") && ($("#bagDisplay").hidden = true);   // pas de sac en review
   review.game = fakeGame;
   review.result = fakeResult;
   review.historyByMove = {};
@@ -1960,6 +1961,7 @@ async function enterReviewMode(id) {
   // Init du mode review
   review.active = true;
   document.body.classList.add("in-review");
+  $("#bagDisplay") && ($("#bagDisplay").hidden = true);   // pas de sac en review
   review.game = game;
   review.result = result;
   review.historyByMove = {};
@@ -2593,6 +2595,7 @@ window.enterLocalReview = function() {
   };
   review.active = true;
   document.body.classList.add("in-review");
+  $("#bagDisplay") && ($("#bagDisplay").hidden = true);   // pas de sac en review
   review.game = fakeGame;
   review.result = fakeResult;
   review.historyByMove = {};
@@ -2677,19 +2680,24 @@ window.openSheet = () => {
   const clickable = review.active;   // permettre le saut à un coup en mode review
   const rows = state.history.map((h, i) => {
     const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
-    const statusIcon = { top: "🏆", giveup: "🏳️", timeout: "⏱" }[h.status] || "";
+    // Surbrillance des tops ratés (giveup ou timeout)
+    const isMiss = h.status === "giveup" || h.status === "timeout";
+    const rowClass = isMiss ? "sheet-miss" : "";
+    // Pas d'icône timeout ni de mention "timeout" → on les regroupe avec "raté"
+    const statusIcon = { top: "🏆", giveup: "🏳️" }[h.status] || (isMiss ? "🏳️" : "");
+    const statusLabel = h.status === "top" ? "top" : isMiss ? "raté" : h.status;
     const played = h.played
       ? `${h.played} (${h.playerScore})`
       : `<em>—</em>`;
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
-    return `<tr ${onclick}>
+    return `<tr class="${rowClass}" ${onclick}>
       <td>${h.moveNo}</td>
       <td><code>${h.rack}</code></td>
       <td>${h.top ? `${h.top.word} <span style="color:#888">${h.top.pos}</span>` : "—"}</td>
       <td style="text-align:right">${h.top?.score ?? "—"}</td>
       <td>${played}</td>
       <td style="text-align:right" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>
-      <td>${statusIcon} <span style="color:#888;font-size:.85em">${h.status}</span></td>
+      <td>${statusIcon} <span style="color:#888;font-size:.85em">${statusLabel}</span></td>
       <td style="text-align:right">${time}</td>
     </tr>`;
   }).join("");
