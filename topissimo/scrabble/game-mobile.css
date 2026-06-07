@@ -58,7 +58,34 @@
   .left-col, .right-col, .game-wrap { display: contents; }
 
   /* Éléments cachés sur mobile */
-  #actionRowPreStart, .annot-toolbar, .bag-display { display: none !important; }
+  #actionRowPreStart, .bag-display { display: none !important; }
+  /* Palette d'annotation : cachée par défaut. Apparait en OVERLAY flottant
+     au-dessus du rack quand body.show-annot est actif (ne pousse pas le layout). */
+  .annot-toolbar { display: none !important; }
+  body.show-annot .annot-toolbar {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #cdd6dc;
+    border-radius: 10px;
+    align-items: center;
+    position: fixed;
+    left: 6px;
+    right: 6px;
+    /* juste au-dessus du rack-row (≈ 60px de hauteur en bas + safe-area) */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+    margin: 0;
+    z-index: 1000;
+    box-shadow: 0 6px 24px rgba(0,30,45,.3);
+  }
+  body.show-annot .annot-toolbar .annot-label { font-size: .75rem; margin-right: 4px; }
+  /* Bouton Annoter actif : fond jaune persistant */
+  #btnAnnotate.active {
+    background: var(--yellow) !important;
+    color: var(--petrol-dark) !important;
+  }
 
   /* ----- A : title-row ----- */
   .title-row {

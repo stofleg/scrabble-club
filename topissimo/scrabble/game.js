@@ -2224,6 +2224,17 @@ if (_btnSheet) _btnSheet.onclick = () => {
   }
   openSheet();
 };
+// Bouton "Annoter" (mobile principalement) : toggle l'affichage de la palette
+// et l'état actif visuel du bouton.
+const _btnAnnotate = $("#btnAnnotate");
+if (_btnAnnotate) _btnAnnotate.onclick = () => {
+  const active = document.body.classList.toggle("show-annot");
+  _btnAnnotate.classList.toggle("active", active);
+  if (!active) {
+    // Sortie du mode annotation : on désélectionne l'outil
+    if (typeof setAnnotTool === "function") setAnnotTool("");
+  }
+};
 
 // Partage en jeu : état actuel du plateau + chevalet du joueur
 async function shareLiveSnapshot() {
