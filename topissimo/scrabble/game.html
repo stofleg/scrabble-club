@@ -71,6 +71,12 @@
         <button class="btn ghost small" id="btnRestart" data-tip="Nouvelle partie (Ctrl/Cmd+N)">
           <span class="ico">🔄</span><span class="lbl">Nouvelle partie</span>
         </button>
+        <button class="btn ghost small" id="btnSheet" data-tip="Feuille de route">
+          <span class="ico">📋</span><span class="lbl">Feuille de route</span>
+        </button>
+        <button class="btn ghost small" id="btnShare" data-tip="Partager (capture grille + tirage)">
+          <span class="ico">📤</span><span class="lbl">Partager</span>
+        </button>
       </div>
 
       <div class="annot-toolbar" id="annotToolbar" hidden>
@@ -104,9 +110,6 @@
     <div class="review-line top"><span class="label">Top</span><span class="val" id="rvTop">—</span></div>
     <div class="review-line played"><span class="label">Toi</span><span class="val" id="rvPlayed">—</span></div>
     <div class="review-line neg"><span class="label">Négatif</span><span class="val" id="rvNeg">—</span></div>
-    <div style="margin-top:10px">
-      <button class="btn small" id="rvShare" data-tip="Partage la position + le tirage (sans le top)">📤 Partager</button>
-    </div>
     <h4 style="margin:14px 0 6px;font-size:.85rem;color:#5a6a73;text-transform:uppercase;letter-spacing:.05em">Autres solutions valides</h4>
     <div class="review-solutions" id="rvSolutions"></div>
       </div>

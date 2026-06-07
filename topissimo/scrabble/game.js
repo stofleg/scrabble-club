@@ -2147,8 +2147,41 @@ $("#rvFirst").onclick = () => { review.step = 1; renderReviewStep(); };
 $("#rvPrev").onclick  = () => { review.step--;     renderReviewStep(); };
 $("#rvNext").onclick  = () => { review.step++;     renderReviewStep(); };
 $("#rvLast").onclick  = () => { review.step = review.game?.moves.length || 1; renderReviewStep(); };
-const _btnShare = $("#rvShare");
-if (_btnShare) _btnShare.onclick = () => shareReviewSnapshot();
+const _btnShare = $("#btnShare");
+if (_btnShare) _btnShare.onclick = () => {
+  if (review.active) shareReviewSnapshot();
+  else shareLiveSnapshot();
+};
+const _btnSheet = $("#btnSheet");
+if (_btnSheet) _btnSheet.onclick = () => {
+  if (!state.history?.length && !review.active) {
+    alert("Pas encore d'historique pour cette partie.");
+    return;
+  }
+  openSheet();
+};
+
+// Partage en jeu : état actuel du plateau + chevalet du joueur
+async function shareLiveSnapshot() {
+  if (!state.dict) return;
+  const rack = state.rack.map(t => t.letter).join("");
+  const moveNo = state.moveNo;
+  const gameName = state.prepared?.name || "Entraînement";
+  const blob = await renderSnapshotToBlob(state.board, rack, { moveNo, gameName });
+  if (!blob) return;
+  const file = new File([blob], `topissimo-coup-${moveNo}.png`, { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: `${gameName} — Coup ${moveNo}`, text: `Quel est le top sur ce coup ?` });
+      return;
+    } catch (e) {}
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `topissimo-coup-${moveNo}.png`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
 document.addEventListener("keydown", (e) => {
   if (!review.active) return;
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
