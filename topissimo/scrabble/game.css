@@ -577,7 +577,10 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   font-weight: 600;
   opacity: .8;
 }
-.tile.blank { color: #c8202a; }
+/* Joker posé : la lettre s'affiche EN ROUGE pour rappeler que c'est un joker.
+   !important pour battre les overrides de thème (ex. DupliJeu fixe color: #111). */
+.tile.blank,
+body.theme-duplijeu .tile.blank { color: #c8202a !important; }
 .tile.blank .val { display: none; }
 
 /* tuile dans le plateau */
