@@ -259,21 +259,8 @@
    ============================================================ */
 @media (max-width: 700px) {
   body.in-review { overflow: hidden !important; }
-  body.in-review .rack-row,
-  body.in-review .rack-controls { display: none !important; }
-  /* La grille n'occupe plus 100vw² mais flex:1 (s'adapte à l'espace restant) */
-  body.in-review .board, body.in-review.theme-duplijeu .board {
-    flex: 1 1 0 !important;
-    width: auto !important;
-    height: auto !important;
-    min-height: 0;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-  body.in-review .board table { width: auto; height: 100%; max-width: 100vw; max-height: 100%; }
-  body.in-review .board td { width: 100%; }   /* cellules dimensionnées par la table */
-  /* Le board en review : ratio carré, taille adaptée à l'espace dispo */
+  body.in-review .rack-row { display: none !important; }
+  /* La grille garde sa forme carrée 100vw² */
 
   /* Panel review : compact, fixe en haut, solutions scrollables */
   body.in-review .review-panel {
