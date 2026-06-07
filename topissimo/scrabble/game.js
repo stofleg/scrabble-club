@@ -1944,26 +1944,7 @@ async function shareReviewSnapshot() {
 
   const blob = await renderSnapshotToBlob(board, rack, { moveNo, gameName });
   if (!blob) return;
-  const file = new File([blob], `topissimo-coup-${moveNo}.png`, { type: "image/png" });
-  // Web Share Level 2 (mobile + Safari/Chrome desktop récents)
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: `${gameName} — Coup ${moveNo}`,
-        text: `Quel est le top sur ce coup ?`,
-      });
-      return;
-    } catch (e) { /* user a annulé : on retombe sur le téléchargement */ }
-  }
-  // Fallback : téléchargement
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `topissimo-coup-${moveNo}.png`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  await shareBlobOrFallback(blob, `${gameName} — Coup ${moveNo}`, `topissimo-coup-${moveNo}.png`);
 }
 
 function renderSnapshotToBlob(board, rack, opts = {}) {
@@ -2167,16 +2148,26 @@ async function shareLiveSnapshot() {
   const gameName = state.prepared?.name || "Entraînement";
   const blob = await renderSnapshotToBlob(state.board, rack, { moveNo, gameName });
   if (!blob) return;
-  const file = new File([blob], `topissimo-coup-${moveNo}.png`, { type: "image/png" });
+  await shareBlobOrFallback(blob, `${gameName} — Coup ${moveNo}`, `topissimo-coup-${moveNo}.png`);
+}
+
+// Tente le partage natif (Web Share API). Sur HTTPS, ouvre la modale système.
+// Sur HTTP (test local), tombe sur un download — pas un comportement souhaité,
+// donc on alerte plutôt avec un message clair.
+async function shareBlobOrFallback(blob, title, filename) {
+  const file = new File([blob], filename, { type: "image/png" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: `${gameName} — Coup ${moveNo}`, text: `Quel est le top sur ce coup ?` });
+      await navigator.share({ files: [file], title, text: `Quel est le top sur ce coup ?` });
       return;
-    } catch (e) {}
+    } catch (e) {
+      if (e.name === "AbortError") return;   // l'utilisateur a fermé la modale
+    }
   }
+  // Pas de Web Share API (HTTP, navigateur ancien, etc.) → on télécharge en dépannage
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = `topissimo-coup-${moveNo}.png`;
+  a.href = url; a.download = filename;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
 }
