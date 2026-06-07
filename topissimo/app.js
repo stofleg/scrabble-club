@@ -1422,12 +1422,15 @@ $("#authForm").addEventListener("submit", async (e) => {
       }
       return;
     } else if (authMode === "forgot") {
-      const { error } = await sb.auth.resetPasswordForEmail(email, {
+      // Normaliser : Supabase stocke les emails en minuscules → on aligne pour
+      // garantir que l'email tapé matche un utilisateur existant.
+      const normalizedEmail = email.toLowerCase().trim();
+      const { error } = await sb.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: window.location.origin + window.location.pathname,
       });
       if (error) throw error;
       msg.className = "auth-msg ok";
-      msg.textContent = "Email envoyé. Vérifie ta boîte de réception.";
+      msg.textContent = "Email envoyé. Vérifie ta boîte de réception (et tes spams).";
       return;
     }
   } catch (err) {
