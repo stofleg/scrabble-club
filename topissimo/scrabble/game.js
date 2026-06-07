@@ -1652,6 +1652,15 @@ window.openSettings = () => {
   $("#optColorTheme").value = state.settings.colorTheme || "classic";
   $("#optChronoType").value = state.settings.chronoType || "challenge";
   $("#optTimePerMove").value = state.settings.timePerMove;
+  // Si la partie est en cours, on verrouille les "Paramètres de jeu"
+  // (préférences perso restent modifiables).
+  const inGame = state.started && state.chronoFinal == null;
+  $("#optGameMode").disabled    = inGame;
+  $("#optWithJoker").disabled   = inGame;
+  $("#optTimePerMove").disabled = inGame;
+  // Indication visuelle
+  const lockMsg = $("#settingsLock");
+  if (lockMsg) lockMsg.hidden = !inGame;
   $("#settings").hidden = false;
 };
 window.closeSettings = () => {
@@ -2542,6 +2551,12 @@ async function saveTrainingGame() {
   if (!pid) return;
   if (!window._sb) await loadSupabaseClient();
   const totalTime = state.chronoFinal != null ? state.chronoFinal : elapsedSeconds();
+  // Si la partie a été abandonnée, on marque le 1er coup avec abandonedGame:true
+  // → permettra de filtrer la partie des "meilleurs temps" côté stats.
+  let historyToSave = state.history;
+  if (state.abandoned && historyToSave?.length) {
+    historyToSave = [{ ...historyToSave[0], abandonedGame: true }, ...historyToSave.slice(1)];
+  }
   const { error } = await window._sb.from("training_games").insert({
     player_id: pid,
     mode: state.settings.gameMode,
@@ -2550,7 +2565,7 @@ async function saveTrainingGame() {
     total_score: state.totalScore,
     sum_neg: state.sumNeg,
     total_time_seconds: totalTime,
-    history: state.history,
+    history: historyToSave,
   });
   if (error) { console.error("Sauvegarde training_games:", error.message); return; }
   // Rétention 30 max par joueur
@@ -2620,13 +2635,18 @@ async function saveResultIfPrepared() {
   const totalTime = state.chronoFinal != null ? state.chronoFinal : elapsedSeconds();
 
   // 1) Sauvegarder dans prepared_game_results (pour la fonction "Revoir")
+  // On marque la partie comme abandonnée si applicable (filtré des stats meilleurs temps).
+  let detailsToSave = state.history;
+  if (state.abandoned && detailsToSave?.length) {
+    detailsToSave = [{ ...detailsToSave[0], abandonedGame: true }, ...detailsToSave.slice(1)];
+  }
   const { error: e1 } = await window._sb.from("prepared_game_results").upsert({
     prepared_game_id: state.prepared.id,
     player_id: pid,
     total_score: state.totalScore,
     sum_neg: state.sumNeg,
     total_time_seconds: totalTime,
-    details: state.history,
+    details: detailsToSave,
   }, { onConflict: "prepared_game_id,player_id" });
   if (e1) { console.error("Erreur sauvegarde prepared_game_results:", e1.message); return; }
 
@@ -2835,6 +2855,8 @@ $("#btnAbandon").onclick = () => {
 function abandonRest() {
   if (state.chronoFinal != null) return;
   if (!state.topMove) return;
+  // Marquer la partie comme abandonnée (filtrée des stats "meilleur temps")
+  state.abandoned = true;
   let playerScore = 0, playedWord = null;
   if (state.pending.length) {
     const m = buildMoveFromPending();

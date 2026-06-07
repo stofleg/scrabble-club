@@ -277,14 +277,27 @@ async function loadMyStats() {
   const tourScore = (tour || []).reduce((a, r) => a + (r.total_score || 0), 0);
   const tourNeg = (tour || []).reduce((a, r) => a + (r.sum_neg || 0), 0);
   const tourTime = (tour || []).reduce((a, r) => a + (r.total_time_seconds || 0), 0);
-  const bestTourTime = Math.min(...(tour || []).filter(r => r.total_time_seconds).map(r => r.total_time_seconds), Infinity);
+  // Meilleur temps tournoi : on EXCLUT les parties abandonnées
+  const isAbandoned = h => Array.isArray(h) && h.length > 0 && h[0]?.abandonedGame === true;
+  const bestTourTime = Math.min(
+    ...(tour || [])
+      .filter(r => r.total_time_seconds && !isAbandoned(r.details))
+      .map(r => r.total_time_seconds),
+    Infinity
+  );
 
   // ===== Agrégats entraînement =====
   const trainGames = (train || []).length;
   const trainScore = (train || []).reduce((a, r) => a + r.total_score, 0);
   const trainNeg = (train || []).reduce((a, r) => a + r.sum_neg, 0);
   const trainTime = (train || []).reduce((a, r) => a + (r.total_time_seconds || 0), 0);
-  const bestTrainTime = Math.min(...(train || []).filter(r => r.total_time_seconds).map(r => r.total_time_seconds), Infinity);
+  // Meilleur temps entraînement : EXCLUT les parties abandonnées
+  const bestTrainTime = Math.min(
+    ...(train || [])
+      .filter(r => r.total_time_seconds && !isAbandoned(r.history))
+      .map(r => r.total_time_seconds),
+    Infinity
+  );
 
   // ===== Streak inter-parties tournoi =====
   const tourSorted = [...(tour || [])].sort((a, b) => {
@@ -1194,9 +1207,13 @@ async function loadTournamentStats(tournamentId, games) {
     const p = byPlayer[pid];
     p.games++;
     p.sumNeg += r.sum_neg;
+    // Pour le meilleur temps individuel : on EXCLUT les parties abandonnées
+    const isAbandoned = Array.isArray(r.details) && r.details.length > 0 && r.details[0]?.abandonedGame === true;
     if (r.total_time_seconds) {
       p.sumTime += r.total_time_seconds;
-      p.bestSingleTime = Math.min(p.bestSingleTime, r.total_time_seconds);
+      if (!isAbandoned) {
+        p.bestSingleTime = Math.min(p.bestSingleTime, r.total_time_seconds);
+      }
     }
     p.results.push(r);
   }
