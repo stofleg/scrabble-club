@@ -198,12 +198,17 @@ function renderBoard() {
         const dragAttr = tile.pending ? `draggable="true" data-pending-r="${r}" data-pending-c="${c}"` : "";
         tileHtmlStr = `<div class="${tcls.join(" ")}" ${dragAttr}>${tile.letter}<span class="val">${tval ?? ""}</span></div>`;
       }
-      // Badge de score live au-dessus de la dernière lettre du mot
+      // Badge de score live. En H : au-dessus de la case suivante (au-dessus de
+      // la grille). En V : à droite de la case suivante (à côté du mot).
       let badge = "";
       const bc = badgeCell();
       if (bc && bc.row === r && bc.col === c) {
         const sc = computePendingScore();
-        if (sc !== null) badge = `<span class="score-badge">${sc}</span>`;
+        if (sc !== null) {
+          const dirClass = state.pending.length && state.pending.every(p => p.col === state.pending[0].col)
+            ? " dir-v" : " dir-h";
+          badge = `<span class="score-badge${dirClass}">${sc}</span>`;
+        }
       }
       const annot = renderAnnotations(r, c);
       html += `<td class="${cls.join(" ")}" data-r="${r}" data-c="${c}">${tileHtmlStr}${badge}${annot}</td>`;
@@ -1650,6 +1655,17 @@ function applyMobileLayout() {
   document.body.dataset.mobileLayout = "1";
 }
 applyMobileLayout();
+
+// Info-bulles non-persistantes : sur clic d'un élément [data-tip], ajoute
+// .show-tip pendant 1 s puis l'enlève. Compatible avec l'action native du
+// bouton (les deux se produisent au même clic).
+document.addEventListener("click", (e) => {
+  const el = e.target.closest && e.target.closest("[data-tip]");
+  if (!el) return;
+  if (el._tipTimer) clearTimeout(el._tipTimer);
+  el.classList.add("show-tip");
+  el._tipTimer = setTimeout(() => el.classList.remove("show-tip"), 1000);
+});
 
 // Empêcher le double-tap zoom sur iOS Safari (qui ignore parfois user-scalable=no).
 // On NE bloque le double-tap QUE sur le fond — les boutons et tuiles restent
