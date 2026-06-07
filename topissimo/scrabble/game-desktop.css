@@ -1,0 +1,9 @@
+/* ============================================================
+   game-desktop.css — règles spécifiques desktop (≥ 701 px)
+   ============================================================ */
+
+@media (min-width: 701px) {
+  /* Sur desktop, ⌫ et ✓ ne sont pas nécessaires (Backspace + Entrée au clavier) */
+  .rack-row { display: flex; align-items: center; gap: 10px; }
+  .btn-backspace, .btn-validate { display: none !important; }
+}

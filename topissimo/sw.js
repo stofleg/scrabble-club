@@ -11,6 +11,8 @@ const SHELL = [
   "./icon-512.png",
   "./scrabble/game.html",
   "./scrabble/game.css",
+  "./scrabble/game-desktop.css",
+  "./scrabble/game-mobile.css",
   "./scrabble/game.js",
   "./scrabble/engine.js",
   "./scrabble/dictionary.js",
