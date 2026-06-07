@@ -1342,6 +1342,11 @@ function setAuthMode(mode) {
   $("#authPseudoField").hidden = mode !== "signup";
   $("#authClubField").hidden = mode !== "signup";
   $("#authPwField").hidden = mode === "forgot";
+  // Désactiver les champs cachés pour qu'ils ne bloquent pas la validation
+  // HTML5 du formulaire (sinon "An invalid form control is not focusable").
+  $("#authPseudo").disabled = mode !== "signup";
+  $("#authClub").disabled   = mode !== "signup";
+  $("#authPassword").disabled = mode === "forgot";
   // Label + placeholder du champ email selon le mode :
   // - inscription / mot de passe oublié : email seul
   // - connexion : email ou pseudo
