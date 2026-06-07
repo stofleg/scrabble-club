@@ -301,7 +301,9 @@ function onRackTileTap(e) {
   if (t.letter === "?") {
     openJokerPicker();
   } else {
-    placeLetter(t.letter);
+    // On passe l'ID de la tuile cliquée pour que ce soit CETTE tuile-là qui
+    // disparaisse du chevalet (pas la première de la même lettre).
+    placeLetter(t.letter, t.id);
   }
 }
 
@@ -1031,7 +1033,7 @@ function handleKey(e) {
   }
 }
 
-function placeLetter(L) {
+function placeLetter(L, preferTileId = null) {
   if (!state.cursor) {
     flashFeedback("error", "Pas de curseur", "Clique d'abord sur une case du plateau.");
     return;
@@ -1048,7 +1050,8 @@ function placeLetter(L) {
     row = state.cursor.row; col = state.cursor.col;
   }
 
-  // Trouver tuile à utiliser : préférer la lettre exacte, sinon joker
+  // Trouver tuile à utiliser : préférer celle pointée par preferTileId si valide,
+  // sinon la lettre exacte, sinon joker.
   let rackTile;
   let isBlank = false;
   if (state.jokerPending) {
@@ -1061,7 +1064,10 @@ function placeLetter(L) {
     isBlank = true;
     state.jokerPending = false;
   } else {
-    rackTile = state.rack.find(t => t.letter === L && !t.used);
+    if (preferTileId != null) {
+      rackTile = state.rack.find(t => t.id === preferTileId && !t.used && t.letter === L);
+    }
+    if (!rackTile) rackTile = state.rack.find(t => t.letter === L && !t.used);
     if (!rackTile) {
       rackTile = state.rack.find(t => t.letter === "?" && !t.used);
       if (rackTile) isBlank = true;
@@ -1646,10 +1652,17 @@ function applyMobileLayout() {
 applyMobileLayout();
 
 // Empêcher le double-tap zoom sur iOS Safari (qui ignore parfois user-scalable=no).
-// On preventDefault sur le 2e touchend si moins de 350 ms s'est écoulé.
+// On NE bloque le double-tap QUE sur le fond — les boutons et tuiles restent
+// totalement réactifs aux tap rapides successifs.
 if (window.matchMedia("(max-width: 700px)").matches) {
   let _lastTap = 0;
   document.addEventListener("touchend", (e) => {
+    const target = e.target;
+    // Tap sur élément interactif → pas de blocage (sinon les ⌫/✓/tuiles deviennent lents)
+    if (target.closest && target.closest("button, .tile, td, a, input, select")) {
+      _lastTap = Date.now();
+      return;
+    }
     const now = Date.now();
     if (now - _lastTap < 350) e.preventDefault();
     _lastTap = now;
@@ -2252,6 +2265,9 @@ async function loadSupabaseClient() {
 
 function startGame() {
   state.started = true;
+  state.bestAttempt = null;
+  hideFeedback();
+  $("#feedback").innerHTML = "";    // vide aussi le contenu (même si caché)
   $("#actionRowPreStart").hidden = true;
   $("#actionRowInGame").hidden = false;
   const isTraining = !state.prepared && !state.isPuzzle;
