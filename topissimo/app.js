@@ -15,10 +15,36 @@ if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY ||
 
 const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-// Service worker (PWA installable)
+// Service worker (PWA installable) + AUTO-MISE-À-JOUR.
+// À chaque chargement, on force la vérification d'une nouvelle version du SW.
+// Si on en trouve une, on la skipWaiting et on reload pour servir le neuf.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("./sw.js");
+      // 1) Check immédiat
+      reg.update();
+      // 2) Re-check toutes les 5 min si l'onglet reste ouvert
+      setInterval(() => reg.update(), 5 * 60 * 1000);
+      // 3) Quand un nouveau SW prend le contrôle → reload pour récupérer le neuf
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+      // 4) Si un nouveau SW est en attente (installé mais pas activé) → activate now
+      if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener("statechange", () => {
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            sw.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+    } catch (e) { /* silencieux */ }
   });
 }
 

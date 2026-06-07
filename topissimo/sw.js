@@ -25,6 +25,12 @@ self.addEventListener("install", e => {
   self.skipWaiting();
 });
 
+// Permet au client de demander le skipWaiting (force l'activation immédiate
+// du nouveau SW dès qu'il est installé, sans attendre que tous les onglets se ferment).
+self.addEventListener("message", e => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
+});
+
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys().then(keys =>
