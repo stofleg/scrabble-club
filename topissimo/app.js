@@ -1368,13 +1368,8 @@ $("#authForm").addEventListener("submit", async (e) => {
 
   try {
     if (authMode === "login") {
-      // Si l'utilisateur a tapé un pseudo (pas d'@), on récupère l'email associé
-      let loginEmail = email;
-      if (!email.includes("@")) {
-        const { data: p } = await sb.from("players").select("email").eq("name", email).maybeSingle();
-        if (!p?.email) throw new Error(`Aucun compte au pseudo "${email}".`);
-        loginEmail = p.email;
-      }
+      // Connexion par email uniquement (la résolution pseudo→email a été retirée).
+      const loginEmail = email.toLowerCase().trim();
       const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
     } else if (authMode === "signup") {
