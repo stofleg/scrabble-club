@@ -2,6 +2,11 @@
    game-desktop.css — règles spécifiques desktop (≥ 701 px)
    ============================================================ */
 
+/* Bloc Pictogrammes : caché sur desktop (PC = clavier, donc Raccourcis) */
+@media (min-width: 701px) {
+  .kbd-shortcuts.kbd-mobile { display: none !important; }
+}
+
 @media (min-width: 701px) {
   /* Sur desktop, ⌫ et ✓ ne sont pas nécessaires (Backspace + Entrée au clavier) */
   .rack-row { display: flex; align-items: center; gap: 10px; }
