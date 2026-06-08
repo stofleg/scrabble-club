@@ -952,8 +952,8 @@ async function loadTournamentDetail(tournamentId) {
     : `<div class="pg-mini-list">${(games || []).map(g => {
         const played = playedIds.has(g.id);
         const action = played
-          ? `<a style="${btnStyle};background:var(--soft);color:var(--petrol)" href="scrabble/game.html?review=${g.id}">👁 Revoir</a>`
-          : `<a style="${btnStyle};background:var(--yellow);color:var(--petrol-dark)" href="scrabble/game.html?prepared=${g.id}">▶ Jouer</a>`;
+          ? `<a style="${btnStyle};background:var(--soft);color:var(--petrol)" href="scrabble/game.html?review=${g.id}&tid=${currentTournamentId}">👁 Revoir</a>`
+          : `<a style="${btnStyle};background:var(--yellow);color:var(--petrol-dark)" href="scrabble/game.html?prepared=${g.id}&tid=${currentTournamentId}">▶ Jouer</a>`;
         const del = admin ? `<button class="danger" onclick="delPreparedGame(${g.id})" title="Supprimer">🗑</button>` : "";
         return `<div class="pg-mini">
           <div class="pg-name">${escapeHtml(g.name)}</div>
@@ -1497,6 +1497,14 @@ function checkRecoveryHash() {
   if (h === "#tab=prepared") {
     const btn = document.querySelector('nav button[data-tab="prepared"]');
     if (btn) { btn.click(); history.replaceState(null, "", location.pathname); }
+  }
+  // Retour vers un tournoi spécifique
+  if (h.startsWith("#tid=")) {
+    const tid = h.slice(5);
+    const btn = document.querySelector('nav button[data-tab="prepared"]');
+    if (btn) btn.click();
+    if (tid) openTournament(tid).catch(() => {});
+    history.replaceState(null, "", location.pathname);
   }
 }
 window.addEventListener("hashchange", checkRecoveryHash);

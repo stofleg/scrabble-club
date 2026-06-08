@@ -52,6 +52,7 @@ const REVIEW_ID = URL_PARAMS.get("review");
 const TRAINING_ID = URL_PARAMS.get("training");
 const PUZZLE_GAME_ID = URL_PARAMS.get("puzzle");
 const PUZZLE_MOVE_NO = +URL_PARAMS.get("move") || 1;
+const TOURNAMENT_ID = URL_PARAMS.get("tid");  // ID du tournoi pour le retour
 
 const state = {
   dict: null,
@@ -2026,6 +2027,13 @@ async function enterReviewMode(id) {
   $("#reviewPanel").hidden = false;
   // (layout déjà en 2 colonnes — rien à faire)
   // Header de feedback (résumé général)
+  // Swap "Démarrer" → "Feuille de route" + "← Accueil" → "← Tournoi"
+  $("#btnStart").hidden = true;
+  $("#btnSheetReview").hidden = !result;   // visible seulement si on a joué la partie
+  const btnHome = $("#btnHome");
+  if (btnHome) btnHome.hidden = true;
+  if (_btnBackToTournament) _btnBackToTournament.hidden = false;
+
   const summary = result
     ? `Ton score : <strong>${result.total_score}</strong> · Négatif : <strong>${result.sum_neg}</strong> · Temps : <strong>${fmtChrono(result.total_time_seconds || 0)}</strong>`
     : `<em>Tu n'as pas encore joué cette partie.</em>`;
@@ -2742,9 +2750,7 @@ window.enterLocalReview = function() {
   // (layout déjà en 2 colonnes — rien à faire)
   renderGameTitle();
   showFeedback("success", `📺 Parcours de « ${fakeGame.name} »`,
-    `Ton score : <strong>${fakeResult.total_score}</strong> · Négatif : <strong>${fakeResult.sum_neg}</strong> · Temps : <strong>${fmtChrono(fakeResult.total_time_seconds)}</strong>
-     · <a href="#" onclick="event.preventDefault();openSheet()" style="color:var(--petrol);text-decoration:underline">feuille de route</a>
-`);
+    `Ton score : <strong>${fakeResult.total_score}</strong> · Négatif : <strong>${fakeResult.sum_neg}</strong> · Temps : <strong>${fmtChrono(fakeResult.total_time_seconds)}</strong>`);
   renderReviewStep();
 };
 
@@ -2960,7 +2966,9 @@ window.goBackToTournament = function(withWarning = false) {
   if (withWarning) {
     if (!confirm("Retourner au tournoi ? La partie en cours sera abandonnée et ton score sera 0.")) return;
   }
-  window.location.href = "../index.html#tab=prepared";
+  window.location.href = TOURNAMENT_ID
+    ? `../index.html#tid=${TOURNAMENT_ID}`
+    : "../index.html#tab=prepared";
 };
 
 const _btnBackToTournament = $("#btnBackToTournament");
