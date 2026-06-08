@@ -49,7 +49,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     _ext:       scoreExtensibility(board, c.move),
     _scrab:     scoreScrabbleOpenings(board, c.move),   // nb d'appuis pour scrabble perpendiculaire
     _open:      scoreOpenness(board, c.move),
-    _left:      scoreLeftPosition(c.move),              // utile au 1er coup
+    _left:      scoreLeftPosition(c.move, dict),        // utile au 1er coup
     _leave:     scoreLeave(board, rack, c.move, bag),
   }));
   // Ordre de priorité :
@@ -179,10 +179,32 @@ function scoreScrabbleOpenings(board, move) {
   return count;
 }
 
-function scoreLeftPosition(move) {
-  // Pour le 1er coup : plus le mot commence à gauche/haut, plus le score est élevé.
-  // -col en H, -row en V. (max donc = position la plus à gauche/haut).
-  return -(move.dir === "H" ? move.col : move.row);
+function scoreLeftPosition(move, dict) {
+  // Pour le 1er coup : on préfère le mot le plus à gauche/haut POSSIBLE, MAIS
+  // si le mot n'a PAS de rallonge initiale d'une lettre dans le dico, on doit
+  // laisser au moins 2 cases libres devant lui (pour pouvoir placer des
+  // scrabbles perpendiculaires plus tard). Sinon le côté est totalement fermé.
+  // Exemple : AIIIRSS → IRISAIS n'a aucune rallonge initiale ; IRISAIS en H2
+  // ne laisse qu'1 case libre devant (col 0) → impossible de tourner autour.
+  // À H3, on a 2 cases libres → on garde des appuis pour scrabbler.
+  const pos = move.dir === "H" ? move.col : move.row;
+  // Test si le mot a une rallonge d'1 lettre par devant dans le dico
+  let hasFrontExt = false;
+  if (dict) {
+    for (let code = 65; code <= 90; code++) {
+      if (dict.has(String.fromCharCode(code) + move.word)) { hasFrontExt = true; break; }
+    }
+  }
+  if (hasFrontExt) {
+    // Rallonge devant : on peut coller le mot au bord (pos = 1 OK)
+    return -pos;
+  }
+  // Pas de rallonge devant : on veut ≥ 2 cases devant
+  if (pos < 2) {
+    // Pénalité forte : la position 0 ou 1 ferme un côté du plateau
+    return -1000 - (2 - pos);
+  }
+  return -pos;
 }
 
 function scoreExtensibility(board, move) {
