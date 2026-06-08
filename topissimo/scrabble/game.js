@@ -208,17 +208,11 @@ function renderBoard() {
         const dragAttr = tile.pending ? `draggable="true" data-pending-r="${r}" data-pending-c="${c}"` : "";
         tileHtmlStr = `<div class="${tcls.join(" ")}" ${dragAttr}>${tile.letter}<span class="val">${tval ?? ""}</span></div>`;
       }
-      // Badge de score live. En H : au-dessus de la case suivante (au-dessus de
-      // la grille). En V : à droite de la case suivante (à côté du mot).
+      // Badge de score live : affiché dans la case curseur quand des tuiles sont posées
       let badge = "";
-      const bc = badgeCell();
-      if (bc && bc.row === r && bc.col === c) {
+      if (isCursor && state.pending.length > 0) {
         const sc = computePendingScore();
-        if (sc !== null) {
-          const dirClass = state.pending.length && state.pending.every(p => p.col === state.pending[0].col)
-            ? " dir-v" : " dir-h";
-          badge = `<span class="score-badge${dirClass}">${sc}</span>`;
-        }
+        if (sc !== null) badge = `<span class="score-badge">${sc}</span>`;
       }
       const annot = renderAnnotations(r, c);
       html += `<td class="${cls.join(" ")}" data-r="${r}" data-c="${c}">${tileHtmlStr}${badge}${annot}</td>`;
@@ -455,6 +449,7 @@ function onCellDrop(e) {
     letter = L; isBlank = true;
   }
   tile.used = true;
+  if (state.pending.length === 0) hideFeedback();
   state.pending.push({ row: r, col: c, letter, rackId: tile.id, isBlank });
   updateCursorAfterDrop(r, c);
   renderBoard();
@@ -561,42 +556,6 @@ function renderBag() {
 // On essaie d'éviter une case déjà occupée par un jeton (mieux lisible) : on avance
 // d'une case dans la direction du mot vers une case libre ; à défaut on prend la case
 // avant le mot ; si rien de libre n'est trouvé, on retombe sur la dernière case pending.
-function badgeCell() {
-  if (!state.pending.length) return null;
-  const sameRow = state.pending.every(p => p.row === state.pending[0].row);
-  const sameCol = state.pending.every(p => p.col === state.pending[0].col);
-  let endCell, dr, dc;
-  if (sameRow) {
-    endCell = state.pending.reduce((a, b) => a.col > b.col ? a : b);
-    dr = 0; dc = 1;
-  } else if (sameCol) {
-    endCell = state.pending.reduce((a, b) => a.row > b.row ? a : b);
-    dr = 1; dc = 0;
-  } else {
-    return state.pending[state.pending.length - 1];
-  }
-  // Cherche la 1re case libre après la fin du mot
-  for (let i = 1; i < BOARD_SIZE; i++) {
-    const r = endCell.row + i * dr, c = endCell.col + i * dc;
-    if (r < 0 || c < 0 || r >= BOARD_SIZE || c >= BOARD_SIZE) break;
-    if (!state.board[r][c] && !state.pending.some(p => p.row === r && p.col === c)) {
-      return { row: r, col: c };
-    }
-  }
-  // Sinon : cherche avant le début du mot
-  const startCell = sameRow
-    ? state.pending.reduce((a, b) => a.col < b.col ? a : b)
-    : state.pending.reduce((a, b) => a.row < b.row ? a : b);
-  for (let i = 1; i < BOARD_SIZE; i++) {
-    const r = startCell.row - i * dr, c = startCell.col - i * dc;
-    if (r < 0 || c < 0 || r >= BOARD_SIZE || c >= BOARD_SIZE) break;
-    if (!state.board[r][c] && !state.pending.some(p => p.row === r && p.col === c)) {
-      return { row: r, col: c };
-    }
-  }
-  // Aucun emplacement libre adjacent : fallback sur la fin du mot
-  return endCell;
-}
 
 function computePendingScore() {
   if (state.pending.length === 0) return null;
@@ -1129,6 +1088,7 @@ function placeLetter(L, preferTileId = null) {
     return;
   }
   rackTile.used = true;
+  if (state.pending.length === 0) hideFeedback();
   state.pending.push({ row, col, letter: L, rackId: rackTile.id, isBlank });
   advanceCursor();
   renderBoard();
@@ -1208,7 +1168,7 @@ function validate() {
       state.topMove.isotopWords = isotopWords;
     }
     if (isotopWords.includes(move.word)) {
-      recordMove({ status: "top", playerScore: topScore, playedWord: move.word });
+      recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
       placeTopAndAdvance(topScore);
       nextMove();
       return;
@@ -1249,7 +1209,7 @@ function validate() {
     move.dir === topMv.dir;
   if (result.score === topScore || isFirstMoveTopWord || isSameAsTopButJokerElsewhere) {
     // TOP trouvé
-    recordMove({ status: "top", playerScore: topScore, playedWord: move.word });
+    recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
     placeTopAndAdvance(topScore);
     nextMove();
   } else {
@@ -1477,6 +1437,9 @@ function placeTopAndAdvance(playerScore) {
     }
     if (idx !== -1) state.rack.splice(idx, 1);
   }
+  // Mémoriser le top pour l'afficher en zone C au début du coup suivant
+  state.lastTop = { word: tm.move.word, row: tm.move.row, col: tm.move.col, dir: tm.move.dir, score: tm.score };
+
   // Score
   state.totalScore += playerScore;
   state.sumNeg += (playerScore - tm.score);
@@ -1524,7 +1487,7 @@ function revealTop() {
 }
 
 // Enregistre un coup dans l'historique (pour la feuille de route)
-function recordMove({ status, playerScore, playedWord = null }) {
+function recordMove({ status, playerScore, playedWord = null, playedMove = null }) {
   const tm = state.topMove;
   const timeMs = stopMoveTimer();
   state.history.push({
@@ -1539,6 +1502,7 @@ function recordMove({ status, playerScore, playedWord = null }) {
       words: tm.words || [],
     } : null,
     played: playedWord,
+    playedPos: playedMove ? posLabel(playedMove) : null,
     playerScore,
     neg: playerScore - (tm?.score || 0),
     status,        // "top" | "giveup" | "timeout"
@@ -1551,6 +1515,15 @@ function posLabel(move) {
   const letter = ROW_LETTERS[move.row];
   const num = move.col + 1;
   return move.dir === "H" ? `${letter}${num}` : `${num}${letter}`;
+}
+
+// Affiche le top du coup qui vient de finir en zone C (fond vert).
+// Effacé dès que le joueur pose sa première lettre au coup suivant.
+function showLastTopFeedback() {
+  if (!state.lastTop) { hideFeedback(); return; }
+  const { word, score } = state.lastTop;
+  const pos = posLabel(state.lastTop);
+  showFeedback("success", `✅ Top : <strong>${word}</strong> — ${score} pts en ${pos}`, "");
 }
 
 // ============================================================
@@ -1569,7 +1542,7 @@ function nextMove() {
     renderBoard();
     computeTop();
     startMoveTimer();
-    hideFeedback();
+    showLastTopFeedback();
     ensureCursorOnFreeCell();
     return;
   }
@@ -1619,7 +1592,7 @@ function nextMove() {
   renderBoard();
   computeTop();
   startMoveTimer();
-  hideFeedback();
+  showLastTopFeedback();
   ensureCursorOnFreeCell();
 }
 
@@ -1830,6 +1803,7 @@ async function initGame() {
   state.totalScore = 0;
   state.sumNeg = 0;
   state.topMove = null;
+  state.lastTop = null;
   state.started = false;
   state.chronoStart = null;
   state.chronoPenalty = 0;
@@ -1847,6 +1821,8 @@ async function initGame() {
   review.result = null;
   review.historyByMove = {};
   $("#reviewPanel").hidden = true;
+  // Masquer le bouton Revoir (n'a de sens qu'en fin de partie)
+  if (_btnReview) { _btnReview.hidden = true; _btnReview.classList.remove("active"); }
   // (rien à reset côté layout)
   document.querySelector(".info-bar")?.style.removeProperty("display");
   $("#endModal").hidden = true;
@@ -1857,6 +1833,7 @@ async function initGame() {
   renderRack();
   applyRackPos();
   applyColorTheme();
+  updateTournamentNavButtons();
   renderGameTitle();
   if (!state.dict) {
     // (Pas de feedback "Chargement du dictionnaire" — UX silencieuse)
@@ -1977,6 +1954,7 @@ async function enterTrainingReviewMode(id) {
   for (const h of (t.history || [])) review.historyByMove[h.moveNo] = h;
   state.history = t.history || [];
   review.step = 1;
+  review.replayMode = false;
   state.started = false;
   state.settings.gameMode = t.mode;
   state.settings.withJoker = t.with_joker;
@@ -2020,6 +1998,7 @@ async function enterReviewMode(id) {
     state.history = result.details; // pour la feuille de route accessible
   }
   review.step = 1;
+  review.replayMode = false;
   state.started = false;
   // Afficher le panel review
   $("#reviewPanel").hidden = false;
@@ -2040,12 +2019,26 @@ function renderReviewStep() {
   const idx = review.step - 1;
   const m = moves[idx];
 
-  // Plateau = état APRÈS application des coups 1..step (incluant le coup courant)
-  let board = emptyBoard();
-  for (let i = 0; i < review.step; i++) board = applyMove(board, moves[i].top);
-  state.board = board;
-  // Mettre en surbrillance le coup courant (lastPlaced)
-  state.lastPlaced = computeLastPlacedCells(moves.slice(0, idx).reduce((b, mv) => applyMove(b, mv.top), emptyBoard()), m.top);
+  const replay = !!review.replayMode;
+  // Sync visuel du bouton replay
+  const _rvReplayBtn = $("#rvReplay");
+  if (_rvReplayBtn) _rvReplayBtn.classList.toggle("active", replay);
+
+  if (replay) {
+    // Mode replay : plateau AVANT le coup courant (sans le top)
+    let board = emptyBoard();
+    for (let i = 0; i < idx; i++) board = applyMove(board, moves[i].top);
+    state.board = board;
+    state.lastPlaced = [];
+  } else {
+    // Mode normal : plateau APRÈS application des coups 1..step (incluant le coup courant)
+    let board = emptyBoard();
+    for (let i = 0; i < review.step; i++) board = applyMove(board, moves[i].top);
+    state.board = board;
+    // Mettre en surbrillance le coup courant (lastPlaced)
+    state.lastPlaced = computeLastPlacedCells(moves.slice(0, idx).reduce((b, mv) => applyMove(b, mv.top), emptyBoard()), m.top);
+  }
+
   // Chevalet du coup courant
   state.rack = m.rack.split("").map((L, i) => ({ letter: L, used: false, id: i + 1 }));
   state.cursor = null;
@@ -2060,25 +2053,33 @@ function renderReviewStep() {
   $("#rvNext").disabled = review.step >= total;
   $("#rvLast").disabled = review.step >= total;
 
-  // Top joué
-  $("#rvTop").textContent = `${m.top.word} — ${m.top.score} pts en ${posLabelMove(m.top)}`;
+  // Masquer/afficher le panneau de résultats selon le mode replay
+  const rvInfoLines = $$("#reviewPanel .review-line");
+  const rvSolutions = $("#rvSolutions");
+  rvInfoLines.forEach(el => el.hidden = replay);
+  if (rvSolutions) rvSolutions.hidden = replay;
 
-  // Mot du joueur
-  const ph = review.historyByMove[m.moveNo];
-  if (ph) {
-    if (ph.played) {
-      $("#rvPlayed").textContent = `${ph.played} — ${ph.playerScore} pts ${ph.status === "top" ? "🏆" : ph.status === "timeout" ? "⏱" : "🏳️"}`;
+  if (!replay) {
+    // Top joué
+    $("#rvTop").textContent = `${m.top.word} — ${m.top.score} pts en ${posLabelMove(m.top)}`;
+
+    // Mot du joueur
+    const ph = review.historyByMove[m.moveNo];
+    if (ph) {
+      if (ph.played) {
+        $("#rvPlayed").textContent = `${ph.played} — ${ph.playerScore} pts ${ph.status === "top" ? "🏆" : ph.status === "timeout" ? "⏱" : "🏳️"}`;
+      } else {
+        $("#rvPlayed").textContent = `— (rien joué, ${ph.status})`;
+      }
+      $("#rvNeg").textContent = ph.neg;
     } else {
-      $("#rvPlayed").textContent = `— (rien joué, ${ph.status})`;
+      $("#rvPlayed").textContent = "—";
+      $("#rvNeg").textContent = "—";
     }
-    $("#rvNeg").textContent = ph.neg;
-  } else {
-    $("#rvPlayed").textContent = "—";
-    $("#rvNeg").textContent = "—";
-  }
 
-  // Autres solutions valides (calcul à la volée)
-  renderReviewSolutions(idx);
+    // Autres solutions valides (calcul à la volée)
+    renderReviewSolutions(idx);
+  }
 }
 
 function posLabelMove(mv) {
@@ -2313,15 +2314,37 @@ function previewSolution(i) {
   $$(`#rvSolutions tr[data-i="${i}"]`).forEach(tr => tr.classList.add("selected"));
 }
 
-$("#rvFirst").onclick = () => { review.step = 1; renderReviewStep(); };
-$("#rvPrev").onclick  = () => { review.step--;     renderReviewStep(); };
-$("#rvNext").onclick  = () => { review.step++;     renderReviewStep(); };
-$("#rvLast").onclick  = () => { review.step = review.game?.moves.length || 1; renderReviewStep(); };
+$("#rvFirst").onclick  = () => { review.step = 1; renderReviewStep(); };
+$("#rvPrev").onclick   = () => { review.step--;    renderReviewStep(); };
+$("#rvNext").onclick   = () => { review.step++;    renderReviewStep(); };
+$("#rvLast").onclick   = () => { review.step = review.game?.moves.length || 1; renderReviewStep(); };
+const _btnReplay = $("#rvReplay");
+if (_btnReplay) _btnReplay.onclick = () => {
+  review.replayMode = !review.replayMode;
+  _btnReplay.classList.toggle("active", review.replayMode);
+  renderReviewStep();
+};
 const _btnShare = $("#btnShare");
 if (_btnShare) _btnShare.onclick = () => {
   if (review.active) shareReviewSnapshot();
   else shareLiveSnapshot();
 };
+const _btnReview = $("#btnReview");
+if (_btnReview) {
+  _btnReview.hidden = true; // masqué tant que la partie n'est pas terminée
+  _btnReview.onclick = () => {
+    if (review.active) {
+      exitLocalReview();
+    } else {
+      if (!state.history?.length) return;
+      // En mode tournoi, pas de review pendant la partie
+      if (state.prepared && state.started) return;
+      closeEndModal?.();
+      enterLocalReview();
+    }
+  };
+}
+
 const _btnSheet = $("#btnSheet");
 if (_btnSheet) _btnSheet.onclick = () => {
   if (!state.history?.length && !review.active) {
@@ -2408,6 +2431,7 @@ async function loadPreparedGame(id) {
     state.spareJokers = 0;
   }
   renderGameTitle();
+  updateTournamentNavButtons();
 }
 
 async function loadSupabaseClient() {
@@ -2440,6 +2464,9 @@ function startGame() {
   $("#btnPause").hidden = !isTraining;
   // Annot toolbar : masquée par défaut, visible uniquement via le bouton ✏️ Annoter
   if (isTraining) clearSavedTraining();
+  // Bouton Revoir : masqué pendant la partie (tout mode), visible seulement en fin
+  if (_btnReview) { _btnReview.hidden = true; _btnReview.classList.remove("active"); }
+  updateTournamentNavButtons();
   startChrono();
   nextMove();
 }
@@ -2569,6 +2596,9 @@ function endGame() {
     <div>Négatif : <strong>${state.sumNeg}</strong></div>
     <div>Temps : <strong>${time}</strong>${state.chronoPenalty ? ` (dont ${state.chronoPenalty}s de pénalités)` : ""}</div>`;
   $("#endModal").hidden = false;
+  // Rendre le bouton Revoir accessible (partie terminée)
+  if (_btnReview) { _btnReview.hidden = false; _btnReview.classList.remove("active"); }
+  updateTournamentNavButtons();
   // Pas de sauvegarde en mode puzzle (rejouer d'un solo)
   if (state.isPuzzle) return;
   // Si c'est une partie pré-tirée → sauvegarder le résultat
@@ -2609,6 +2639,32 @@ async function saveTrainingGame() {
 }
 window.closeEndModal = () => $("#endModal").hidden = true;
 
+function exitLocalReview() {
+  review.active = false;
+  review.replayMode = false;
+  document.body.classList.remove("in-review");
+  review.game = null;
+  review.result = null;
+  review.historyByMove = {};
+  $("#reviewPanel").hidden = true;
+  document.querySelector(".info-bar")?.style.removeProperty("display");
+  // Remettre le plateau dans l'état de fin de partie
+  const moves = state.history || [];
+  let board = emptyBoard();
+  for (const h of moves) board = applyMove(board, h.top);
+  state.board = board;
+  state.lastPlaced = [];
+  state.rack = [];
+  renderBoard();
+  renderRack();
+  renderGameTitle();
+  // Remettre le feedback de fin de partie
+  showFeedback("success", "Partie terminée",
+    `Score : <strong>${state.totalScore}</strong> · Négatif : <strong>${state.sumNeg}</strong>`);
+  // Sync bouton
+  if (_btnReview) { _btnReview.classList.remove("active"); }
+}
+
 // Mode review à partir de l'historique en mémoire (fin de partie entraînement OU pré-tirée)
 window.enterLocalReview = function() {
   if (!state.history.length) { alert("Pas d'historique."); return; }
@@ -2647,9 +2703,12 @@ window.enterLocalReview = function() {
   review.historyByMove = {};
   for (const h of state.history) review.historyByMove[h.moveNo] = h;
   review.step = 1;
+  review.replayMode = false;
   state.started = false;
   document.querySelector(".info-bar")?.style.setProperty("display", "none");
   $("#reviewPanel").hidden = false;
+  // Activer le bouton Revoir
+  if (_btnReview) { _btnReview.hidden = false; _btnReview.classList.add("active"); }
   // (layout déjà en 2 colonnes — rien à faire)
   renderGameTitle();
   showFeedback("success", `📺 Parcours de « ${fakeGame.name} »`,
@@ -2737,17 +2796,20 @@ window.openSheet = () => {
     // Icônes distinctes : timeout = ⏱ chrono · giveup (voir le coup / abandon) = 🏳️ drapeau blanc
     const statusIcon = { top: "🏆", giveup: "🏳️", timeout: "⏱" }[h.status] || "";
     const statusLabel = { top: "top", giveup: "abandon", timeout: "temps écoulé" }[h.status] || h.status;
-    const played = h.played
-      ? `${h.played} (${h.playerScore})`
+    const coord = pos => `<span style="font-size:.75em;color:#888;vertical-align:.1em">${pos}</span>`;
+    const topCell = h.top
+      ? `<strong>${h.top.word}</strong> ${coord(h.top.pos)} ${h.top.score} pts`
+      : "—";
+    const playedCell = h.played
+      ? `<strong>${h.played}</strong>${h.playedPos ? " " + coord(h.playedPos) : ""} ${h.playerScore} pts`
       : `<em>—</em>`;
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
     return `<tr class="${rowClass}" ${onclick}>
       <td>${h.moveNo}</td>
       <td><code>${h.rack}</code></td>
-      <td>${h.top ? `${h.top.word} <span style="color:#888">${h.top.pos}</span>` : "—"}</td>
-      <td style="text-align:right">${h.top?.score ?? "—"}</td>
-      <td>${played}</td>
-      <td style="text-align:right" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>
+      <td>${topCell}</td>
+      <td>${playedCell}</td>
+      <td style="text-align:center" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>
       <td>${statusIcon} <span style="color:#888;font-size:.85em">${statusLabel}</span></td>
       <td style="text-align:right">${time}</td>
     </tr>`;
@@ -2764,9 +2826,8 @@ window.openSheet = () => {
         <th style="padding:6px 8px;text-align:left">#</th>
         <th style="padding:6px 8px;text-align:left">Tirage</th>
         <th style="padding:6px 8px;text-align:left">Top</th>
-        <th style="padding:6px 8px;text-align:right">Pts</th>
         <th style="padding:6px 8px;text-align:left">Joué</th>
-        <th style="padding:6px 8px;text-align:right">Négatif</th>
+        <th style="padding:6px 8px;text-align:center">Négatif</th>
         <th style="padding:6px 8px;text-align:left">Statut</th>
         <th style="padding:6px 8px;text-align:right">Temps</th>
       </tr></thead>
@@ -2862,6 +2923,48 @@ if (headerAccueilLink) {
       setTimeout(() => { window.location.href = headerAccueilLink.href; }, 50);
     }
   }, { capture: true });
+}
+
+// ── Navigation tournoi ──────────────────────────────────────────────────────
+window.goBackToTournament = function(withWarning = false) {
+  if (withWarning) {
+    if (!confirm("Retourner au tournoi ? La partie en cours sera abandonnée et ton score sera 0.")) return;
+  }
+  window.location.href = "../index.html#tab=prepared";
+};
+
+const _btnBackToTournament = $("#btnBackToTournament");
+if (_btnBackToTournament) {
+  _btnBackToTournament.onclick = () => {
+    const gameInProgress = state.prepared && state.started && state.chronoFinal == null;
+    goBackToTournament(gameInProgress);
+  };
+}
+
+const _btnNextGame = $("#btnNextGame");
+if (_btnNextGame) {
+  _btnNextGame.onclick = () => goBackToTournament(false);
+}
+
+// Met à jour la visibilité des boutons Accueil / Tournoi / Nouvelle partie / Partie suivante
+function updateTournamentNavButtons() {
+  const isTournament = !!state.prepared && !state.isPuzzle;
+  const gameOver = state.chronoFinal != null;
+  const btnHome = $("#btnHome");
+  if (btnHome) btnHome.hidden = isTournament;
+  if (_btnBackToTournament) _btnBackToTournament.hidden = !isTournament;
+  // Pictos
+  const btnRestart = $("#btnRestart");
+  if (btnRestart) btnRestart.hidden = isTournament;
+  if (_btnNextGame) {
+    _btnNextGame.hidden = !isTournament;
+    _btnNextGame.disabled = !gameOver;
+  }
+  // Modale de fin
+  const endModalRestart = $("#endModalRestart");
+  const endModalNextGame = $("#endModalNextGame");
+  if (endModalRestart) endModalRestart.hidden = isTournament;
+  if (endModalNextGame) endModalNextGame.hidden = !isTournament;
 }
 $("#btnRestart").onclick = () => {
   if (confirm("Démarrer une nouvelle partie ? La partie en cours sera perdue.")) restartGame();

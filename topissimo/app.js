@@ -1005,6 +1005,8 @@ async function loadTournamentLeaderboard(tournamentId, games) {
     const missed = (r.details || []).filter(h => h.status === "giveup" || h.status === "timeout").length;
     byPlayer[r.player_id].perGame[r.prepared_game_id] = {
       neg: r.sum_neg, time: r.total_time_seconds || 0, missed,
+      details: r.details || [],
+      totalScore: r.total_score || 0,
     };
   }
   const players = Object.values(byPlayer);
@@ -1056,6 +1058,10 @@ async function loadTournamentLeaderboard(tournamentId, games) {
   const fmtT = (s) => !s ? "—" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const rankClass = (r) => r === 1 ? "gold" : r === 2 ? "silver" : r === 3 ? "bronze" : "";
 
+  // Contexte pour les modales feuille de route joueur
+  const myGameIds = new Set(results.filter(r => r.player_id === me).map(r => r.prepared_game_id));
+  window._lbCtx = { games, byPlayer, myGameIds };
+
   // ===== Tableau compact : 1 ligne par joueur, sous-totaux par catégorie + total =====
   const orderedCats = ["std", "blitz", "orig"].filter(c => cats[c].length > 0);
 
@@ -1099,7 +1105,7 @@ async function loadTournamentLeaderboard(tournamentId, games) {
     const generalRank = rankTotalNeg[p.id];
     let row = `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
       <td class="rank ${rankClass(generalRank)}">${generalRank || "—"}</td>
-      <td class="player-name">${escapeHtml(p.name)}</td>`;
+      <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>`;
     for (const c of orderedCats) {
       const cd = p.byCat[c];
       if (cd.count === 0) {
@@ -1147,7 +1153,7 @@ async function loadTournamentLeaderboard(tournamentId, games) {
       const generalRank = rankTotalNeg[p.id];
       let row = `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
         <td class="rank ${rankClass(generalRank)}">${generalRank || "—"}</td>
-        <td class="player-name">${escapeHtml(p.name)}</td>`;
+        <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>`;
       for (const c of orderedCats) {
         const cd = p.byCat[c];
         if (cd.count === 0) row += `<td class="cat-cell muted">—</td>`;
@@ -1487,6 +1493,11 @@ function checkRecoveryHash() {
   if (h.includes("type=recovery") || q.includes("type=recovery")) {
     $("#resetPwModal").hidden = false;
   }
+  // Retour depuis une partie tournoi → activer directement le tab Tournois
+  if (h === "#tab=prepared") {
+    const btn = document.querySelector('nav button[data-tab="prepared"]');
+    if (btn) { btn.click(); history.replaceState(null, "", location.pathname); }
+  }
 }
 window.addEventListener("hashchange", checkRecoveryHash);
 window.addEventListener("DOMContentLoaded", checkRecoveryHash);
@@ -1553,9 +1564,126 @@ function onSignedOut() {
 }
 
 // ============================================================
+//  Feuille de route d'un joueur (vue depuis le classement)
+// ============================================================
+
+function _psPos(row, col, dir) {
+  const letter = "ABCDEFGHIJKLMNO"[row];
+  const num = col + 1;
+  return dir === "H" ? `${letter}${num}` : `${num}${letter}`;
+}
+
+window.openPlayerGamesModal = function(playerId) {
+  const ctx = window._lbCtx;
+  if (!ctx) return;
+  const p = ctx.byPlayer[playerId];
+  if (!p) return;
+
+  // Parties jouées par ce joueur ET que l'utilisateur courant a aussi jouées
+  const eligible = ctx.games.filter(g => p.perGame[g.id] && ctx.myGameIds.has(g.id));
+
+  const modal = $("#playerSheetModal");
+  const body = $("#playerSheetModalBody");
+
+  if (!eligible.length) {
+    body.innerHTML = `<h3 style="margin:0 0 12px">🎯 ${escapeHtml(p.name)}</h3>
+      <p class="muted">Aucune partie en commun avec toi pour l'instant.</p>`;
+    modal.hidden = false;
+    return;
+  }
+
+  let html = `<h3 style="margin:0 0 12px">🎯 ${escapeHtml(p.name)}</h3>
+    <p style="margin:0 0 10px;color:#5a6a73;font-size:.9rem">Clique sur une partie pour voir sa feuille de route :</p>
+    <div style="display:flex;flex-direction:column;gap:6px">`;
+
+  for (const g of eligible) {
+    const r = p.perGame[g.id];
+    const negDisp = r.neg !== undefined ? r.neg : "—";
+    html += `<button class="btn ghost" style="text-align:left;justify-content:space-between"
+      onclick="openPlayerGameSheet(${playerId}, '${g.id}')">
+      <span>${escapeHtml(g.name)}</span>
+      <span style="color:#888;font-size:.85rem">Nég. : ${negDisp} · Score : ${r.totalScore}</span>
+    </button>`;
+  }
+  html += `</div>`;
+  body.innerHTML = html;
+  modal.hidden = false;
+};
+
+window.openPlayerGameSheet = function(playerId, gameId) {
+  const ctx = window._lbCtx;
+  if (!ctx) return;
+  const p = ctx.byPlayer[playerId];
+  if (!p) return;
+  const r = p.perGame[gameId];
+  if (!r || !r.details) return;
+  const game = ctx.games.find(g => g.id === gameId);
+  const gameName = game ? game.name : gameId;
+
+  const coord = pos => `<span style="font-size:.75em;color:#888;vertical-align:.1em">${pos}</span>`;
+
+  const rows = r.details.map(h => {
+    const isMiss = h.status === "giveup" || h.status === "timeout";
+    const rowClass = isMiss ? "sheet-miss" : "";
+    const statusIcon = { top: "🏆", giveup: "🏳️", timeout: "⏱" }[h.status] || "";
+    const statusLabel = { top: "top", giveup: "abandon", timeout: "temps écoulé" }[h.status] || (h.status || "");
+    const topPos = h.top?.pos || (h.top ? _psPos(h.top.row, h.top.col, h.top.dir) : "");
+    const topCell = h.top
+      ? `<strong>${h.top.word}</strong> ${coord(topPos)} ${h.top.score} pts`
+      : "—";
+    const playedCell = h.played
+      ? `<strong>${h.played}</strong>${h.playedPos ? " " + coord(h.playedPos) : ""} ${h.playerScore} pts`
+      : `<em>—</em>`;
+    const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
+    return `<tr class="${rowClass}">
+      <td>${h.moveNo}</td>
+      <td><code>${h.rack || ""}</code></td>
+      <td>${topCell}</td>
+      <td>${playedCell}</td>
+      <td style="text-align:center" class="${(h.neg || 0) < 0 ? 'neg' : ''}">${(h.neg || 0) < 0 ? h.neg : ''}</td>
+      <td>${statusIcon} <span style="color:#888;font-size:.85em">${statusLabel}</span></td>
+      <td style="text-align:right">${time}</td>
+    </tr>`;
+  }).join("");
+
+  const body = $("#playerSheetModalBody");
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <button class="btn ghost small" onclick="openPlayerGamesModal(${playerId})">← Retour</button>
+      <h3 style="margin:0">🎯 ${escapeHtml(p.name)} — ${escapeHtml(gameName)}</h3>
+    </div>
+    <div style="margin-bottom:10px;font-size:.9rem;color:#5a6a73">
+      Score : <strong>${r.totalScore}</strong> · Négatif : <strong>${r.neg || 0}</strong>
+    </div>
+    <div style="max-height:65vh;overflow:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead><tr style="background:var(--petrol);color:#fff;position:sticky;top:0">
+        <th style="padding:6px 8px;text-align:left">#</th>
+        <th style="padding:6px 8px;text-align:left">Tirage</th>
+        <th style="padding:6px 8px;text-align:left">Top</th>
+        <th style="padding:6px 8px;text-align:left">Joué</th>
+        <th style="padding:6px 8px;text-align:center">Négatif</th>
+        <th style="padding:6px 8px;text-align:left">Statut</th>
+        <th style="padding:6px 8px;text-align:right">Temps</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>`;
+};
+
+window.closePlayerSheetModal = function() {
+  $("#playerSheetModal").hidden = true;
+};
+
+// ============================================================
 //  Init
 // ============================================================
 (async () => {
+  // Masquer l'overlay immédiatement si on a un joueur en cache (évite le flash
+  // de déconnexion pendant le temps de vérification asynchrone de la session).
+  if (localStorage.getItem("currentPlayerId")) {
+    $("#authOverlay").hidden = true;
+  }
   // Vérifier la session existante
   const { data: { session: sess } } = await sb.auth.getSession();
   session = sess;

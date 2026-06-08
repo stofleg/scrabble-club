@@ -524,8 +524,9 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 .lb-compact th.sort-asc::after  { content: " ↑"; opacity: 1; color: var(--yellow); }
 .lb-compact th.sort-desc::after { content: " ↓"; opacity: 1; color: var(--yellow); }
 .lb-compact th[data-sort]:hover { background: var(--petrol-2); }
-.lb-compact td.player-name { text-align: left; font-weight: 600; cursor: pointer; }
-.lb-compact td.player-name:hover { color: var(--petrol); text-decoration: underline; }
+.lb-compact td.player-name { text-align: left; font-weight: 600; }
+.lb-compact .player-name-link { cursor: pointer; }
+.lb-compact .player-name-link:hover { color: var(--petrol); text-decoration: underline; }
 .lb-compact tr.me td { background: rgba(255,221,0,.15); }
 .lb-compact td.rank { font-weight: 700; }
 .lb-compact .gold   { color: #b8860b; font-weight: 700; }
@@ -621,6 +622,9 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 }
 .neg { color: var(--danger); font-weight: 600; }
 .ok  { color: var(--ok); font-weight: 600; }
+
+/* Feuille de route joueur (modale classement) */
+#playerSheetModal tr.sheet-miss td { background: #fff4d6; color: #8a6a1f; }
 
 .tile {
   display: inline-flex;

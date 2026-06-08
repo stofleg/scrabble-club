@@ -29,7 +29,8 @@
       <div class="title-row">
         <div class="game-title" id="gameTitle"></div>
         <button class="btn small" onclick="openSettings()" title="Paramètres">⚙️</button>
-        <a href="../index.html" class="btn small" title="Retour">← Accueil</a>
+        <a href="../index.html" id="btnHome" class="btn small" title="Retour">← Accueil</a>
+        <button id="btnBackToTournament" class="btn small" hidden>← Tournoi</button>
       </div>
 
       <div class="info-bar two-sections">
@@ -58,6 +59,9 @@
         <button class="btn-backspace" id="btnBackspace" data-tip="Effacer la dernière lettre">⌫</button>
         <div class="picto-group">
           <!-- Ligne 1 PC : Nouvelle partie / Pause / Voir le top / Abandonner -->
+          <button class="btn ghost small" id="btnNextGame" hidden disabled data-tip="Partie suivante">
+            <span class="ico">⏭</span><span class="lbl">Partie suivante</span>
+          </button>
           <button class="btn ghost small" id="btnRestart" data-tip="Nouvelle partie (Ctrl/Cmd+N)">
             <span class="ico">🔄</span><span class="lbl">Nouvelle partie</span>
           </button>
@@ -73,6 +77,9 @@
           <!-- Ligne 2 PC : Feuille de route / Annoter / Partager -->
           <button class="btn ghost small" id="btnSheet" data-tip="Feuille de route (Ctrl/Cmd+F)">
             <span class="ico">📋</span><span class="lbl">Feuille de route</span>
+          </button>
+          <button class="btn ghost small" id="btnReview" data-tip="Revoir la partie coup par coup">
+            <span class="ico">👀</span><span class="lbl">Revoir</span>
           </button>
           <button class="btn ghost small" id="btnAnnotate" data-tip="Annoter la grille">
             <span class="ico">✏️</span><span class="lbl">Annoter</span>
@@ -110,6 +117,7 @@
       <span class="step-label" id="rvStep">—</span>
       <button class="btn small" id="rvNext" title="Suivant (→)">▶</button>
       <button class="btn small" id="rvLast" title="Dernier coup">⏭</button>
+      <button class="btn small" id="rvReplay" data-tip="Rejouer le coup (cache le top et les solutions)">🫣</button>
     </div>
     <div class="review-line top"><span class="label">Top</span><span class="val" id="rvTop">—</span></div>
     <div class="review-line played"><span class="label">Toi</span><span class="val" id="rvPlayed">—</span></div>
@@ -254,7 +262,8 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
       <button class="btn" onclick="openSheet()">📋 Feuille de route</button>
       <button class="btn" onclick="closeEndModal();enterLocalReview()">👁 Revoir la partie</button>
-      <button class="btn ghost" onclick="restartGame()">Nouvelle partie</button>
+      <button class="btn ghost" id="endModalRestart" onclick="restartGame()">Nouvelle partie</button>
+      <button class="btn" id="endModalNextGame" hidden onclick="goBackToTournament()">⏭ Partie suivante</button>
     </div>
   </div>
 </div>

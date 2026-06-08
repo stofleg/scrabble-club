@@ -46,6 +46,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     _qPos:      scoreQPosition(c.move),                 // -1 si Q en bout, 0 sinon
     _extBoth:   isFirstMove ? scoreExtBothSides(c.move.word, dict) : 0, // 1 si rallongeable des 2 côtés (1er coup)
     _dictExt:   scoreDictExtensibility(c.move.word, dict), // rallonges 1 lettre dans le dico
+    _twAccess:  scoreTWAccess(board, c.move),              // nb de cases TW libres atteignables après ce coup
     _ext:       scoreExtensibility(board, c.move),
     _scrab:     scoreScrabbleOpenings(board, c.move),   // nb d'appuis pour scrabble perpendiculaire
     _open:      scoreOpenness(board, c.move),
@@ -59,11 +60,12 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   //   4. Q pas en bout de mot
   //   5. (1er coup) rallongeable des 2 côtés en 1 lettre (TETAI > ETAIT)
   //   6. extensibilité dico globale (nb total de rallonges 1 lettre)
-  //   7. rallongeabilité physique (les 2 côtés ouverts sur le plateau)
-  //   8. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
-  //   9. position à gauche (1er coup uniquement)
-  //  10. ouverture de la grille (générique)
-  //  11. qualité du reliquat
+  //   7. accès aux cases TW libres (tuile posée dans même ligne/colonne qu'une TW libre)
+  //   8. rallongeabilité physique (les 2 côtés ouverts sur le plateau)
+  //   9. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
+  //  10. position à gauche (1er coup uniquement)
+  //  11. ouverture de la grille (générique)
+  //  12. qualité du reliquat
   scored.sort((a, b) =>
     b._endsGame - a._endsGame ||
     (preserveJoker ? b._noJoker - a._noJoker : 0) ||
@@ -71,6 +73,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     b._qPos - a._qPos ||
     b._extBoth - a._extBoth ||
     b._dictExt - a._dictExt ||
+    b._twAccess - a._twAccess ||
     b._ext - a._ext ||
     b._scrab - a._scrab ||
     (isFirstMove ? b._left - a._left : 0) ||
@@ -145,6 +148,38 @@ function scoreDictExtensibility(word, dict) {
     const L = String.fromCharCode(code);
     if (dict.has(word + L)) count++;
     if (dict.has(L + word)) count++;
+  }
+  return count;
+}
+
+// Cases TW (mots compte triple) du plateau standard.
+const TW_CELLS = [
+  [0,0],[0,7],[0,14],
+  [7,0],[7,14],
+  [14,0],[14,7],[14,14],
+];
+
+// Compte le nombre de cases TW encore libres (non occupées) pour lesquelles
+// le coup crée une nouvelle "ligne d'accès" : une tuile nouvellement posée
+// partage la même ligne OU la même colonne que la case TW.
+// Ex : KIPS pose une lettre en ligne O (row 14) → ouvre l'accès aux TW en
+// O1 (14,0) et O8 (14,7) qui sont dans la même ligne.
+function scoreTWAccess(board, move) {
+  const dr = move.dir === "V" ? 1 : 0;
+  const dc = move.dir === "H" ? 1 : 0;
+  // Coordonnées des tuiles nouvellement posées
+  const newTiles = [];
+  for (let i = 0; i < move.word.length; i++) {
+    const r = move.row + i * dr, c = move.col + i * dc;
+    if (!board[r][c]) newTiles.push([r, c]);
+  }
+  if (!newTiles.length) return 0;
+  let count = 0;
+  for (const [tr, tc] of TW_CELLS) {
+    if (board[tr][tc]) continue; // déjà occupée → ne compte pas
+    // Vérifier si une tuile nouvelle partage la ligne OU la colonne de cette TW
+    const accessed = newTiles.some(([nr, nc]) => nr === tr || nc === tc);
+    if (accessed) count++;
   }
   return count;
 }
@@ -307,11 +342,27 @@ export function findTop(board, rack, dict, opts = {}) {
     const dr = dir === "V" ? 1 : 0;
     const dc = dir === "H" ? 1 : 0;
     for (const [ar, ac] of anchors) {
-      // offsets de l'ancre dans le mot : 0..min(rack.length, distance_avant_ancre)
-      // L'ancre est en position `offset` du mot. Le mot commence en
-      //   (ar - offset*dr, ac - offset*dc)
-      // On limite par la place dispo et par le rack.
-      const maxOffset = Math.min(rack.length, dir === "H" ? ac : ar);
+      // offsets de l'ancre dans le mot : on recule depuis l'ancre en comptant
+      // uniquement les cases VIDES (= nouvelles tuiles du rack) ; on s'arrête
+      // dès qu'on aurait besoin de plus de tuiles que le rack n'en contient,
+      // ou qu'on sort du plateau.
+      // (L'ancienne borne Math.min(rack.length, ac) était trop restrictive :
+      //  elle ignorait les lettres déjà posées avant l'ancre, qui ne consomment
+      //  pas de tuiles. Ex : MOTIVERAIS avec MOTIVER déjà en ligne O → offset 8
+      //  mais seulement 2 nouvelles cases avant l'ancre.)
+      let maxOffset = 0;
+      {
+        let newTilesNeeded = 0;
+        const physicalMax = dir === "H" ? ac : ar;
+        for (let step = 1; step <= physicalMax; step++) {
+          const tr = ar - step * dr, tc = ac - step * dc;
+          if (!board[tr][tc]) {
+            newTilesNeeded++;
+            if (newTilesNeeded > rack.length) break;
+          }
+          maxOffset = step;
+        }
+      }
       for (let offset = 0; offset <= maxOffset; offset++) {
         const startR = ar - offset * dr;
         const startC = ac - offset * dc;
