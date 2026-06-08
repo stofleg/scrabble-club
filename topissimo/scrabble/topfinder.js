@@ -41,6 +41,7 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   const scored = tied.map(c => ({
     ...c,
     _noJoker:   (c.move.blanks?.length || 0) === 0 ? 1 : 0,
+    _endsGame:  scoreEndsGame(rack, c.move, bag),       // 1 si ce coup termine la partie
     _playsQ:    c.move.word.includes("Q") ? 1 : 0,
     _qPos:      scoreQPosition(c.move),                 // -1 si Q en bout, 0 sinon
     _extBoth:   isFirstMove ? scoreExtBothSides(c.move.word, dict) : 0, // 1 si rallongeable des 2 côtés (1er coup)
@@ -53,17 +54,19 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   }));
   // Ordre de priorité :
   //   1. joker préservé (mode joker)
-  //   2. joue le Q
-  //   3. Q pas en bout de mot
-  //   4. (1er coup) rallongeable des 2 côtés en 1 lettre (TETAI > ETAIT)
-  //   5. extensibilité dico globale (nb total de rallonges 1 lettre)
-  //   6. rallongeabilité physique (les 2 côtés ouverts sur le plateau)
-  //   7. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
-  //   8. position à gauche (1er coup uniquement)
-  //   9. ouverture de la grille (générique)
-  //  10. qualité du reliquat
+  //   2. coup qui TERMINE la partie (chevalet + sac final non jouable)
+  //   3. joue le Q
+  //   4. Q pas en bout de mot
+  //   5. (1er coup) rallongeable des 2 côtés en 1 lettre (TETAI > ETAIT)
+  //   6. extensibilité dico globale (nb total de rallonges 1 lettre)
+  //   7. rallongeabilité physique (les 2 côtés ouverts sur le plateau)
+  //   8. nb d'appuis créant un scrabble (≥6 cases libres perpendiculaires)
+  //   9. position à gauche (1er coup uniquement)
+  //  10. ouverture de la grille (générique)
+  //  11. qualité du reliquat
   scored.sort((a, b) =>
     (preserveJoker ? b._noJoker - a._noJoker : 0) ||
+    b._endsGame - a._endsGame ||
     b._playsQ - a._playsQ ||
     b._qPos - a._qPos ||
     b._extBoth - a._extBoth ||
@@ -75,6 +78,40 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     b._leave - a._leave
   );
   return { ...scored[0], isotops: tied.length, isotopWords };
+}
+
+// Renvoie 1 si le coup TERMINE la partie : après avoir joué, ce qui reste
+// (chevalet conservé + sac) n'a plus de voyelle OU plus de consonne.
+// Le bag passé peut être null (cas générique) → on retourne 0 (info indispo).
+function scoreEndsGame(rack, move, bag) {
+  if (!bag) return 0;
+  // Compter les lettres POSÉES (= les nouvelles tuiles utilisées du rack)
+  // Pour chaque lettre du mot, si la case est nouvelle (pas déjà sur le board)
+  // on consomme une tuile du rack. Approximation : on suppose toutes nouvelles.
+  // En pratique on n'a pas le board ici, donc on prend les letters du move.blanks
+  // pour identifier les jokers (qui consomment "?") et les autres consomment leur lettre.
+  const used = []; // letters retirées du chevalet
+  for (let i = 0; i < move.word.length; i++) {
+    const isBlank = (move.blanks || []).includes(i);
+    used.push(isBlank ? "?" : move.word[i]);
+  }
+  const rackRem = rack.slice();
+  for (const L of used) {
+    let idx = rackRem.indexOf(L);
+    if (idx === -1 && L !== "?") idx = rackRem.indexOf("?");  // joker en remplacement
+    if (idx !== -1) rackRem.splice(idx, 1);
+  }
+  // Total voyelles + consonnes restantes (rack + sac)
+  let v = 0, c = 0;
+  for (const L of rackRem) {
+    if (L === "?") continue;
+    if (VOWELS.has(L)) v++; else c++;
+  }
+  for (const [L, n] of Object.entries(bag)) {
+    if (L === "?" || !n) continue;
+    if (VOWELS.has(L)) v += n; else c += n;
+  }
+  return (v === 0 || c === 0) ? 1 : 0;
 }
 
 function scoreQPosition(move) {
