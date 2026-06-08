@@ -1985,8 +1985,7 @@ async function enterTrainingReviewMode(id) {
   document.querySelector(".info-bar")?.style.setProperty("display", "none");
   $("#reviewPanel").hidden = false;
   showFeedback("success", `📺 ${fakeGame.name}`,
-    `Score : <strong>${t.total_score}</strong> · Négatif : <strong>${t.sum_neg}</strong> · Temps : <strong>${fmtChrono(t.total_time_seconds || 0)}</strong>
-     · <a href="#" onclick="event.preventDefault();openSheet()" style="color:var(--petrol);text-decoration:underline">feuille de route</a>`);
+    `Score : <strong>${t.total_score}</strong> · Négatif : <strong>${t.sum_neg}</strong> · Temps : <strong>${fmtChrono(t.total_time_seconds || 0)}</strong>`);
   renderReviewStep();
 }
 
@@ -2029,10 +2028,7 @@ async function enterReviewMode(id) {
   const summary = result
     ? `Ton score : <strong>${result.total_score}</strong> · Négatif : <strong>${result.sum_neg}</strong> · Temps : <strong>${fmtChrono(result.total_time_seconds || 0)}</strong>`
     : `<em>Tu n'as pas encore joué cette partie.</em>`;
-  showFeedback("success", `📺 Parcours de « ${game.name} »`,
-    `${summary}
-     ${result ? ` · <a href="#" onclick="event.preventDefault();openSheet()" style="color:var(--petrol);text-decoration:underline">feuille de route</a>` : ""}
-`);
+  showFeedback("success", `📺 Parcours de « ${game.name} »`, summary);
   renderReviewStep();
 }
 

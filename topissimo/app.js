@@ -910,11 +910,17 @@ async function loadTournamentDetail(tournamentId) {
   if (!t) { backToTournaments(); return; }
   $("#tournamentDetailTitle").textContent = `🏟 ${t.name}`;
 
-  const { data: games, error } = await sb.from("prepared_games")
+  const { data: gamesRaw, error } = await sb.from("prepared_games")
     .select("id,name,mode,with_joker,time_per_move,created_at")
-    .eq("tournament_id", tournamentId)
-    .order("created_at", { ascending: true });
+    .eq("tournament_id", tournamentId);
   if (error) return alert(error.message);
+  // Tri naturel par nom : "Partie 2" < "Partie 10" (au lieu de l'ordre lexico ou chrono).
+  // Fallback : si même prefix → ordre chronologique de création.
+  const games = (gamesRaw || []).slice().sort((a, b) => {
+    const cmp = a.name.localeCompare(b.name, "fr", { numeric: true, sensitivity: "base" });
+    if (cmp !== 0) return cmp;
+    return (a.created_at || "").localeCompare(b.created_at || "");
+  });
 
   // Pré-remplir le nom par défaut "Partie N+1" pour ce tournoi
   const nums = (games || []).map(g => {
@@ -973,11 +979,14 @@ async function loadTournamentLeaderboard(tournamentId, games) {
   const body = $("#tournamentLeaderboardBody");
   if (!games.length) { body.innerHTML = `<p class="muted">Pas encore de partie.</p>`; return; }
 
-  // Trier les parties par catégorie + ordre chronologique
+  // Trier les parties par catégorie + tri naturel par nom (Partie 2 < Partie 10)
   const cats = { std: [], blitz: [], orig: [] };
   for (const g of games) cats[categorize(g)].push(g);
   for (const k of Object.keys(cats)) {
-    cats[k].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+    cats[k].sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name, "fr", { numeric: true, sensitivity: "base" });
+      return cmp !== 0 ? cmp : (a.created_at || "").localeCompare(b.created_at || "");
+    });
   }
   const gameIds = games.map(g => g.id);
 
