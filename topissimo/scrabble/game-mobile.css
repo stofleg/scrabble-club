@@ -227,6 +227,23 @@
   }
   #actionRowInGame .btn .lbl { display: none; }
   #actionRowInGame .btn .ico { font-size: 1.05rem; }
+
+  /* Ordre mobile (différent du HTML qui suit l'ordre PC) :
+     Pause / Partager / Abandonner / Voir le top / Annoter / Feuille / Nouvelle */
+  #btnPause    { order: 1; }
+  #btnShare    { order: 2; }
+  #btnAbandon  { order: 3; }
+  #btnGiveUp   { order: 4; }
+  #btnAnnotate { order: 5; }
+  #btnSheet    { order: 6; }
+  #btnRestart  { order: 7; }
+  /* Forcer la picto-group à passer en flex (override le grid PC) */
+  #actionRowInGame .picto-group {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+  }
   /* ⌫ et ✓ : carrés colorés, conservent leur look */
   #actionRowInGame .btn-backspace,
   #actionRowInGame .btn-validate {

@@ -2442,7 +2442,7 @@ function startGame() {
   $("#actionRowInGame").hidden = false;
   const isTraining = !state.prepared && !state.isPuzzle;
   $("#btnPause").hidden = !isTraining;
-  $("#annotToolbar").hidden = false;     // outils d'annotation disponibles dès le démarrage
+  // Annot toolbar : masquée par défaut, visible uniquement via le bouton ✏️ Annoter
   if (isTraining) clearSavedTraining();
   startChrono();
   nextMove();

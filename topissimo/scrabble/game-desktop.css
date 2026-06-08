@@ -20,11 +20,32 @@
     align-items: center;
     flex-wrap: wrap;
   }
+  /* PC : grid 4 colonnes → 4 boutons ligne 1, 3 boutons ligne 2.
+     L'ordre HTML détermine la position : ligne 1 = Nouvelle / Pause / Voir top / Abandon
+                                          ligne 2 = Feuille / Annoter / Partager */
   #actionRowInGame .picto-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
     gap: 8px;
-    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
+  }
+  /* Annot-toolbar : masquée par défaut, visible quand body.show-annot (toggle via ✏️ Annoter) */
+  .annot-toolbar { display: none !important; }
+  body.show-annot .annot-toolbar {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,30,45,.12);
+  }
+  /* État actif du bouton ✏️ Annoter (fond jaune) */
+  #btnAnnotate.active {
+    background: var(--yellow) !important;
+    color: var(--petrol-dark) !important;
   }
   #actionRowInGame .btn {
     display: inline-flex !important;
