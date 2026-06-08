@@ -1422,7 +1422,7 @@ function placeTopAndAdvance(playerScore) {
     topWordTimer = null;
     state.lastTopCells = [];
     renderBoard();
-  }, 1000);
+  }, 1500);
 
   // Appliquer le top au plateau
   state.board = applyMove(state.board, tm.move);
