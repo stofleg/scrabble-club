@@ -1350,7 +1350,22 @@ function buildMoveFromPending() {
   const allSameRow = ps.every(p => p.row === ps[0].row);
   const allSameCol = ps.every(p => p.col === ps[0].col);
   if (!allSameRow && !allSameCol) return null;
-  const dir = allSameRow ? "H" : "V";
+  // Cas particulier : une seule tuile posée → la direction H/V est ambiguë
+  // tant qu'on ne regarde pas les lettres voisines. Si on a un voisin
+  // vertical (au-dessus ou en-dessous) mais pas horizontal, on doit jouer
+  // verticalement. Idem inverse.
+  let dir;
+  if (ps.length === 1) {
+    const p = ps[0];
+    const has = (r, c) => r >= 0 && c >= 0 && r < BOARD_SIZE && c < BOARD_SIZE && !!state.board[r][c];
+    const vNeighbor = has(p.row - 1, p.col) || has(p.row + 1, p.col);
+    const hNeighbor = has(p.row, p.col - 1) || has(p.row, p.col + 1);
+    if (vNeighbor && !hNeighbor) dir = "V";
+    else if (hNeighbor && !vNeighbor) dir = "H";
+    else dir = state.cursor?.dir || "H";   // ambigu ou seule sur le plateau : on prend la direction du curseur
+  } else {
+    dir = allSameRow ? "H" : "V";
+  }
   // tri par axe progressif
   ps.sort((a,b) => dir === "H" ? a.col - b.col : a.row - b.row);
   // étendre le mot en prenant les lettres committed avant le 1er pending et entre les pending
@@ -1560,7 +1575,18 @@ function nextMove() {
   }
 
   // ===== Mode entraînement (aléatoire) =====
-  if (bagTotalVowels(state.bag) === 0 || bagTotalConsonants(state.bag) === 0) {
+  // La partie ne s'arrête que quand IL N'Y A PLUS DE voyelles OU PLUS DE
+  // consonnes dans l'UNION du sac ET du chevalet conservé du joueur.
+  // → la partie continue même si le tirage est < 7 lettres, tant qu'on
+  //   peut faire AU MOINS un mot.
+  const remainingRackLetters = state.rack.filter(t => !t.used).map(t => t.letter);
+  let vAvail = bagTotalVowels(state.bag);
+  let cAvail = bagTotalConsonants(state.bag);
+  for (const L of remainingRackLetters) {
+    if (L === "?") continue;
+    if (VOWELS.has(L)) vAvail++; else cAvail++;
+  }
+  if (vAvail === 0 || cAvail === 0) {
     endGame();
     return;
   }
