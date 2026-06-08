@@ -99,7 +99,7 @@ const state = {
 function loadSettings() {
   const defaults = {
     rackPos: "bottom", sortRack: false, showCoords: true,
-    timePerMove: 0, gameMode: "duplicate", withJoker: false,
+    timePerMove: 120, gameMode: "duplicate", withJoker: false,
     colorTheme: "classic",
     chronoType: "challenge",
   };
