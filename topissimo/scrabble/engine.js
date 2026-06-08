@@ -278,6 +278,17 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
     return { vowels: v, consonants: rack.length - v };
   };
 
+  // Si le sac est vide : on retourne le chevalet tel quel SI il a au moins
+  // 1 voyelle + 1 consonne (= jouable). Sinon échec (fin de partie).
+  const bagEmpty = Object.values(bag).every(c => !c);
+  if (bagEmpty) {
+    const { vowels, consonants } = countTypes(kept);
+    if (vowels >= 1 && consonants >= 1) {
+      return { drawn: [], bag: { ...bag }, minApplied: 0 };
+    }
+    return { drawn: null, bag: { ...bag }, failed: true };
+  }
+
   // On essaie d'abord avec la règle stricte, puis si impossible on relâche
   for (const minVC of [baseMin, 1, 0]) {
     for (let attempt = 0; attempt < 30; attempt++) {
@@ -293,7 +304,6 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
         drawn.push(letter);
         trial[letter]--;
       }
-      if (!ok && drawn.length === 0) return { drawn: null, bag: { ...bag }, failed: true };
       const final = [...kept, ...drawn];
       const { vowels, consonants } = countTypes(final);
       if (vowels >= minVC && consonants >= minVC) {
@@ -301,7 +311,8 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
       }
     }
   }
-  // Vraiment impossible : tirer sans contrainte
+  // Vraiment impossible : tirer sans contrainte ; ne PAS échouer si le
+  // résultat final reste jouable (≥1 voyelle + ≥1 consonne).
   const trial = { ...bag };
   const drawn = [];
   for (let i = 0; i < need; i++) {
@@ -311,6 +322,11 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
     const idx = Math.floor(Math.random() * pool.length);
     drawn.push(pool[idx]);
     trial[drawn[drawn.length-1]]--;
+  }
+  const finalRack = [...kept, ...drawn];
+  const { vowels, consonants } = countTypes(finalRack);
+  if (vowels === 0 || consonants === 0) {
+    return { drawn: null, bag: { ...bag }, failed: true };
   }
   return { drawn, bag: trial, minApplied: 0 };
 }
