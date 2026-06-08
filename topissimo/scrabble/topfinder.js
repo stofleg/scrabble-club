@@ -53,8 +53,8 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
     _leave:     scoreLeave(board, rack, c.move, bag),
   }));
   // Ordre de priorité :
-  //   1. joker préservé (mode joker)
-  //   2. coup qui TERMINE la partie (chevalet + sac final non jouable)
+  //   1. coup qui TERMINE la partie (prime sur tout, même sur préserver joker)
+  //   2. joker préservé (mode joker)
   //   3. joue le Q
   //   4. Q pas en bout de mot
   //   5. (1er coup) rallongeable des 2 côtés en 1 lettre (TETAI > ETAIT)
@@ -65,8 +65,8 @@ export function findTopRanked(board, rack, dict, bag = null, opts = {}) {
   //  10. ouverture de la grille (générique)
   //  11. qualité du reliquat
   scored.sort((a, b) =>
-    (preserveJoker ? b._noJoker - a._noJoker : 0) ||
     b._endsGame - a._endsGame ||
+    (preserveJoker ? b._noJoker - a._noJoker : 0) ||
     b._playsQ - a._playsQ ||
     b._qPos - a._qPos ||
     b._extBoth - a._extBoth ||
