@@ -45,8 +45,16 @@ export function generateGame(dict, options = {}, onProgress = null) {
   const estimatedMoves = 28; // pour le calcul de progress
 
   while (true) {
-    // Fin de partie : voyelles OU consonnes épuisées
-    if (bagTotalVowels(bag) === 0 || bagTotalConsonants(bag) === 0) break;
+    // Fin de partie : voyelles OU consonnes épuisées DANS LE POOL TOTAL
+    // (chevalet conservé + sac restant). Sinon la partie continue.
+    const VOWELS_SET = new Set(["A","E","I","O","U","Y"]);
+    let v = bagTotalVowels(bag);
+    let c = bagTotalConsonants(bag);
+    for (const t of rack) {
+      if (t.letter === "?") continue;
+      if (VOWELS_SET.has(t.letter)) v++; else c++;
+    }
+    if (v === 0 || c === 0) break;
 
     // Compléter le chevalet
     const target = mode.rackSize;
@@ -146,5 +154,7 @@ export function generateGame(dict, options = {}, onProgress = null) {
   }
 
   if (onProgress) onProgress(1);
-  return { moves, totalTopScore };
+  // On expose aussi l'état final du sac et du chevalet pour debug/vérification
+  const finalRack = rack.map(t => t.letter);
+  return { moves, totalTopScore, finalBag: bag, finalRack };
 }
