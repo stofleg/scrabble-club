@@ -2,6 +2,11 @@
    Scrabble — UI de jeu
    ============================================================ */
 
+/* Visibilité des boutons tournoi vs entraînement.
+   body.mode-tournament est positionné par updateTournamentNavButtons() dans game.js. */
+body:not(.mode-tournament) #btnNextGame { display: none !important; }
+body.mode-tournament #btnRestart { display: none !important; }
+
 :root {
   --petrol: #002E44;
   --petrol-2: #003a55;
@@ -461,6 +466,14 @@ body.theme-duplijeu .board tr:last-child td.coord { height: calc(var(--cell-size
   /* si curseur ET dernière → curseur violet a priorité */
   border-color: #8a3cb5;
 }
+
+/* ===== Mot top retenu : surbrillance dorée de toutes les cases du mot ===== */
+.board td.top-word .tile {
+  background: var(--petrol);
+  color: #fff;
+}
+.board td.top-word .tile .val { color: rgba(255,255,255,.6); }
+.board td.top-word .tile.blank { background: var(--petrol-2); }
 
 /* ===== Badge de score live (au-dessus de la dernière lettre du mot) ===== */
 /* Badge de score live : texte centré dans la case, sans fond propre

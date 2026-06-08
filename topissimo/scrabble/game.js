@@ -77,7 +77,8 @@ const state = {
   moveStart: null,            // performance.now() au début du coup
   moveTimeLeft: 0,            // secondes restantes (si timePerMove > 0)
   // Surbrillance du dernier coup
-  lastPlaced: [],             // [{row, col}]
+  lastPlaced: [],             // [{row, col}] — nouvelles cases du top
+  lastTopCells: [],           // [{row, col}] — toutes les cases du mot top (surbrillance dorée)
   // Historique pour feuille de route
   history: [],                // [{moveNo, rack, top, played, score, isTop, timeMs, status}]
   // Mode joker : nb de jokers "actifs" restants (2 au départ en mode joker)
@@ -197,6 +198,7 @@ function renderBoard() {
       const isCursor = state.cursor && state.cursor.row === r && state.cursor.col === c;
       if (isCursor) cls.push("cursor", state.cursor.dir === "H" ? "dir-h" : "dir-v");
       if (state.lastPlaced.some(p => p.row === r && p.col === c)) cls.push("last-placed");
+      if (state.lastTopCells.some(p => p.row === r && p.col === c)) cls.push("top-word");
       let tileHtmlStr = "";
       if (tile) {
         const tcls = ["tile"];
@@ -676,6 +678,9 @@ function hideFeedback() {
   // donc explicitement le contenu pour que rien ne traîne d'un coup à l'autre.
   div.innerHTML = "";
   div.className = "feedback";
+  // Effacer aussi la surbrillance bleue du mot top et annuler son timer
+  if (topWordTimer) { clearTimeout(topWordTimer); topWordTimer = null; }
+  state.lastTopCells = [];
 }
 
 function applyRackPos() {
@@ -1125,6 +1130,7 @@ function cancelCurrent() {
 }
 
 let flashTimer = null;
+let topWordTimer = null;   // efface la surbrillance bleue du mot top après 3s
 function flashFeedback(kind, title, detail) {
   showFeedback(kind, title, detail);
   clearTimeout(flashTimer);
@@ -1406,6 +1412,17 @@ function placeTopAndAdvance(playerScore) {
     }
   }
   state.lastPlaced = lastPlaced;
+  // Toutes les cases du mot (nouvelles + préexistantes) pour la surbrillance dorée
+  state.lastTopCells = Array.from({ length: word.length }, (_, i) => ({
+    row: row + i * dr, col: col + i * dc,
+  }));
+  // Effacer la surbrillance après 3 secondes
+  if (topWordTimer) clearTimeout(topWordTimer);
+  topWordTimer = setTimeout(() => {
+    topWordTimer = null;
+    state.lastTopCells = [];
+    renderBoard();
+  }, 1000);
 
   // Appliquer le top au plateau
   state.board = applyMove(state.board, tm.move);
@@ -1480,6 +1497,7 @@ function revealTop() {
   const tm = state.topMove;
   recordMove({ status: "giveup", playerScore, playedWord });
   placeTopAndAdvance(playerScore);
+  renderBoard();   // afficher immédiatement la surbrillance du mot top
   showFeedback("miss", `Top : ${tm.move.word} — ${tm.score} pts (toi : ${playerScore}, −20s)`,
     `Négatif : ${playerScore - tm.score}.`,
     `${tm.words.map(w => `${w.word}(${w.score})`).join(" + ")}`);
@@ -1787,6 +1805,8 @@ if (window.matchMedia("(max-width: 700px)").matches) {
 
 async function initGame() {
   state.bag = { ...LETTER_BAG };
+  state.prepared = null;
+  state.isPuzzle = false;
   state.preparedIdx = 0;
   // Mode joker : extraire les 2 jokers du sac et les stocker à part
   if (state.settings.withJoker) {
@@ -1809,11 +1829,13 @@ async function initGame() {
   state.chronoPenalty = 0;
   state.chronoFinal = null;
   state.lastPlaced = [];
+  state.lastTopCells = [];
   state.history = [];
   state.moveStart = null;
   state.moveTimeLeft = 0;
   if (chronoTimer) { clearInterval(chronoTimer); chronoTimer = null; }
   if (moveTimer) { clearInterval(moveTimer); moveTimer = null; }
+  if (topWordTimer) { clearTimeout(topWordTimer); topWordTimer = null; }
   // Reset UI review s'il était activé
   review.active = false;
   document.body.classList.remove("in-review");
@@ -2030,13 +2052,19 @@ function renderReviewStep() {
     for (let i = 0; i < idx; i++) board = applyMove(board, moves[i].top);
     state.board = board;
     state.lastPlaced = [];
+    state.lastTopCells = [];
   } else {
     // Mode normal : plateau APRÈS application des coups 1..step (incluant le coup courant)
     let board = emptyBoard();
     for (let i = 0; i < review.step; i++) board = applyMove(board, moves[i].top);
     state.board = board;
-    // Mettre en surbrillance le coup courant (lastPlaced)
-    state.lastPlaced = computeLastPlacedCells(moves.slice(0, idx).reduce((b, mv) => applyMove(b, mv.top), emptyBoard()), m.top);
+    // Mettre en surbrillance le coup courant (lastPlaced + toutes les cases du mot)
+    const boardBefore = moves.slice(0, idx).reduce((b, mv) => applyMove(b, mv.top), emptyBoard());
+    state.lastPlaced = computeLastPlacedCells(boardBefore, m.top);
+    const dr = m.top.dir === "V" ? 1 : 0, dc = m.top.dir === "H" ? 1 : 0;
+    state.lastTopCells = Array.from({ length: m.top.word.length }, (_, i) => ({
+      row: m.top.row + i * dr, col: m.top.col + i * dc,
+    }));
   }
 
   // Chevalet du coup courant
@@ -2518,6 +2546,7 @@ function restorePausedTraining() {
     state.spareJokers = s.spareJokers || 0;
     state.history = s.history || [];
     state.lastPlaced = s.lastPlaced || [];
+    state.lastTopCells = s.lastTopCells || [];
     state.bestAttempt = s.bestAttempt || null;
     Object.assign(state.settings, s.settings || {});
     state.chronoPenalty = s.chronoPenalty || 0;
@@ -2654,6 +2683,7 @@ function exitLocalReview() {
   for (const h of moves) board = applyMove(board, h.top);
   state.board = board;
   state.lastPlaced = [];
+  state.lastTopCells = [];
   state.rack = [];
   renderBoard();
   renderRack();
@@ -2947,19 +2977,18 @@ if (_btnNextGame) {
 }
 
 // Met à jour la visibilité des boutons Accueil / Tournoi / Nouvelle partie / Partie suivante
+// La classe CSS body.mode-tournament pilote #btnNextGame et #btnRestart via game.css.
 function updateTournamentNavButtons() {
   const isTournament = !!state.prepared && !state.isPuzzle;
   const gameOver = state.chronoFinal != null;
+  // Classe CSS — source de vérité unique pour les deux boutons principaux
+  document.body.classList.toggle("mode-tournament", isTournament);
+  // Accueil / ← Tournoi
   const btnHome = $("#btnHome");
   if (btnHome) btnHome.hidden = isTournament;
   if (_btnBackToTournament) _btnBackToTournament.hidden = !isTournament;
-  // Pictos
-  const btnRestart = $("#btnRestart");
-  if (btnRestart) btnRestart.hidden = isTournament;
-  if (_btnNextGame) {
-    _btnNextGame.hidden = !isTournament;
-    _btnNextGame.disabled = !gameOver;
-  }
+  // Partie suivante : enabled seulement quand la partie est terminée
+  if (_btnNextGame) _btnNextGame.disabled = !gameOver;
   // Modale de fin
   const endModalRestart = $("#endModalRestart");
   const endModalNextGame = $("#endModalNextGame");
