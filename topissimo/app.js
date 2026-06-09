@@ -1351,19 +1351,24 @@ async function loadTournamentStats(tournamentId, games) {
     topScrabbleByGame[gid] = set;
   }
 
-  for (const p of players) {
-    p.missedScrabbles = 0;
-    for (const r of (p.results || [])) {
-      const scrabbleMoves = topScrabbleByGame[r.prepared_game_id];
-      if (!scrabbleMoves) continue;
-      const bonuses = bonusesOf(r.prepared_game_id);
-      for (const m of (r.details || [])) {
-        if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
-        // On ne compte que si la donnée est fiable : placedCount doit être
-        // enregistré (parties récentes). Les anciens tournois (sans placedCount)
-        // ne sont pas calculables a posteriori → 0 → rubrique masquée ("—").
-        if (m.placedCount == null) continue;
-        if (!bonuses[m.placedCount]) p.missedScrabbles++;  // le joueur n'a pas posé de scrabble
+  for (const p of players) p.missedScrabbles = 0;
+  // La rubrique n'est calculable que si TOUTES les feuilles du tournoi portent
+  // placedCount (parties récentes). Sinon (résidu d'anciennes parties pour
+  // certains joueurs), le classement serait partiel et trompeur → on masque tout.
+  const scrabbleReliable = players.every(p =>
+    (p.results || []).every(r =>
+      !(r.details || []).length || (r.details || []).some(m => m.placedCount != null)));
+  if (scrabbleReliable) {
+    for (const p of players) {
+      for (const r of (p.results || [])) {
+        const scrabbleMoves = topScrabbleByGame[r.prepared_game_id];
+        if (!scrabbleMoves) continue;
+        const bonuses = bonusesOf(r.prepared_game_id);
+        for (const m of (r.details || [])) {
+          if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
+          if (m.placedCount == null) continue;
+          if (!bonuses[m.placedCount]) p.missedScrabbles++;  // le joueur n'a pas posé de scrabble
+        }
       }
     }
   }
