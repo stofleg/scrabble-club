@@ -1359,11 +1359,11 @@ async function loadTournamentStats(tournamentId, games) {
       const bonuses = bonusesOf(r.prepared_game_id);
       for (const m of (r.details || [])) {
         if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
-        // Le joueur a trouvé le top-scrabble (status "top") OU a posé son propre
-        // scrabble (placedCount → prime) → pas de raté. Sinon, scrabble raté.
-        // (status est fiable même sur d'anciennes parties sans placedCount.)
-        const foundScrabble = m.status === "top" || !!bonuses[m.placedCount];
-        if (!foundScrabble) p.missedScrabbles++;
+        // On ne compte que si la donnée est fiable : placedCount doit être
+        // enregistré (parties récentes). Les anciens tournois (sans placedCount)
+        // ne sont pas calculables a posteriori → 0 → rubrique masquée ("—").
+        if (m.placedCount == null) continue;
+        if (!bonuses[m.placedCount]) p.missedScrabbles++;  // le joueur n'a pas posé de scrabble
       }
     }
   }
