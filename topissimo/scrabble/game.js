@@ -657,7 +657,6 @@ function timeoutAdvance() {
   const tm = state.topMove;
   recordMove({ status: "timeout", playerScore, playedWord });
   placeTopAndAdvance(playerScore);
-  showTopFeedback(tm.move.word, tm.score); // barre verte top
   showFeedback("miss", `⏱ Temps écoulé — tu marques ${playerScore} pts`, "");
   setTimeout(nextMove, 1000);
 }
@@ -1303,7 +1302,6 @@ function validate() {
     const bestLine = isNewBest
       ? `${currentLine} — meilleur essai ✓`
       : `${currentLine}<br>Meilleur essai : <strong>${best.word}</strong> = ${best.score} pts`;
-    showTopFeedback(state.topMove.move.word, state.topMove.score); // barre verte top
     showFeedback("miss", bestLine, `Pas le top, cherche encore. <kbd>Voir le top</kbd> pour révéler.`);
   }
 }
