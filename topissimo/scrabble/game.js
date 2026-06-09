@@ -1281,7 +1281,7 @@ function validate() {
   } else {
     // Miss : on garde la trace du meilleur essai
     if (!state.bestAttempt || result.score > state.bestAttempt.score) {
-      state.bestAttempt = { word: move.word, score: result.score };
+      state.bestAttempt = { word: move.word, score: result.score, move };
     }
     const startR = move.row, startC = move.col;
     clearPending();
@@ -1556,7 +1556,9 @@ function revealTop() {
   }
   const tm = state.topMove;
   // Construire le playedMove pour avoir les coordonnées dans la barre jaune
-  const playedMoveObj = state.pending.length ? buildMoveFromPending() : null;
+  // Priorité : pending courant, sinon move stocké dans bestAttempt
+  let playedMoveObj = state.pending.length ? buildMoveFromPending() : null;
+  if (!playedMoveObj && state.bestAttempt?.move) playedMoveObj = state.bestAttempt.move;
   recordMove({ status: "giveup", playerScore, playedWord });
   placeTopAndAdvance(playerScore, playedWord || null, playerScore || null, playedMoveObj);
   renderBoard();   // afficher immédiatement la surbrillance du mot top
