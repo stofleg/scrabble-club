@@ -662,16 +662,19 @@ function timeoutAdvance() {
   setTimeout(nextMove, 1000);
 }
 
-// Enveloppe un mot Scrabble dans un lien cliquable vers 1mot.net
+// Enveloppe un mot Scrabble dans un lien cliquable vers elimots.com
+function dictUrl(word) {
+  return `https://elimots.com/ods?mot=${word.toLowerCase()}`;
+}
 function wLink(word) {
   if (!word) return word;
-  return `<a href="https://1mot.net/${word.toLowerCase()}" class="word-link" onclick="event.preventDefault();event.stopPropagation();openDictPanel('${word}')">${word}</a>`;
+  return `<a href="${dictUrl(word)}" class="word-link" onclick="event.preventDefault();event.stopPropagation();openDictPanel('${word}')">${word}</a>`;
 }
 
 window.openDictPanel = function(word) {
   // Pas de dictionnaire pendant une partie tournoi en cours
   if (document.body.classList.contains("mode-tournament") && state.started && !review.active) return;
-  const url = `https://1mot.net/${word.toLowerCase()}`;
+  const url = dictUrl(word);
   // Si la feuille de route est ouverte, utiliser le volet latéral de la feuille
   if (!$("#sheet").hidden) {
     $("#sheetDictWord").textContent = word;

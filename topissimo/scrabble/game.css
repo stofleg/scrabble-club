@@ -750,10 +750,10 @@ input:disabled, select:disabled {
 }
 .dict-iframe {
   position: absolute;
-  top: -183px;   /* masque l'en-tête + titre de 1mot.net */
+  top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% + 183px);
+  height: 100%;
   border: none;
 }
 
@@ -807,8 +807,8 @@ input:disabled, select:disabled {
 .sheet-dict-panel[hidden] { display: none !important; }
 /* Décalage spécifique au volet de la feuille de route (+5 mm) */
 .sheet-dict-panel .dict-iframe {
-  top: -202px;
-  height: calc(100% + 202px);
+  top: 0;
+  height: 100%;
 }
 /* Volet ouvert : lever le plafond pour que le volet s'ajoute à droite */
 .sheet-content.with-dict { max-width: min(1200px, calc(100vw - 40px)) !important; }
