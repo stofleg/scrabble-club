@@ -1324,7 +1324,7 @@ async function loadTournamentStats(tournamentId, games) {
         if (m.status !== "top" && m.rack?.length === 7 && m.top?.word?.length >= 7) p.missedScrabbles++;
   }
   const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
-  const cardShame = `<h3>🏴\u200d☠️ Hall of Shame</h3>
+  const cardShame = `<h3>🐭 Mur de la taupe</h3>
     <div class="shame-grid">
       <div><h4>💩 Mots faux</h4><ol>${[...players].sort((a,b)=>b.invalidCount-a.invalidCount).filter(p=>p.invalidCount>0).slice(0,5).map(p=>shRow(p,p.invalidCount+' mot'+(p.invalidCount>1?'s':''))).join('')||'<li class="muted">Pas encore de données</li>'}</ol></div>
       <div><h4>🫣 Anti-solos</h4><ol>${[...players].sort((a,b)=>b.antiSolos-a.antiSolos).filter(p=>p.antiSolos>0).slice(0,5).map(p=>shRow(p,p.antiSolos+' coup'+(p.antiSolos>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
