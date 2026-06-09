@@ -1368,13 +1368,56 @@ async function loadTournamentStats(tournamentId, games) {
     <h3>📉 Meilleur cumul négatifs (sur ${games.length} partie${games.length>1?'s':''})</h3>
     <ol>${topN(players.filter(p => p.games === games.length), 5, "sumNeg").map(p => renderRow(p, p.sumNeg)).join("") || '<li class="muted">Aucun joueur n\'a fait toutes les parties</li>'}</ol>`;
 
+  // ===== HALL OF SHAME =====
+  for (const p of players) {
+    p.invalidCount = 0;
+    for (const g of Object.values(p.perGame || {}))
+      for (const m of (g.details || [])) p.invalidCount += (m.invalidCount || 0);
+  }
+  const antiCount = {};
+  for (const [, rs] of Object.entries(byGame)) {
+    if (rs.length < 2) continue;
+    const topsByMv = {};
+    for (const r of rs) {
+      for (const h of (r.details || [])) {
+        (topsByMv[h.moveNo] ||= { tops: new Set(), all: new Set() }).all.add(r.player_id);
+        if (h.status === "top") topsByMv[h.moveNo].tops.add(r.player_id);
+      }
+    }
+    for (const d of Object.values(topsByMv)) {
+      if (d.all.size < 2) continue;
+      const missed = [...d.all].filter(pid => !d.tops.has(pid));
+      if (missed.length === 1) antiCount[missed[0]] = (antiCount[missed[0]] || 0) + 1;
+    }
+  }
+  for (const p of players) p.antiSolos = antiCount[p.id] || 0;
+  for (const p of players) {
+    const ts = Object.values(p.perGame || {}).map(g => g.time).filter(t => t > 0);
+    p.worstSingleTime = ts.length ? Math.max(...ts) : 0;
+  }
+  for (const p of players) {
+    p.missedScrabbles = 0;
+    for (const g of Object.values(p.perGame || {}))
+      for (const m of (g.details || []))
+        if (m.status !== "top" && m.rack?.length === 7 && m.top?.word?.length >= 7) p.missedScrabbles++;
+  }
+  const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
+  const cardShame = `<h3>🏴\u200d☠️ Hall of Shame</h3>
+    <div class="shame-grid">
+      <div><h4>💩 Mots hors dico</h4><ol>${[...players].sort((a,b)=>b.invalidCount-a.invalidCount).filter(p=>p.invalidCount>0).slice(0,5).map(p=>shRow(p,p.invalidCount+' mot'+(p.invalidCount>1?'s':''))).join('')||'<li class="muted">Pas encore de données</li>'}</ol></div>
+      <div><h4>🫣 Anti-solos</h4><ol>${[...players].sort((a,b)=>b.antiSolos-a.antiSolos).filter(p=>p.antiSolos>0).slice(0,5).map(p=>shRow(p,p.antiSolos+' coup'+(p.antiSolos>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
+      <div><h4>🐢 Partie la plus lente</h4><ol>${[...players].sort((a,b)=>b.worstSingleTime-a.worstSingleTime).filter(p=>p.worstSingleTime>0).slice(0,5).map(p=>shRow(p,fmtT(p.worstSingleTime))).join('')||'<li class="muted">—</li>'}</ol></div>
+      <div><h4>😤 Scrabbles ratés</h4><ol>${[...players].sort((a,b)=>b.missedScrabbles-a.missedScrabbles).filter(p=>p.missedScrabbles>0).slice(0,5).map(p=>shRow(p,p.missedScrabbles+' scrabble'+(p.missedScrabbles>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
+    </div>`;
+
   body.innerHTML = `
     <div class="tournament-stats-grid">
       <div class="t-stat-card">${cardSolos}</div>
       <div class="t-stat-card">${cardBestTime}</div>
       <div class="t-stat-card">${cardCumulTime}</div>
       <div class="t-stat-card">${cardCumulNeg}</div>
-    </div>`;
+    </div>
+    <div class="t-stat-card shame" style="margin-top:16px">${cardShame}</div>`;
 }
 
 $("#tCreate").onclick = async () => {
