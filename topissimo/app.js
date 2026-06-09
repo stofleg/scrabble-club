@@ -1367,7 +1367,10 @@ async function loadTournamentStats(tournamentId, games) {
         for (const m of (r.details || [])) {
           if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
           if (m.placedCount == null) continue;
-          if (!bonuses[m.placedCount]) p.missedScrabbles++;  // le joueur n'a pas posé de scrabble
+          // Trouvé le top-scrabble (status "top") OU posé son propre scrabble
+          // (placedCount → prime) → pas de raté.
+          if (m.status === "top" || bonuses[m.placedCount]) continue;
+          p.missedScrabbles++;
         }
       }
     }
