@@ -1558,6 +1558,25 @@ async function onSignedIn() {
   $("#authOverlay").hidden = true;
   $("#userPill").hidden = false;
   $("#currentPseudo").textContent = player.name;
+  // Affiche la version SW uniquement pour stof (debug)
+  const swVerEl = $("#swVersion");
+  if (player.name === "stof" && swVerEl) {
+    navigator.serviceWorker?.getRegistration?.().then(reg => {
+      const sw = reg?.active || reg?.installing || reg?.waiting;
+      const scriptURL = sw?.scriptURL || "";
+      const m = scriptURL.match(/sw\.js(\?.*)?$/) ? null : null; // on lit le cache name via message
+      // Fallback : lire le cache via caches.keys()
+      if (typeof caches !== "undefined") {
+        caches.keys().then(keys => {
+          const v = keys.find(k => k.startsWith("garenna-")) || "";
+          swVerEl.textContent = v ? ` · ${v}` : "";
+          swVerEl.hidden = !v;
+        });
+      }
+    }).catch(() => {});
+  } else if (swVerEl) {
+    swVerEl.hidden = true;
+  }
   // Charger les données
   loadPlayers().then(loadPreparedGames);
 }

@@ -191,6 +191,12 @@ header .user-pill .pseudo {
   font-size: .95rem;
   padding: 4px 4px 4px 0;
 }
+header .user-pill .sw-version {
+  color: rgba(255,255,255,.55);
+  font-size: .7rem;
+  font-weight: 400;
+  letter-spacing: .03em;
+}
 header .user-pill .logout-btn {
   background: rgba(255,255,255,.15);
   border: none;
