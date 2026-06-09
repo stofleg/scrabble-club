@@ -67,6 +67,7 @@ const state = {
   jokerPending: false,// vrai si on attend la lettre à associer au ?
   topMove: null,      // {score, move, words}
   currentRackFresh: true,  // le tirage courant est-il un chevalet complet neuf ?
+  currentKept: "",         // reliquat (lettres conservées) du tirage courant
   moveNo: 1,
   totalScore: 0,
   sumNeg: 0,
@@ -1579,6 +1580,7 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
     moveNo: state.moveNo,
     rack: state.rack.map(t => t.letter).join(""),
     freshRack: !!state.currentRackFresh,
+    kept: state.currentRackFresh ? "" : (state.currentKept || ""),
     top: tm ? {
       word: tm.move.word,
       score: tm.score,
@@ -1638,6 +1640,7 @@ function nextMove() {
     const next = state.prepared.moves[state.preparedIdx];
     state.rack = next.rack.split("").map(L => ({ letter: L, used: false, id: nextTileId() }));
     state.currentRackFresh = !!next.freshRack;
+    state.currentKept = next.freshRack ? "" : (next.kept || "");
     renderRack();
     renderBoard();
     computeTop();
@@ -1682,6 +1685,7 @@ function nextMove() {
   // les jokers conservés, le reste est un tirage complet neuf.
   if (result.fresh) state.rack = state.rack.filter(t => t.letter === "?");
   state.currentRackFresh = !!result.fresh;
+  state.currentKept = result.fresh ? "" : kept.join("");
   for (const L of (result.drawn || [])) {
     state.rack.push({ letter: L, used: false, id: nextTileId() });
   }
@@ -2915,6 +2919,21 @@ async function syncPreparedToChampionship(pid, totalTime) {
   if (re) console.error("Sauvegarde results:", re.message);
 }
 
+// Affichage du tirage sur la feuille de route :
+//   - reliquat présent      → "AGI+RTYU" (reliquat + lettres piochées)
+//   - tirage complet neuf    → "–AEGRTUY"
+//   - ancien format (sans flag) → tirage brut
+function rackDisplay(h) {
+  const rack = h.rack || "";
+  if (h.kept) {
+    const rest = rack.split("");
+    for (const ch of h.kept) { const i = rest.indexOf(ch); if (i >= 0) rest.splice(i, 1); }
+    return `${h.kept}+${rest.join("")}`;
+  }
+  if (h.freshRack) return "–" + rack;
+  return rack;
+}
+
 window.openSheet = () => {
   const clickable = review.active;   // permettre le saut à un coup en mode review
   const rows = state.history.map((h, i) => {
@@ -2935,7 +2954,7 @@ window.openSheet = () => {
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
     return `<tr class="${rowClass}" ${onclick}>
       <td>${h.moveNo}</td>
-      <td><code>${h.freshRack ? "–" : ""}${h.rack}</code></td>
+      <td><code>${rackDisplay(h)}</code></td>
       <td>${topCell}</td>
       <td>${playedCell}</td>
       <td style="text-align:center" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>

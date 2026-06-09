@@ -93,6 +93,7 @@ export function generateGame(dict, options = {}, onProgress = null) {
       moveNo,
       rack: rackLetters.join(""),
       freshRack,
+      kept: freshRack ? "" : kept.join(""),
       top: {
         word: top.move.word,
         row: top.move.row,

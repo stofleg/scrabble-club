@@ -1700,6 +1700,16 @@ window.openPlayerGameSheet = function(playerId, gameId) {
   const gameName = game ? game.name : gameId;
 
   const coord = pos => `<span style="font-size:.75em;color:#888;vertical-align:.1em">${pos}</span>`;
+  const rackDisplay = (h) => {
+    const rack = h.rack || "";
+    if (h.kept) {
+      const rest = rack.split("");
+      for (const ch of h.kept) { const i = rest.indexOf(ch); if (i >= 0) rest.splice(i, 1); }
+      return `${h.kept}+${rest.join("")}`;
+    }
+    if (h.freshRack) return "–" + rack;
+    return rack;
+  };
 
   const rows = r.details.map(h => {
     const isMiss = h.status === "giveup" || h.status === "timeout";
@@ -1716,7 +1726,7 @@ window.openPlayerGameSheet = function(playerId, gameId) {
     const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
     return `<tr class="${rowClass}">
       <td>${h.moveNo}</td>
-      <td><code>${h.freshRack ? "–" : ""}${h.rack || ""}</code></td>
+      <td><code>${rackDisplay(h)}</code></td>
       <td>${topCell}</td>
       <td>${playedCell}</td>
       <td style="text-align:center" class="${(h.neg || 0) < 0 ? 'neg' : ''}">${(h.neg || 0) < 0 ? h.neg : ''}</td>
