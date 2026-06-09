@@ -86,6 +86,7 @@ const state = {
   spareJokers: 0,
   // Meilleur essai sur le coup courant (réinitialisé à chaque coup)
   bestAttempt: null,          // { word, score }
+  moveInvalidCount: 0,       // mots hors dico tentés sur le coup courant
   // Annotations sur la grille (mode entraînement)
   annotations: {},            // "r,c" → { tl, tr, bl, br, center, dot }
   arrowAnnotations: [],       // [{fromR, fromC, toR, toC}]
@@ -1350,6 +1351,7 @@ function bestJokerVariant(board, move, dict, opts) {
 // renvoie au chevalet. Affiche le meilleur essai en cours s'il existe,
 // sinon conserve le feedback précédent tel quel.
 function flashInvalidWord(detail) {
+  state.moveInvalidCount++;  // compteur de mots hors dico
   // 1) Marquer les pending tiles comme invalides → CSS les passe en rouge
   state.pending.forEach(p => p.invalid = true);
   renderBoard();
@@ -1525,6 +1527,7 @@ function placeTopAndAdvance(playerScore, playedWord = null, playedScore = null, 
   // S'il atterrit sur une case maintenant occupée, on l'avance après nextMove.
   state.pending = [];
   state.bestAttempt = null;
+  state.moveInvalidCount = 0;
   state.moveNo++;
   if (state.prepared) state.preparedIdx++;
   renderInfo();
@@ -1587,6 +1590,7 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
     playerScore,
     neg: playerScore - (tm?.score || 0),
     status,        // "top" | "giveup" | "timeout"
+    invalidCount: state.moveInvalidCount,
     timeMs,
   });
 }

@@ -779,6 +779,67 @@ async function loadSolosAndStreaks() {
     }))
     .sort((a, b) => a.time - b.time);
 
+  // ===== HALL OF SHAME =====
+
+  // 1. Mots hors dico (invalidCount cumulé par joueur)
+  const invalidByPlayer = {};
+  for (const r of detailed) {
+    const pid = r.player_id, name = r.players?.name || "?";
+    invalidByPlayer[pid] ||= { player_id: pid, name, count: 0 };
+    for (const m of (r.details || [])) invalidByPlayer[pid].count += (m.invalidCount || 0);
+  }
+  const invalidRecs = Object.values(invalidByPlayer).filter(p => p.count > 0).sort((a,b) => b.count - a.count);
+
+  // 2. Anti-solos : coup trouvé par tous sauf exactement un joueur
+  const antiSolos = [];
+  for (const [gameId, rs] of Object.entries(byGame)) {
+    const playerIds = rs.map(r => r.player_id);
+    if (playerIds.length < 2) continue;
+    const topsByMove = {};
+    for (const r of rs) {
+      for (const h of (r.details || [])) {
+        (topsByMove[h.moveNo] ||= { tops: new Set(), all: new Set() }).all.add(r.player_id);
+        if (h.status === "top") topsByMove[h.moveNo].tops.add(r.player_id);
+      }
+    }
+    for (const [moveNo, data] of Object.entries(topsByMove)) {
+      if (data.all.size < 2) continue;
+      const missed = [...data.all].filter(pid => !data.tops.has(pid));
+      if (missed.length !== 1) continue;
+      const pid = missed[0];
+      const r = rs.find(r => r.player_id === pid);
+      antiSolos.push({
+        player_id: pid,
+        name: r?.players?.name || "?",
+        gameName: r?.prepared_games?.name || "?",
+        moveNo: +moveNo,
+        gameId: r?.prepared_game_id,
+      });
+    }
+  }
+  const antiByPlayer = {};
+  for (const a of antiSolos) {
+    antiByPlayer[a.player_id] ||= { player_id: a.player_id, name: a.name, count: 0 };
+    antiByPlayer[a.player_id].count++;
+  }
+  const antiRecs = Object.values(antiByPlayer).sort((a,b) => b.count - a.count);
+
+  // 3. Pire temps sur une partie
+  const worstTimes = [...timeRecs].sort((a,b) => b.time - a.time);
+
+  // 4. Scrabbles ratés : coup où rack=7 lettres, top.word≥7 lettres, status≠top
+  const scrabblesByPlayer = {};
+  for (const r of detailed) {
+    const pid = r.player_id, name = r.players?.name || "?";
+    scrabblesByPlayer[pid] ||= { player_id: pid, name, count: 0 };
+    for (const m of (r.details || [])) {
+      if (m.status !== "top" && m.rack?.length === 7 && m.top?.word?.length >= 7) {
+        scrabblesByPlayer[pid].count++;
+      }
+    }
+  }
+  const scrabbleRecs = Object.values(scrabblesByPlayer).filter(p => p.count > 0).sort((a,b) => b.count - a.count);
+
   // ===== Affichage Records all-time (top 5 par catégorie) =====
   const renderRow = (p, val) => `
     <li class="${p.player_id === me ? 'me' : ''}">
@@ -793,6 +854,27 @@ async function loadSolosAndStreaks() {
     <div class="t-stat-card">
       <h3>⏱ Partie la plus rapide</h3>
       <ol>${timeRecs.slice(0, 5).map(r => renderRow(r, fmtT(r.time))).join("") || '<li class="muted">—</li>'}</ol>
+    </div>
+    <div class="t-stat-card shame">
+      <h3>🏴‍☠️ Hall of Shame</h3>
+      <div class="shame-grid">
+        <div>
+          <h4>💩 Mots hors dico</h4>
+          <ol>${invalidRecs.slice(0,5).map(p => renderRow(p, `${p.count} mot${p.count>1?'s':''}`)).join("") || '<li class="muted">Pas encore de données</li>'}</ol>
+        </div>
+        <div>
+          <h4>🫣 Anti-solos</h4>
+          <ol>${antiRecs.slice(0,5).map(p => renderRow(p, `${p.count} coup${p.count>1?'s':''}`)).join("") || '<li class="muted">—</li>'}</ol>
+        </div>
+        <div>
+          <h4>🐢 Partie la plus lente</h4>
+          <ol>${worstTimes.slice(0,5).map(r => renderRow(r, fmtT(r.time))).join("") || '<li class="muted">—</li>'}</ol>
+        </div>
+        <div>
+          <h4>😤 Scrabbles ratés</h4>
+          <ol>${scrabbleRecs.slice(0,5).map(p => renderRow(p, `${p.count} scrabble${p.count>1?'s':''}`)).join("") || '<li class="muted">—</li>'}</ol>
+        </div>
+      </div>
     </div>`;
 }
 
