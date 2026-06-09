@@ -758,22 +758,13 @@ async function loadSolosAndStreaks() {
   for (const p of Object.values(byPlayer)) {
     // Trier les parties par date
     p.entries.sort((a, b) => a.gameDate.localeCompare(b.gameDate));
-    let cur = 0, max = 0, maxAt = null;
-    const dbg = [];
+    let cur = 0, max = 0;
     for (const e of p.entries) {
       for (const m of e.moves) {
-        if (m.status === "top") {
-          cur++;
-          if (cur > max) { max = cur; maxAt = `${e.gameName} coup${m.moveNo}`; }
-          dbg.push("✅");
-        } else {
-          if (cur > 0) dbg.push(`(❌${m.status}@${e.gameName}coup${m.moveNo})`);
-          cur = 0;
-          dbg.push("❌");
-        }
+        if (m.status === "top") { cur++; if (cur > max) max = cur; }
+        else cur = 0;
       }
     }
-    console.log(`[streak] ${p.name} → max=${max} atteint à ${maxAt} | ${dbg.join("")}`);
     if (max > 0) streaks.push({ player_id: p.id, name: p.name, length: max });
   }
   streaks.sort((a, b) => b.length - a.length);
