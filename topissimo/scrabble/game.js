@@ -1232,6 +1232,7 @@ function validate() {
     }
     if (isotopWords.includes(move.word)) {
       recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
+      hideTopFeedback();  // efface le top du coup précédent dès validation
       placeTopAndAdvance(topScore, move.word);
       nextMove();
       return;
@@ -1273,6 +1274,7 @@ function validate() {
   if (result.score === topScore || isFirstMoveTopWord || isSameAsTopButJokerElsewhere) {
     // TOP trouvé
     recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
+    hideTopFeedback();  // efface le top du coup précédent dès validation
     placeTopAndAdvance(topScore, move.word);
     nextMove();
   } else {
@@ -1302,6 +1304,7 @@ function validate() {
     const bestLine = isNewBest
       ? `${currentLine} — meilleur essai ✓`
       : `${currentLine}<br>Meilleur essai : <strong>${best.word}</strong> = ${best.score} pts`;
+    hideTopFeedback();  // efface le top du coup précédent dès validation
     showFeedback("miss", bestLine, `Pas le top, cherche encore. <kbd>Voir le top</kbd> pour révéler.`);
   }
 }
