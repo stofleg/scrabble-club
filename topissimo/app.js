@@ -689,7 +689,8 @@ async function loadClubStats() {
 
 async function loadSolosAndStreaks() {
   const { data: detailed } = await sb.from("prepared_game_results")
-    .select("player_id, prepared_game_id, total_time_seconds, finished_at, details, players(name), prepared_games(id,name,mode,with_joker,time_per_move,created_at)");
+    .select("player_id, prepared_game_id, total_time_seconds, finished_at, details, players(name), prepared_games(id,name,mode,with_joker,time_per_move,created_at)")
+    .limit(5000);
   if (!detailed || detailed.length === 0) {
     $("#solosBody").innerHTML = `<tr><td colspan="6" class="muted">Pas encore de parties tournoi.</td></tr>`;
     $("#recordsGrid").innerHTML = `<p class="muted">Pas encore de parties tournoi.</p>`;
@@ -748,7 +749,7 @@ async function loadSolosAndStreaks() {
   for (const r of detailed) {
     (byPlayer[r.player_id] ||= { name: r.players?.name || "?", id: r.player_id, entries: [] })
       .entries.push({
-        gameDate: r.prepared_games?.created_at || r.finished_at || "1970-01-01",
+        gameDate: r.finished_at || r.prepared_games?.created_at || "1970-01-01",
         gameName: r.prepared_games?.name || "?",
         moves: (r.details || []).sort((a, b) => a.moveNo - b.moveNo),
       });
