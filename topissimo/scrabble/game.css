@@ -130,6 +130,10 @@ main {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Aligne le bas du panneau avec le bas de la grille :
+     hauteur plateau = 15 cellules (box-sizing:border-box) + padding .board (8px×2) */
+  height: calc(15 * var(--cell-size) + 16px);
+  overflow: visible;
 }
 .right-col .info-bar,
 .right-col .feedback,
@@ -654,23 +658,36 @@ input:disabled, select:disabled {
   cursor: default;
 }
 
-/* ---------- FEEDBACK ---------- */
+/* ---------- FEEDBACK — bloc bas du panneau droit ---------- */
 .feedback {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   background: #fff;
+  border-left: 4px solid transparent;
   border-radius: 12px;
-  padding: 14px 18px;
   box-shadow: 0 2px 10px rgba(0,46,68,.08);
-  width: 100%;
-  max-width: 580px;
-  min-height: 60px;
+  white-space: nowrap;
+  overflow: hidden;
 }
-.feedback.success { background: #e6f5d8; color: #2c7a3b; border-left: 4px solid #2c7a3b; }
-.feedback.miss { background: #fff4d6; color: #8a6a1f; border-left: 4px solid var(--tile-bg-2); }
-.feedback.error { background: #ffe7e7; color: #a02525; border-left: 4px solid #a02525; }
+.feedback.success { background: #e6f5d8; color: #2c7a3b; border-left-color: #2c7a3b; }
+.feedback.miss    { background: #fff4d6; color: #8a6a1f; border-left-color: var(--tile-bg-2); }
+.feedback.error   { background: #ffe7e7; color: #a02525; border-left-color: #a02525; }
 
-.feedback .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.1rem; margin-bottom: 4px; }
-.feedback .detail { font-size: .9rem; line-height: 1.4; }
-.feedback .top-reveal { margin-top: 8px; font-family: monospace; background: rgba(0,0,0,.05); padding: 6px 10px; border-radius: 6px; }
+.feedback .title {
+  flex: 1 1 auto;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: .95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+.feedback .detail    { display: none; }
+.feedback .top-reveal { display: none; }
 
 /* ---------- MODAL SETTINGS ---------- */
 .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }

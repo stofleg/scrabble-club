@@ -172,8 +172,29 @@
   }
   .feedback:empty::before { content: "—"; color: #97a4ab; }
 
-  /* ----- C bis : chip Coup N (au-dessus du feedback) ----- */
-  .move-timer-chip { flex: 0 0 auto; height: 22px; margin: 0 4px; }
+  /* ----- C bis : chip Coup N — pleine largeur, label à gauche / chrono à droite ----- */
+  .move-timer-chip {
+    flex: 0 0 38px !important;
+    height: 38px !important;
+    width: 100vw !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 0 14px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  .move-timer-chip .label {
+    font-size: .72rem !important;
+    margin-bottom: 0 !important;
+    letter-spacing: .1em;
+  }
+  .move-timer-chip .move-timer {
+    font-size: 1.3rem !important;
+  }
 
   /* ----- E : grille = carré 100vw × 100vw ----- */
   body .board, body.theme-duplijeu .board {
@@ -199,51 +220,50 @@
   /* ----- F : ⌫ ferré à gauche + pictos centrés + ✓ ferré à droite ----- */
   #actionRowInGame, #actionRowInGame[hidden] {
     display: flex !important;
+    flex-wrap: nowrap !important;
     flex: 0 0 auto !important;
     height: auto !important;
     gap: 0;
     align-items: stretch;
     justify-content: space-between;
-    margin: 6px 0 6px !important;   /* léger gap au-dessus (grille) et en-dessous (rack) */
+    margin: 6px 0 6px !important;
     padding: 0 !important;
     width: 100vw;
   }
+  /* Picto-group : s'étale sur l'espace restant, 1 seule ligne */
   #actionRowInGame .picto-group {
     flex: 1 1 auto;
-    display: flex;
-    gap: 2px;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 1px;
     justify-content: center;
     align-items: stretch;
     min-width: 0;
+    overflow: hidden;
   }
+  /* Chaque bouton picto : prend une part égale, se réduit si écran petit */
   #actionRowInGame .btn, #actionRowInGame .btn[hidden] {
     display: inline-flex !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
     align-items: center;
     justify-content: center;
-    padding: 4px 6px;
-    min-width: 32px;
+    padding: 4px 2px;
     height: 36px;
     touch-action: manipulation;
   }
   #actionRowInGame .btn .lbl { display: none; }
   #actionRowInGame .btn .ico { font-size: 1.05rem; }
 
-  /* Ordre mobile (différent du HTML qui suit l'ordre PC) :
-     Pause / Partager / Abandonner / Voir le top / Annoter / Feuille / Nouvelle */
+  /* Ordre mobile : Pause / Partager / Abandonner / Voir le top / Annoter / Revoir / Feuille / Nouvelle */
   #btnPause    { order: 1; }
   #btnShare    { order: 2; }
   #btnAbandon  { order: 3; }
   #btnGiveUp   { order: 4; }
   #btnAnnotate { order: 5; }
-  #btnSheet    { order: 6; }
-  #btnRestart  { order: 7; }
-  /* Forcer la picto-group à passer en flex (override le grid PC) */
-  #actionRowInGame .picto-group {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 2px;
-    justify-content: center;
-  }
+  #btnReview   { order: 6; }
+  #btnSheet    { order: 7; }
+  #btnRestart  { order: 8; }
   /* ⌫ et ✓ : carrés colorés, conservent leur look */
   #actionRowInGame .btn-backspace,
   #actionRowInGame .btn-validate {
