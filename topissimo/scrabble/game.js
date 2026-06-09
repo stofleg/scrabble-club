@@ -1331,27 +1331,26 @@ function bestJokerVariant(board, move, dict, opts) {
 }
 
 // Coup invalide : fait clignoter les tuiles posées en rouge pendant 1s puis les
-// renvoie au chevalet et restaure le feedback précédent (meilleur essai ou vide).
+// renvoie au chevalet. Affiche le meilleur essai en cours s'il existe,
+// sinon conserve le feedback précédent tel quel.
 function flashInvalidWord(detail) {
-  // 1) Snapshot du feedback courant AVANT d'écraser
-  const prevTitle  = state.bestAttempt
-    ? `Meilleur essai : <strong>${state.bestAttempt.word}</strong> = ${state.bestAttempt.score} pts`
-    : "";
-  const prevKind = state.bestAttempt ? "miss" : "";
-
-  // 2) Marquer les pending tiles comme invalides → CSS les passe en rouge
+  // 1) Marquer les pending tiles comme invalides → CSS les passe en rouge
   state.pending.forEach(p => p.invalid = true);
   renderBoard();
   showFeedback("error", "Coup invalide", detail);
 
-  // 3) Au bout d'1 seconde : retirer les pending et restaurer le feedback
+  // 2) Au bout d'1 seconde : retirer les pending et afficher le meilleur essai
   setTimeout(() => {
     state.pending.forEach(p => delete p.invalid);
     clearPending();
     renderRack();
     renderBoard();
-    if (prevTitle) showFeedback(prevKind, prevTitle);
-    else hideFeedback();
+    const best = state.bestAttempt;
+    if (best) {
+      showFeedback("miss",
+        `Meilleur essai : <strong>${wLink(best.word)}</strong> = <strong>${best.score}</strong> pts ✓`, "");
+    }
+    // Sinon : on laisse le feedback inchangé (pas de hideFeedback)
   }, 1000);
 }
 
