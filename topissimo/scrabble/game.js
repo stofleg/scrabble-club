@@ -1555,12 +1555,13 @@ function revealTop() {
     playedWord = state.bestAttempt.word;
   }
   const tm = state.topMove;
+  // Construire le playedMove pour avoir les coordonnées dans la barre jaune
+  const playedMoveObj = state.pending.length ? buildMoveFromPending() : null;
   recordMove({ status: "giveup", playerScore, playedWord });
-  placeTopAndAdvance(playerScore);
+  placeTopAndAdvance(playerScore, playedWord || null, playerScore || null, playedMoveObj);
   renderBoard();   // afficher immédiatement la surbrillance du mot top
-  showFeedback("miss", `Top : ${wLink(tm.move.word)} — ${tm.score} pts (toi : ${playerScore}, −20s)`,
-    `Négatif : ${playerScore - tm.score}.`,
-    `${tm.words.map(w => `${w.word}(${w.score})`).join(" + ")}`);
+  // Pas de showFeedback ici : showLastTopFeedback (appelé par nextMove) affichera
+  // les deux barres verte + jaune avec toutes les infos.
   setTimeout(nextMove, 1000);
 }
 
