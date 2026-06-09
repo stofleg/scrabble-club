@@ -1373,8 +1373,8 @@ async function loadTournamentStats(tournamentId, games) {
   // ===== HALL OF SHAME =====
   for (const p of players) {
     p.invalidCount = 0;
-    for (const g of Object.values(p.perGame || {}))
-      for (const m of (g.details || [])) p.invalidCount += (m.invalidCount || 0);
+    for (const r of (p.results || []))
+      for (const m of (r.details || [])) p.invalidCount += (m.invalidCount || 0);
   }
   const antiCount = {};
   for (const [, rs] of Object.entries(byGame)) {
@@ -1394,13 +1394,15 @@ async function loadTournamentStats(tournamentId, games) {
   }
   for (const p of players) p.antiSolos = antiCount[p.id] || 0;
   for (const p of players) {
-    const ts = Object.values(p.perGame || {}).map(g => g.time).filter(t => t > 0);
+    const ts = (p.results || [])
+      .filter(r => r.total_time_seconds > 0 && !(Array.isArray(r.details) && r.details[0]?.abandonedGame))
+      .map(r => r.total_time_seconds);
     p.worstSingleTime = ts.length ? Math.max(...ts) : 0;
   }
   for (const p of players) {
     p.missedScrabbles = 0;
-    for (const g of Object.values(p.perGame || {}))
-      for (const m of (g.details || []))
+    for (const r of (p.results || []))
+      for (const m of (r.details || []))
         if (m.status !== "top" && m.rack?.length === 7 && m.top?.word?.length >= 7) p.missedScrabbles++;
   }
   const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
