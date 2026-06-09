@@ -2570,6 +2570,7 @@ function saveTrainingState() {
   if (state.prepared || state.isPuzzle) return;
   try {
     const snapshot = {
+      playerId: +(localStorage.getItem("currentPlayerId") || 0),
       bag: state.bag,
       board: state.board,
       rack: state.rack.map(t => ({ letter: t.letter })),
@@ -2599,6 +2600,12 @@ function restorePausedTraining() {
   if (!raw) return false;
   try {
     const s = JSON.parse(raw);
+    // Ne pas restaurer une partie appartenant à un autre joueur
+    const currentPid = +(localStorage.getItem("currentPlayerId") || 0);
+    if (s.playerId && currentPid && s.playerId !== currentPid) {
+      localStorage.removeItem(TRAINING_STORAGE_KEY);
+      return false;
+    }
     state.bag = s.bag;
     state.board = s.board;
     state.rack = (s.rack || []).map(t => ({ letter: t.letter, used: false, id: nextTileId() }));
