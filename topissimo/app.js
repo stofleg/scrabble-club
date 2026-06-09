@@ -744,71 +744,6 @@ async function loadSolosAndStreaks() {
         <td>${replayBtn(s.gameId, s.moveNo)}</td>
       </tr>`).join("");
 
-  // ===== ANTI-SOLOS =====
-  const antiSolos = [];
-  for (const rs of Object.values(byGame)) {
-    const topsByMove = {};
-    for (const r of rs) {
-      for (const h of (r.details || [])) {
-        (topsByMove[h.moveNo] ||= { tops: [], all: [] }).all.push(r);
-        if (h.status === "top") topsByMove[h.moveNo].tops.push(r);
-      }
-    }
-    for (const [moveNo, data] of Object.entries(topsByMove)) {
-      if (data.all.length < 2) continue;
-      const missedResults = data.all.filter(r => !data.tops.find(t => t.player_id === r.player_id));
-      if (missedResults.length !== 1) continue;
-      const loser = missedResults[0];
-      const g = loser.prepared_games;
-      antiSolos.push({
-        player_id: loser.player_id,
-        name: loser.players?.name || "?",
-        gameId: loser.prepared_game_id,
-        gameName: g?.name || "?",
-        modeLabel: modeDisplayName(g?.mode, g?.with_joker),
-        timePerMove: g?.time_per_move || 0,
-        date: (loser.finished_at || g?.created_at || "").slice(0, 10),
-        moveNo: +moveNo,
-      });
-    }
-  }
-  antiSolos.sort((a, b) => b.date.localeCompare(a.date));
-  $("#antiSolosBody").innerHTML = antiSolos.length === 0
-    ? `<tr><td colspan="6" class="muted">Aucun anti-solo pour l'instant.</td></tr>`
-    : antiSolos.slice(0, 30).map(s => `
-      <tr>
-        <td class="clickable" onclick="openPlayerModal(${s.player_id})"><strong>${escapeHtml(s.name)}</strong></td>
-        <td class="muted">${escapeHtml(s.gameName)}</td>
-        <td>${s.modeLabel}</td>
-        <td>${s.timePerMove ? s.timePerMove + ' s' : '<span class="muted">illimité</span>'}</td>
-        <td class="muted">${s.date}</td>
-        <td>${replayBtn(s.gameId, s.moveNo)}</td>
-      </tr>`).join("");
-
-  // ===== PIRE TEMPS =====
-  const worstTimes = detailed
-    .filter(r => r.total_time_seconds && !(Array.isArray(r.details) && r.details[0]?.abandonedGame))
-    .map(r => ({
-      player_id: r.player_id, name: r.players?.name || "?",
-      time: r.total_time_seconds,
-      gameName: r.prepared_games?.name || "?",
-      modeLabel: modeDisplayName(r.prepared_games?.mode, r.prepared_games?.with_joker),
-      timePerMove: r.prepared_games?.time_per_move || 0,
-      date: (r.finished_at || r.prepared_games?.created_at || "").slice(0, 10),
-    }))
-    .sort((a, b) => b.time - a.time);
-  $("#worstTimesBody").innerHTML = worstTimes.length === 0
-    ? `<tr><td colspan="6" class="muted">Pas encore de données.</td></tr>`
-    : worstTimes.slice(0, 20).map(r => `
-      <tr>
-        <td class="clickable" onclick="openPlayerModal(${r.player_id})"><strong>${escapeHtml(r.name)}</strong></td>
-        <td class="muted">${escapeHtml(r.gameName)}</td>
-        <td>${r.modeLabel}</td>
-        <td>${r.timePerMove ? r.timePerMove + ' s' : '<span class="muted">illimité</span>'}</td>
-        <td><strong>${fmtT(r.time)}</strong></td>
-        <td class="muted">${r.date}</td>
-      </tr>`).join("");
-
   // ===== STREAK INTER-PARTIES =====
   // Pour chaque joueur : concaténer tous ses coups dans l'ordre chronologique (par created_at de la partie puis moveNo),
   // puis trouver la plus longue série de "top" consécutifs.
@@ -1483,8 +1418,12 @@ async function loadTournamentStats(tournamentId, games) {
       <div class="t-stat-card">${cardBestTime}</div>
       <div class="t-stat-card">${cardCumulTime}</div>
       <div class="t-stat-card">${cardCumulNeg}</div>
-    </div>
-    <div class="t-stat-card shame" style="margin-top:16px">${cardShame}</div>`;
+    </div>`;
+
+  const shameContainer = $("#tournamentShameBody");
+  if (shameContainer) {
+    shameContainer.innerHTML = `<div class="card t-stat-card shame" style="margin-top:0">${cardShame}</div>`;
+  }
 }
 
 $("#tCreate").onclick = async () => {
