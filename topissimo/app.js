@@ -1317,11 +1317,51 @@ async function loadTournamentStats(tournamentId, games) {
       .map(r => r.total_time_seconds);
     p.worstSingleTime = ts.length ? Math.max(...ts) : 0;
   }
+  // Scrabbles ratés : un coup où le TOP était un scrabble (le joueur aurait pu
+  // poser tous ses jetons et toucher la prime) mais où le joueur ne l'a pas fait.
+  // On détermine « le top est un scrabble » en REjouant le plateau coup par coup
+  // (nombre de NOUVELLES tuiles posées par le top == clé de prime du mode), ce qui
+  // est fiable même sur d'anciennes parties (le hadBonus stocké est non fiable).
+  const { emptyBoard, applyMove, GAME_MODES } = await import("./scrabble/engine.js");
+  const gameById = {};
+  for (const g of games) gameById[g.id] = g;
+  const bonusesOf = (gid) => (GAME_MODES[gameById[gid]?.mode] || GAME_MODES.duplicate).bonuses || { 7: 50 };
+
+  const topScrabbleByGame = {};   // gid → Set(moveNo) où le top est un scrabble
+  for (const [gid, rs] of Object.entries(byGame)) {
+    const bonuses = bonusesOf(gid);
+    const topByMove = {};
+    for (const r of rs) for (const h of (r.details || [])) {
+      if (h.top && h.top.word && h.top.row != null && topByMove[h.moveNo] == null) topByMove[h.moveNo] = h.top;
+    }
+    const moveNos = Object.keys(topByMove).map(Number).sort((a, b) => a - b);
+    let board = emptyBoard();
+    const set = new Set();
+    for (const mv of moveNos) {
+      const t = topByMove[mv];
+      const dr = t.dir === "V" ? 1 : 0, dc = t.dir === "H" ? 1 : 0;
+      let placed = 0;
+      for (let i = 0; i < t.word.length; i++) {
+        const rr = t.row + i * dr, cc = t.col + i * dc;
+        if (board[rr] && !board[rr][cc]) placed++;
+      }
+      if (bonuses[placed]) set.add(mv);
+      board = applyMove(board, { word: t.word, row: t.row, col: t.col, dir: t.dir, blanks: t.blanks || [] });
+    }
+    topScrabbleByGame[gid] = set;
+  }
+
   for (const p of players) {
     p.missedScrabbles = 0;
-    for (const r of (p.results || []))
-      for (const m of (r.details || []))
-        if (m.top?.hadBonus ? !m.gotBonus : (m.rack?.length === 7 && m.top?.word?.length >= 7 && (m.placedCount != null ? m.placedCount < 7 : (m.played?.length || 0) < 7))) p.missedScrabbles++;
+    for (const r of (p.results || [])) {
+      const scrabbleMoves = topScrabbleByGame[r.prepared_game_id];
+      if (!scrabbleMoves) continue;
+      const bonuses = bonusesOf(r.prepared_game_id);
+      for (const m of (r.details || [])) {
+        if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
+        if (!bonuses[m.placedCount]) p.missedScrabbles++;  // le joueur n'a pas posé de scrabble
+      }
+    }
   }
   const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
   const cardShame = `<h2>🧐 Mur de la taupe</h2>
