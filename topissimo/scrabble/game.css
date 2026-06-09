@@ -130,10 +130,14 @@ main {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* Aligne le bas du panneau avec le bas de la grille :
-     hauteur plateau = 15 cellules (box-sizing:border-box) + padding .board (8px×2) */
+  /* Aligne le bas du panneau avec le bas de la grille (sans références) :
+     hauteur plateau = 15 cellules + padding .board (8px×2) */
   height: calc(15 * var(--cell-size) + 16px);
   overflow: visible;
+}
+/* Avec références alphanumériques : +2 rangées de 0.55×cell-size */
+body.show-coords .right-col {
+  height: calc((15 + 1.1) * var(--cell-size) + 16px);
 }
 .right-col .info-bar,
 .right-col .feedback,

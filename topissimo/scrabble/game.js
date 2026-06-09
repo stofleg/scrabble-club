@@ -182,6 +182,7 @@ function renderBoard() {
   // Sur mobile (< 700 px) on supprime les coords pour gagner de la place
   const isMobile = window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
   const showCoords = state.settings.showCoords && !isMobile;
+  document.body.classList.toggle("show-coords", showCoords);
   let html = "<table>";
   if (showCoords) {
     html += `<tr><td class="coord corner"></td>`;
