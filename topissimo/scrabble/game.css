@@ -750,10 +750,10 @@ input:disabled, select:disabled {
 }
 .dict-iframe {
   position: absolute;
-  top: 0;
+  top: -302px;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% + 302px);
   border: none;
 }
 
@@ -805,10 +805,10 @@ input:disabled, select:disabled {
   max-height: calc(100vh - 40px);
 }
 .sheet-dict-panel[hidden] { display: none !important; }
-/* Décalage spécifique au volet de la feuille de route (+5 mm) */
+/* Décalage spécifique au volet de la feuille de route */
 .sheet-dict-panel .dict-iframe {
-  top: 0;
-  height: 100%;
+  top: -302px;
+  height: calc(100% + 302px);
 }
 /* Volet ouvert : lever le plafond pour que le volet s'ajoute à droite */
 .sheet-content.with-dict { max-width: min(1200px, calc(100vw - 40px)) !important; }
