@@ -740,11 +740,12 @@ function hideFeedback() {
   state.lastTopCells = [];
 }
 
-function showTopFeedback(word, score) {
+function showTopFeedback(word, score, pos = "") {
   const div = $("#feedbackTop");
   if (!div) return;
   div.className = "feedback success";
-  div.innerHTML = `<div class="title">✅ Top : <strong>${wLink(word)}</strong> — ${score} pts</div>`;
+  const posStr = pos ? ` en ${pos}` : "";
+  div.innerHTML = `<div class="title">✅ Top : <strong>${wLink(word)}</strong> — <strong>${score}</strong> pts${posStr}</div>`;
   div.hidden = false;
 }
 function hideTopFeedback() {
@@ -1600,7 +1601,7 @@ function posLabel(move) {
 function showLastTopFeedback() {
   if (!state.lastTop) { hideFeedback(); hideTopFeedback(); return; }
   const { word, score, playedWord, playedScore, playedMove } = state.lastTop;
-  showTopFeedback(word, score);           // barre verte : top de la position
+  showTopFeedback(word, score, posLabel(state.lastTop));  // barre verte : top de la position
   // Barre jaune : mot joué par le joueur (si disponible)
   if (playedWord) {
     const pos  = playedMove ? ` en ${posLabel(playedMove)}` : "";
