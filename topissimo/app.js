@@ -1705,7 +1705,7 @@ window.openPlayerGameSheet = function(playerId, gameId) {
     if (h.kept) {
       const rest = rack.split("");
       for (const ch of h.kept) { const i = rest.indexOf(ch); if (i >= 0) rest.splice(i, 1); }
-      return `${h.kept}+${rest.join("")}`;
+      return rest.length ? `${h.kept}+${rest.join("")}` : rack;
     }
     if (h.freshRack) return "–" + rack;
     return rack;

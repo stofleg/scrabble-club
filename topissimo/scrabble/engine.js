@@ -331,13 +331,36 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
     }
   }
 
-  // 2) REJET : on remet le reliquat (hors jokers) dans le sac et on tire un
-  //    chevalet complet neuf. On répète jusqu'à satisfaire la règle.
+  // Le rejet (remise du reliquat + tirage complet) n'a de sens que s'il reste
+  // assez de lettres pour reformer un chevalet complet de `target` jetons.
   const bagBack = { ...bag };
   for (const l of realKept) bagBack[l] = (bagBack[l] || 0) + 1;
   const freshNeed = target - jokerCount;
   const jokerFill = Array(jokerCount).fill("?");
+  const bagBackCount = Object.values(bagBack).reduce((a, b) => a + b, 0);
 
+  // 1bis) Fin de partie : pas assez de lettres pour un chevalet complet.
+  //   → AUCUN rejet. On garde le reliquat et on pioche le complément disponible
+  //   (sans tiret). On cherche un rack jouable (≥1 voyelle + ≥1 consonne).
+  if (jokerCount + bagBackCount < target) {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const r = drawN(bag, need);
+      const { vowels, consonants } = countTypes([...kept, ...r.drawn]);
+      if (vowels >= 1 && consonants >= 1) {
+        return { drawn: r.drawn, bag: r.bag, fresh: false, minApplied: 0 };
+      }
+    }
+    // Aucun complément jouable : on renvoie le chevalet restant tel quel s'il
+    // est lui-même jouable, sinon fin de partie.
+    const { vowels, consonants } = countTypes(kept);
+    if (vowels >= 1 && consonants >= 1) {
+      return { drawn: [], bag: { ...bag }, fresh: false, minApplied: 0 };
+    }
+    return { drawn: null, bag: { ...bag }, failed: true };
+  }
+
+  // 2) REJET : on remet le reliquat (hors jokers) dans le sac et on tire un
+  //    chevalet complet neuf. On répète jusqu'à satisfaire la règle.
   for (let attempt = 0; attempt < 200; attempt++) {
     const r = drawN(bagBack, freshNeed);
     if (r.drawn.length < freshNeed) break;   // plus assez de lettres
@@ -347,11 +370,11 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
     }
   }
 
-  // 3) Fin de partie : règle impossible. On relâche tant que le rack reste
-  //    jouable (≥1 voyelle + ≥1 consonne), tirage complet.
+  // 3) Règle stricte impossible malgré un sac suffisant. On relâche tant que le
+  //    rack reste jouable (≥1 voyelle + ≥1 consonne), tirage complet (rejet).
   for (let attempt = 0; attempt < 200; attempt++) {
     const r = drawN(bagBack, freshNeed);
-    if (!r.drawn.length) break;
+    if (r.drawn.length < freshNeed) break;
     const { vowels, consonants } = countTypes([...jokerFill, ...r.drawn]);
     if (vowels >= 1 && consonants >= 1) {
       return { drawn: r.drawn, bag: r.bag, fresh: true, minApplied: 0 };
