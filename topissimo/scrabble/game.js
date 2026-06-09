@@ -672,7 +672,7 @@ function wLink(word) {
 
 window.openDictPanel = function(word) {
   // Pas de dictionnaire pendant une partie tournoi en cours
-  if (document.body.classList.contains("mode-tournament") && state.started && !review.active) return;
+  if (document.body.classList.contains("mode-tournament") && state.started && state.chronoFinal == null && !review.active) return;
   const url = dictUrl(word);
   // Si la feuille de route est ouverte, utiliser le volet latéral de la feuille
   if (!$("#sheet").hidden) {
