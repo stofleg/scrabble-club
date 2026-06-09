@@ -602,13 +602,37 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
   color: var(--petrol-dark);
 }
 .t-stat-card ol {
-  list-style: decimal inside;
+  list-style: none;
+  counter-reset: rank;
   padding: 0; margin: 0;
   font-size: .9rem;
 }
-.t-stat-card ol li { padding: 3px 0; }
+.t-stat-card ol li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+  counter-increment: rank;
+}
+.t-stat-card ol li::before {
+  content: counter(rank) ".";
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+}
+.t-stat-card ol li > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.t-stat-card ol li > span {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
 .t-stat-card ol li.me { color: var(--petrol); font-weight: 700; }
-.t-stat-card ol li.me::after { content: " (toi)"; font-weight: 400; color: var(--ink-soft); font-size: .8em; }
+.t-stat-card ol li.me > strong::after { content: " (toi)"; font-weight: 400; color: var(--ink-soft); font-size: .8em; }
 
 /* Hall of Shame */
 .t-stat-card.shame { border-top-color: #c0392b; }
