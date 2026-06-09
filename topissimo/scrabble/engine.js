@@ -273,8 +273,10 @@ export function applyMove(board, move) {
 //   Retour : { drawn, bag, fresh, minApplied } ou { drawn:null, failed:true }.
 //     - drawn : lettres à AJOUTER au reliquat si fresh === false ;
 //               chevalet complet neuf (hors jokers conservés) si fresh === true.
-//     - fresh : true si le chevalet est un tirage complet (reliquat vidé par le
-//               jeu, ou rejet) → affiché « –XXX » sur la feuille de route.
+//     - fresh : true UNIQUEMENT en cas de REJET (le reliquat a été remis dans
+//               le sac car le rack complété violait la règle). C'est ce cas, et
+//               lui seul, qui est affiché « –XXX » sur la feuille de route.
+//               Un chevalet vidé par le jeu (reliquat vide) n'est PAS un rejet.
 // ============================================================
 export function drawForDuplicate(bag, kept, moveNo, target = 7) {
   const minVC = moveNo >= 15 ? 1 : 2;
@@ -289,7 +291,7 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
 
   // Rien à piocher : on garde le chevalet tel quel.
   if (need <= 0) {
-    return { drawn: [], bag: { ...bag }, fresh: realKept.length === 0, minApplied: minVC };
+    return { drawn: [], bag: { ...bag }, fresh: false, minApplied: minVC };
   }
 
   // Sac vide : on retourne le chevalet tel quel s'il est jouable, sinon échec.
@@ -323,7 +325,8 @@ export function drawForDuplicate(bag, kept, moveNo, target = 7) {
     if (r.drawn.length === need) {
       const { vowels, consonants } = countTypes([...kept, ...r.drawn]);
       if (vowels >= minVC && consonants >= minVC) {
-        return { drawn: r.drawn, bag: r.bag, fresh: realKept.length === 0, minApplied: minVC };
+        // Complément valide : on garde le reliquat → ce n'est PAS un rejet.
+        return { drawn: r.drawn, bag: r.bag, fresh: false, minApplied: minVC };
       }
     }
   }
