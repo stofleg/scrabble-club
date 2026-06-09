@@ -656,7 +656,7 @@ function timeoutAdvance() {
   }
   const tm = state.topMove;
   recordMove({ status: "timeout", playerScore, playedWord });
-  placeTopAndAdvance(playerScore);
+  placeTopAndAdvance(playerScore, playedWord || null);
   showFeedback("miss", `⏱ Temps écoulé — tu marques ${playerScore} pts`, "");
   setTimeout(nextMove, 1000);
 }
@@ -1232,7 +1232,7 @@ function validate() {
     }
     if (isotopWords.includes(move.word)) {
       recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
-      placeTopAndAdvance(topScore);
+      placeTopAndAdvance(topScore, move.word);
       nextMove();
       return;
     }
@@ -1273,7 +1273,7 @@ function validate() {
   if (result.score === topScore || isFirstMoveTopWord || isSameAsTopButJokerElsewhere) {
     // TOP trouvé
     recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
-    placeTopAndAdvance(topScore);
+    placeTopAndAdvance(topScore, move.word);
     nextMove();
   } else {
     // Miss : on garde la trace du meilleur essai
@@ -1442,7 +1442,7 @@ function buildMoveFromPending() {
 // Place le TOP sur le plateau, retire ses lettres du chevalet,
 // met à jour score/négatif selon le score du joueur (0 si rien tenté).
 // Gère le mode joker (remplacement par la lettre du sac si possible).
-function placeTopAndAdvance(playerScore) {
+function placeTopAndAdvance(playerScore, playedWord = null) {
   const tm = state.topMove;
   if (!tm) return;
   const { word, row, col, dir, blanks } = tm.move;
@@ -1511,7 +1511,7 @@ function placeTopAndAdvance(playerScore) {
     if (idx !== -1) state.rack.splice(idx, 1);
   }
   // Mémoriser le top pour l'afficher en zone C au début du coup suivant
-  state.lastTop = { word: tm.move.word, row: tm.move.row, col: tm.move.col, dir: tm.move.dir, score: tm.score };
+  state.lastTop = { word: tm.move.word, row: tm.move.row, col: tm.move.col, dir: tm.move.dir, score: tm.score, playedWord };
 
   // Score
   state.totalScore += playerScore;
@@ -1596,11 +1596,15 @@ function posLabel(move) {
 // La barre jaune joueur (#feedback) est effacée (nouveau coup, pas encore d'essai).
 function showLastTopFeedback() {
   if (!state.lastTop) { hideFeedback(); hideTopFeedback(); return; }
-  const { word, score } = state.lastTop;
-  const pos = posLabel(state.lastTop);
-  showTopFeedback(word, score);           // barre verte
-  const div = $("#feedback");             // vider la barre jaune
-  div.hidden = true; div.innerHTML = ""; div.className = "feedback";
+  const { word, score, playedWord } = state.lastTop;
+  showTopFeedback(word, score);           // barre verte : top de la position
+  // Barre jaune : mot joué par le joueur (si disponible)
+  if (playedWord) {
+    showFeedback("miss", `Tu as joué : <strong>${wLink(playedWord)}</strong>`, "");
+  } else {
+    const div = $("#feedback");
+    div.hidden = true; div.innerHTML = ""; div.className = "feedback";
+  }
 }
 
 // ============================================================
