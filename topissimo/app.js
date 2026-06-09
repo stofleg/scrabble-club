@@ -1321,7 +1321,7 @@ async function loadTournamentStats(tournamentId, games) {
     p.missedScrabbles = 0;
     for (const r of (p.results || []))
       for (const m of (r.details || []))
-        if (m.status !== "top" && m.rack?.length === 7 && m.top?.word?.length >= 7) p.missedScrabbles++;
+        if (m.rack?.length === 7 && m.top?.word?.length >= 7 && (m.played?.length || 0) < 7) p.missedScrabbles++;
   }
   const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
   const cardShame = `<h2>🧐 Mur de la taupe</h2>
