@@ -689,6 +689,81 @@ input:disabled, select:disabled {
 .feedback .detail    { display: none; }
 .feedback .top-reveal { display: none; }
 
+/* ---------- PANNEAU DICTIONNAIRE (inline right-col) ---------- */
+.dict-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,46,68,.08);
+  overflow: hidden;
+}
+.dict-panel[hidden] { display: none !important; }
+.dict-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--petrol);
+  color: #fff;
+  flex-shrink: 0;
+}
+.dict-word {
+  flex: 1 1 auto;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: .04em;
+}
+.dict-ext {
+  color: rgba(255,255,255,.7);
+  font-size: .85rem;
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background .15s;
+}
+.dict-ext:hover { background: rgba(255,255,255,.15); color: #fff; }
+.dict-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.7);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background .15s;
+}
+.dict-close:hover { background: rgba(255,255,255,.15); color: #fff; }
+.dict-iframe-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.dict-iframe {
+  position: absolute;
+  top: -183px;   /* masque l'en-tête + titre de 1mot.net */
+  left: 0;
+  width: 100%;
+  height: calc(100% + 183px);
+  border: none;
+}
+
+/* ---------- LIENS MOTS (1mot.net) ---------- */
+.word-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.word-link:hover {
+  text-decoration: underline;
+  opacity: .8;
+}
+
 /* ---------- MODAL SETTINGS ---------- */
 .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modal[hidden] { display: none !important; }
@@ -701,6 +776,40 @@ input:disabled, select:disabled {
 
 /* ===== Modal Paramètres : look moderne ===== */
 #settings .content { max-width: 460px; padding: 28px 28px 22px; }
+
+/* Feuille de route — layout 2 colonnes quand le volet dict est ouvert */
+.sheet-content {
+  display: flex;
+  gap: 0;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: min(900px, calc(100vw - 40px)) !important;
+}
+.sheet-main {
+  flex: 0 0 auto;
+  width: min(660px, calc(100vw - 80px));
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 40px);
+}
+.sheet-dict-panel {
+  flex: 0 0 510px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #e0e8ed;
+  overflow: hidden;  /* clip l'iframe uniquement dans ce volet */
+  max-height: calc(100vh - 40px);
+}
+.sheet-dict-panel[hidden] { display: none !important; }
+/* Décalage spécifique au volet de la feuille de route (+5 mm) */
+.sheet-dict-panel .dict-iframe {
+  top: -202px;
+  height: calc(100% + 202px);
+}
+/* Volet ouvert : lever le plafond pour que le volet s'ajoute à droite */
+.sheet-content.with-dict { max-width: min(1200px, calc(100vw - 40px)) !important; }
+/* Décaler le ✕ du modal dans le coin du volet dict */
+.sheet-content.with-dict > .close { right: calc(510px + 12px); }
 .settings-section {
   font-family: 'Fraunces', serif;
   font-weight: 600;
@@ -1207,6 +1316,46 @@ input:disabled, select:disabled {
   border: 1px solid var(--soft);
   border-radius: 8px;
 }
+
+/* En mode review : le panneau remplit la hauteur disponible (jusqu'au-dessus de la zone C) */
+body.in-review .review-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: none;
+}
+.review-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.review-sol-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.review-sol-wrap h4 { flex-shrink: 0; }
+/* La liste des solutions remplit sa moitié et scrolle */
+body.in-review .review-solutions {
+  flex: 1 1 auto;
+  max-height: none;
+  margin-top: 6px;
+}
+/* Volet 1mot.net : moitié basse quand visible */
+.review-dict {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.review-dict[hidden] { display: none !important; }
+/* Volet fermé : la liste des solutions reprend toute la hauteur */
+.review-split:not(.with-dict) .review-sol-wrap { flex: 1 1 auto; }
 .review-solutions table { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .review-solutions th { position: sticky; top: 0; background: var(--petrol); color: #fff; padding: 6px 10px; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
 .review-solutions td { padding: 6px 10px; border-bottom: 1px solid var(--soft); }

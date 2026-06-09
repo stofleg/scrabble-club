@@ -656,10 +656,60 @@ function timeoutAdvance() {
   const tm = state.topMove;
   recordMove({ status: "timeout", playerScore, playedWord });
   placeTopAndAdvance(playerScore);
-  showFeedback("miss", `⏱ Temps écoulé — top : ${tm.move.word} (${tm.score} pts)`,
+  showFeedback("miss", `⏱ Temps écoulé — top : ${wLink(tm.move.word)} (${tm.score} pts)`,
     `Tu marques ${playerScore} pts.`);
   setTimeout(nextMove, 1000);
 }
+
+// Enveloppe un mot Scrabble dans un lien cliquable vers 1mot.net
+function wLink(word) {
+  if (!word) return word;
+  return `<a href="https://1mot.net/${word.toLowerCase()}" class="word-link" onclick="event.preventDefault();event.stopPropagation();openDictPanel('${word}')">${word}</a>`;
+}
+
+window.openDictPanel = function(word) {
+  const url = `https://1mot.net/${word.toLowerCase()}`;
+  // Si la feuille de route est ouverte, utiliser le volet latéral de la feuille
+  if (!$("#sheet").hidden) {
+    $("#sheetDictWord").textContent = word;
+    $("#sheetDictExt").href = url;
+    $("#sheetDictIframe").src = url;
+    $("#sheetDictPanel").hidden = false;
+    $("#sheet .sheet-content").classList.add("with-dict");
+    return;
+  }
+  // En mode review : volet intégré dans la moitié basse du panneau review
+  if (review.active) {
+    $("#reviewDictWord").textContent = word;
+    $("#reviewDictExt").href = url;
+    $("#reviewDictIframe").src = url;
+    $("#reviewDictPanel").hidden = false;
+    document.querySelector(".review-split")?.classList.add("with-dict");
+    return;
+  }
+  // Sinon volet inline du panneau droit
+  $("#dictWord").textContent = word;
+  $("#dictExt").href = url;
+  $("#dictIframe").src = url;
+  $("#dictPanel").hidden = false;
+};
+
+window.closeReviewDict = function() {
+  $("#reviewDictPanel").hidden = true;
+  $("#reviewDictIframe").src = "";
+  document.querySelector(".review-split")?.classList.remove("with-dict");
+};
+
+window.closeDictPanel = function() {
+  $("#dictPanel").hidden = true;
+  $("#dictIframe").src = "";
+};
+
+window.closeSheetDict = function() {
+  $("#sheetDictPanel").hidden = true;
+  $("#sheetDictIframe").src = "";
+  $("#sheet .sheet-content").classList.remove("with-dict");
+};
 
 function showFeedback(kind, title, detail = "", topReveal = "") {
   const div = $("#feedback");
@@ -1123,7 +1173,7 @@ function cancelCurrent() {
   const best = state.bestAttempt;
   if (best) {
     showFeedback("miss",
-      `Saisie annulée — meilleur essai : <strong>${best.word}</strong> = <strong>${best.score}</strong> pts ✓`,
+      `Saisie annulée — meilleur essai : <strong>${wLink(best.word)}</strong> = <strong>${best.score}</strong> pts ✓`,
       `Clique sur une case pour repositionner le curseur.`);
   } else {
     showFeedback("", "Saisie annulée", "Clique sur une case pour repositionner le curseur.");
@@ -1499,7 +1549,7 @@ function revealTop() {
   recordMove({ status: "giveup", playerScore, playedWord });
   placeTopAndAdvance(playerScore);
   renderBoard();   // afficher immédiatement la surbrillance du mot top
-  showFeedback("miss", `Top : ${tm.move.word} — ${tm.score} pts (toi : ${playerScore}, −20s)`,
+  showFeedback("miss", `Top : ${wLink(tm.move.word)} — ${tm.score} pts (toi : ${playerScore}, −20s)`,
     `Négatif : ${playerScore - tm.score}.`,
     `${tm.words.map(w => `${w.word}(${w.score})`).join(" + ")}`);
   setTimeout(nextMove, 1000);
@@ -1542,7 +1592,7 @@ function showLastTopFeedback() {
   if (!state.lastTop) { hideFeedback(); return; }
   const { word, score } = state.lastTop;
   const pos = posLabel(state.lastTop);
-  showFeedback("success", `✅ Top : <strong>${word}</strong> — ${score} pts en ${pos}`, "");
+  showFeedback("success", `✅ Top : <strong>${wLink(word)}</strong> — ${score} pts en ${pos}`, "");
 }
 
 // ============================================================
@@ -1844,6 +1894,7 @@ async function initGame() {
   review.result = null;
   review.historyByMove = {};
   $("#reviewPanel").hidden = true;
+  if (typeof closeReviewDict === "function") closeReviewDict();
   // Masquer le bouton Revoir (n'a de sens qu'en fin de partie)
   if (_btnReview) { _btnReview.hidden = true; _btnReview.classList.remove("active"); }
   // (rien à reset côté layout)
@@ -2097,13 +2148,13 @@ function renderReviewStep() {
 
   if (!replay) {
     // Top joué
-    $("#rvTop").textContent = `${m.top.word} — ${m.top.score} pts en ${posLabelMove(m.top)}`;
+    $("#rvTop").innerHTML = `${wLink(m.top.word)} — ${m.top.score} pts en ${posLabelMove(m.top)}`;
 
     // Mot du joueur
     const ph = review.historyByMove[m.moveNo];
     if (ph) {
       if (ph.played) {
-        $("#rvPlayed").textContent = `${ph.played} — ${ph.playerScore} pts ${ph.status === "top" ? "🏆" : ph.status === "timeout" ? "⏱" : "🏳️"}`;
+        $("#rvPlayed").innerHTML = `${wLink(ph.played)} — ${ph.playerScore} pts ${ph.status === "top" ? "🏆" : ph.status === "timeout" ? "⏱" : "🏳️"}`;
       } else {
         $("#rvPlayed").textContent = `— (rien joué, ${ph.status})`;
       }
@@ -2324,7 +2375,7 @@ function renderReviewSolutions(idx) {
       const isTop = s.move.word === topMv.word && s.move.row === topMv.row && s.move.col === topMv.col && s.move.dir === topMv.dir;
       const isPlayed = playedMv && s.move.word === playedMv;
       const cls = isTop ? "is-top" : (isPlayed ? "is-played" : "");
-      return `<tr class="${cls}" data-i="${i}"><td>${s.move.word}</td><td>${posLabelMove(s.move)}</td><td>${s.score}</td></tr>`;
+      return `<tr class="${cls}" data-i="${i}"><td>${wLink(s.move.word)}</td><td>${posLabelMove(s.move)}</td><td>${s.score}</td></tr>`;
     }).join("");
     div.innerHTML = `<table>
       <thead><tr><th>Mot</th><th>Place</th><th>Score</th></tr></thead>
@@ -2834,10 +2885,10 @@ window.openSheet = () => {
     const statusLabel = { top: "top", giveup: "abandon", timeout: "temps écoulé" }[h.status] || h.status;
     const coord = pos => `<span style="font-size:.75em;color:#888;vertical-align:.1em">${pos}</span>`;
     const topCell = h.top
-      ? `<strong>${h.top.word}</strong> ${coord(h.top.pos)} ${h.top.score} pts`
+      ? `<strong>${wLink(h.top.word)}</strong> ${coord(h.top.pos)} ${h.top.score} pts`
       : "—";
     const playedCell = h.played
-      ? `<strong>${h.played}</strong>${h.playedPos ? " " + coord(h.playedPos) : ""} ${h.playerScore} pts`
+      ? `<strong>${wLink(h.played)}</strong>${h.playedPos ? " " + coord(h.playedPos) : ""} ${h.playerScore} pts`
       : `<em>—</em>`;
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
     return `<tr class="${rowClass}" ${onclick}>
@@ -2857,7 +2908,7 @@ window.openSheet = () => {
       · Temps total : <strong>${fmtChrono(state.chronoFinal ?? elapsedSeconds())}</strong>
     </div>
     <div style="max-height:60vh;overflow:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;white-space:nowrap">
       <thead><tr style="background:var(--petrol);color:#fff;position:sticky;top:0">
         <th style="padding:6px 8px;text-align:left">#</th>
         <th style="padding:6px 8px;text-align:left">Tirage</th>
@@ -2872,7 +2923,10 @@ window.openSheet = () => {
     </div>`;
   $("#sheet").hidden = false;
 };
-window.closeSheet = () => $("#sheet").hidden = true;
+window.closeSheet = () => {
+  closeSheetDict();
+  $("#sheet").hidden = true;
+};
 
 window.jumpToReviewMove = (moveNo) => {
   if (!review.active || !review.game) return;

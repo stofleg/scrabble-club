@@ -121,13 +121,38 @@
     <div class="review-line top"><span class="label">Top</span><span class="val" id="rvTop">—</span></div>
     <div class="review-line played"><span class="label">Toi</span><span class="val" id="rvPlayed">—</span></div>
     <div class="review-line neg"><span class="label">Négatif</span><span class="val" id="rvNeg">—</span></div>
-    <h4 style="margin:14px 0 6px;font-size:.85rem;color:#5a6a73;text-transform:uppercase;letter-spacing:.05em">Autres solutions valides</h4>
-    <div class="review-solutions" id="rvSolutions"></div>
+    <div class="review-split">
+      <div class="review-sol-wrap">
+        <h4 style="margin:14px 0 6px;font-size:.85rem;color:#5a6a73;text-transform:uppercase;letter-spacing:.05em">Autres solutions valides</h4>
+        <div class="review-solutions" id="rvSolutions"></div>
+      </div>
+      <div class="review-dict" id="reviewDictPanel" hidden>
+        <div class="dict-header">
+          <span class="dict-word" id="reviewDictWord"></span>
+          <a class="dict-ext" id="reviewDictExt" href="#" target="_blank" rel="noopener noreferrer" title="Ouvrir dans un onglet">↗</a>
+          <button class="dict-close" onclick="closeReviewDict()" title="Fermer">✕</button>
+        </div>
+        <div class="dict-iframe-wrap">
+          <iframe class="dict-iframe" id="reviewDictIframe" src="" loading="lazy" title="Définition"></iframe>
+        </div>
+      </div>
+    </div>
       </div>
 
       <div class="bag-display" id="bagDisplay" hidden>
         <div class="bag-title">Sac — <span id="bagCount">0</span> lettres</div>
         <div class="bag-tiles" id="bagTiles"></div>
+      </div>
+
+      <div class="dict-panel" id="dictPanel" hidden>
+        <div class="dict-header">
+          <span class="dict-word" id="dictWord"></span>
+          <a class="dict-ext" id="dictExt" href="#" target="_blank" rel="noopener noreferrer" title="Ouvrir dans un onglet">↗</a>
+          <button class="dict-close" onclick="closeDictPanel()" title="Fermer">✕</button>
+        </div>
+        <div class="dict-iframe-wrap">
+          <iframe class="dict-iframe" id="dictIframe" src="" loading="lazy" title="Définition"></iframe>
+        </div>
       </div>
 
       <div class="feedback" id="feedback" hidden></div>
@@ -272,10 +297,22 @@
 <!-- Modal feuille de route -->
 <div id="sheet" class="modal" hidden>
   <div class="backdrop" onclick="closeSheet()"></div>
-  <div class="content" style="max-width: 900px">
+  <div class="content sheet-content">
     <button class="close" onclick="closeSheet()">×</button>
-    <h2>📋 Feuille de route</h2>
-    <div id="sheetBody"></div>
+    <div class="sheet-main">
+      <h2>📋 Feuille de route</h2>
+      <div id="sheetBody"></div>
+    </div>
+    <div class="sheet-dict-panel" id="sheetDictPanel" hidden>
+      <div class="dict-header">
+        <span class="dict-word" id="sheetDictWord"></span>
+        <a class="dict-ext" id="sheetDictExt" href="#" target="_blank" rel="noopener noreferrer" title="Ouvrir dans un onglet">↗</a>
+        <button class="dict-close" onclick="closeSheetDict()" title="Fermer">✕</button>
+      </div>
+      <div class="dict-iframe-wrap">
+        <iframe class="dict-iframe" id="sheetDictIframe" src="" loading="lazy" title="Définition"></iframe>
+      </div>
+    </div>
   </div>
 </div>
 

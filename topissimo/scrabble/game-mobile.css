@@ -58,7 +58,7 @@
   .left-col, .right-col, .game-wrap { display: contents; }
 
   /* Éléments cachés sur mobile */
-  #actionRowPreStart, .bag-display { display: none !important; }
+  #actionRowPreStart, .bag-display, .dict-panel { display: none !important; }
   /* Palette d'annotation : cachée par défaut. Apparait en OVERLAY flottant
      au-dessus du rack quand body.show-annot est actif (ne pousse pas le layout). */
   .annot-toolbar { display: none !important; }
