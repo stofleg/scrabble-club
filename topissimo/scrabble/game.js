@@ -1233,7 +1233,7 @@ function validate() {
     if (isotopWords.includes(move.word)) {
       recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
       hideTopFeedback();  // efface le top du coup précédent dès validation
-      placeTopAndAdvance(topScore, move.word);
+      placeTopAndAdvance(topScore, move.word, topScore, move);
       nextMove();
       return;
     }
@@ -1275,7 +1275,7 @@ function validate() {
     // TOP trouvé
     recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
     hideTopFeedback();  // efface le top du coup précédent dès validation
-    placeTopAndAdvance(topScore, move.word);
+    placeTopAndAdvance(topScore, move.word, topScore, move);
     nextMove();
   } else {
     // Miss : on garde la trace du meilleur essai
@@ -1445,7 +1445,7 @@ function buildMoveFromPending() {
 // Place le TOP sur le plateau, retire ses lettres du chevalet,
 // met à jour score/négatif selon le score du joueur (0 si rien tenté).
 // Gère le mode joker (remplacement par la lettre du sac si possible).
-function placeTopAndAdvance(playerScore, playedWord = null) {
+function placeTopAndAdvance(playerScore, playedWord = null, playedScore = null, playedMove = null) {
   const tm = state.topMove;
   if (!tm) return;
   const { word, row, col, dir, blanks } = tm.move;
@@ -1514,7 +1514,7 @@ function placeTopAndAdvance(playerScore, playedWord = null) {
     if (idx !== -1) state.rack.splice(idx, 1);
   }
   // Mémoriser le top pour l'afficher en zone C au début du coup suivant
-  state.lastTop = { word: tm.move.word, row: tm.move.row, col: tm.move.col, dir: tm.move.dir, score: tm.score, playedWord };
+  state.lastTop = { word: tm.move.word, row: tm.move.row, col: tm.move.col, dir: tm.move.dir, score: tm.score, playedWord, playedScore, playedMove };
 
   // Score
   state.totalScore += playerScore;
@@ -1599,11 +1599,13 @@ function posLabel(move) {
 // La barre jaune joueur (#feedback) est effacée (nouveau coup, pas encore d'essai).
 function showLastTopFeedback() {
   if (!state.lastTop) { hideFeedback(); hideTopFeedback(); return; }
-  const { word, score, playedWord } = state.lastTop;
+  const { word, score, playedWord, playedScore, playedMove } = state.lastTop;
   showTopFeedback(word, score);           // barre verte : top de la position
   // Barre jaune : mot joué par le joueur (si disponible)
   if (playedWord) {
-    showFeedback("miss", `Tu as joué : <strong>${wLink(playedWord)}</strong>`, "");
+    const pos  = playedMove ? ` en ${posLabel(playedMove)}` : "";
+    const pts  = playedScore != null ? ` — <strong>${playedScore}</strong> pts` : "";
+    showFeedback("miss", `Mot validé : <strong>${wLink(playedWord)}</strong>${pts}${pos}`, "");
   } else {
     const div = $("#feedback");
     div.hidden = true; div.innerHTML = ""; div.className = "feedback";
