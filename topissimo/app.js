@@ -1326,7 +1326,7 @@ async function loadTournamentStats(tournamentId, games) {
   const shRow = (p, val) => `<li class="${p.id === me ? 'me' : ''}"><strong>${escapeHtml(p.name)}</strong><span style="float:right">${val}</span></li>`;
   const cardShame = `<h3>🏴\u200d☠️ Hall of Shame</h3>
     <div class="shame-grid">
-      <div><h4>💩 Mots hors dico</h4><ol>${[...players].sort((a,b)=>b.invalidCount-a.invalidCount).filter(p=>p.invalidCount>0).slice(0,5).map(p=>shRow(p,p.invalidCount+' mot'+(p.invalidCount>1?'s':''))).join('')||'<li class="muted">Pas encore de données</li>'}</ol></div>
+      <div><h4>💩 Mots faux</h4><ol>${[...players].sort((a,b)=>b.invalidCount-a.invalidCount).filter(p=>p.invalidCount>0).slice(0,5).map(p=>shRow(p,p.invalidCount+' mot'+(p.invalidCount>1?'s':''))).join('')||'<li class="muted">Pas encore de données</li>'}</ol></div>
       <div><h4>🫣 Anti-solos</h4><ol>${[...players].sort((a,b)=>b.antiSolos-a.antiSolos).filter(p=>p.antiSolos>0).slice(0,5).map(p=>shRow(p,p.antiSolos+' coup'+(p.antiSolos>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
       <div><h4>🐢 Partie la plus lente</h4><ol>${[...players].sort((a,b)=>b.worstSingleTime-a.worstSingleTime).filter(p=>p.worstSingleTime>0).slice(0,5).map(p=>shRow(p,fmtT(p.worstSingleTime))).join('')||'<li class="muted">—</li>'}</ol></div>
       <div><h4>😤 Scrabbles ratés</h4><ol>${[...players].sort((a,b)=>b.missedScrabbles-a.missedScrabbles).filter(p=>p.missedScrabbles>0).slice(0,5).map(p=>shRow(p,p.missedScrabbles+' scrabble'+(p.missedScrabbles>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
