@@ -613,6 +613,7 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 /* Hall of Shame */
 .t-stat-card.shame { border-top-color: #c0392b; }
 .t-stat-card.shame h3 { color: #c0392b; }
+.t-stat-card.shame h2 { color: #c0392b; }
 .shame-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .shame-grid h4 { margin: 0 0 6px; font-size: .85rem; font-weight: 700; color: var(--petrol-dark); }
 @media (max-width: 600px) { .shame-grid { grid-template-columns: 1fr; } }
