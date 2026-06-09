@@ -453,7 +453,7 @@ function onCellDrop(e) {
     letter = L; isBlank = true;
   }
   tile.used = true;
-  if (state.pending.length === 0) hideFeedback();
+  // feedback conservé jusqu'à la prochaine validation
   state.pending.push({ row: r, col: c, letter, rackId: tile.id, isBlank });
   updateCursorAfterDrop(r, c);
   renderBoard();
@@ -1150,7 +1150,7 @@ function placeLetter(L, preferTileId = null) {
     return;
   }
   rackTile.used = true;
-  if (state.pending.length === 0) hideFeedback();
+  // feedback conservé jusqu'à la prochaine validation
   state.pending.push({ row, col, letter: L, rackId: rackTile.id, isBlank });
   advanceCursor();
   renderBoard();
@@ -1174,16 +1174,7 @@ function cancelCurrent() {
   state.cursor = null;
   renderBoard();
   renderRack();
-  // On rappelle le meilleur essai accumulé pour ce coup, s'il existe, pour que
-  // le joueur ne perde pas de vue son score-plancher déjà acquis.
-  const best = state.bestAttempt;
-  if (best) {
-    showFeedback("miss",
-      `Saisie annulée — meilleur essai : <strong>${wLink(best.word)}</strong> = <strong>${best.score}</strong> pts ✓`,
-      `Clique sur une case pour repositionner le curseur.`);
-  } else {
-    showFeedback("", "Saisie annulée", "Clique sur une case pour repositionner le curseur.");
-  }
+  // Le feedback reste inchangé : on conserve l'état jusqu'à la prochaine validation.
 }
 
 let flashTimer = null;
@@ -1192,10 +1183,7 @@ function flashFeedback(kind, title, detail) {
   showFeedback(kind, title, detail);
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => {
-    if (state.cursor) {
-      showFeedback("", `Curseur en (${state.cursor.row+1},${state.cursor.col+1}) — ${state.cursor.dir === "H" ? "Horizontal" : "Vertical"}`,
-        `Tape les lettres de ton mot. <kbd>Entrée</kbd> pour valider.`);
-    }
+    // Ne pas écraser le feedback : on laisse le message d'erreur visible.
   }, 1500);
 }
 
