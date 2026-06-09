@@ -141,6 +141,8 @@
   .info-bar.two-sections .item .value { font-size: 1.15rem; }
 
   /* ----- C : feedback (pleine largeur, HAUTEUR FIXE → layout stable) ----- */
+  #feedbackTop { display: none !important; }
+  .feedback-zone { margin: 0 !important; gap: 0 !important; }
   .feedback, .feedback[hidden] {
     display: flex !important;
     flex: 0 0 42px !important;

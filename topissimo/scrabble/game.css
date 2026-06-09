@@ -663,8 +663,13 @@ input:disabled, select:disabled {
 }
 
 /* ---------- FEEDBACK — bloc bas du panneau droit ---------- */
-.feedback {
+.feedback-zone {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.feedback {
   display: flex;
   align-items: center;
   gap: 10px;

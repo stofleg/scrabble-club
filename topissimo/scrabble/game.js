@@ -657,8 +657,8 @@ function timeoutAdvance() {
   const tm = state.topMove;
   recordMove({ status: "timeout", playerScore, playedWord });
   placeTopAndAdvance(playerScore);
-  showFeedback("miss", `⏱ Temps écoulé — top : ${wLink(tm.move.word)} (${tm.score} pts)`,
-    `Tu marques ${playerScore} pts.`);
+  showTopFeedback(tm.move.word, tm.score); // barre verte top
+  showFeedback("miss", `⏱ Temps écoulé — tu marques ${playerScore} pts`, "");
   setTimeout(nextMove, 1000);
 }
 
@@ -735,9 +735,22 @@ function hideFeedback() {
   // donc explicitement le contenu pour que rien ne traîne d'un coup à l'autre.
   div.innerHTML = "";
   div.className = "feedback";
+  hideTopFeedback();
   // Effacer aussi la surbrillance bleue du mot top et annuler son timer
   if (topWordTimer) { clearTimeout(topWordTimer); topWordTimer = null; }
   state.lastTopCells = [];
+}
+
+function showTopFeedback(word, score) {
+  const div = $("#feedbackTop");
+  if (!div) return;
+  div.className = "feedback success";
+  div.innerHTML = `<div class="title">✅ Top : <strong>${wLink(word)}</strong> — ${score} pts</div>`;
+  div.hidden = false;
+}
+function hideTopFeedback() {
+  const div = $("#feedbackTop");
+  if (div) { div.hidden = true; div.innerHTML = ""; }
 }
 
 function applyRackPos() {
@@ -1290,6 +1303,7 @@ function validate() {
     const bestLine = isNewBest
       ? `${currentLine} — meilleur essai ✓`
       : `${currentLine}<br>Meilleur essai : <strong>${best.word}</strong> = ${best.score} pts`;
+    showTopFeedback(state.topMove.move.word, state.topMove.score); // barre verte top
     showFeedback("miss", bestLine, `Pas le top, cherche encore. <kbd>Voir le top</kbd> pour révéler.`);
   }
 }
@@ -1580,12 +1594,15 @@ function posLabel(move) {
 }
 
 // Affiche le top du coup qui vient de finir en zone C (fond vert).
-// Effacé dès que le joueur pose sa première lettre au coup suivant.
+// Affiche le top du coup précédent en barre verte (#feedbackTop).
+// La barre jaune joueur (#feedback) est effacée (nouveau coup, pas encore d'essai).
 function showLastTopFeedback() {
-  if (!state.lastTop) { hideFeedback(); return; }
+  if (!state.lastTop) { hideFeedback(); hideTopFeedback(); return; }
   const { word, score } = state.lastTop;
   const pos = posLabel(state.lastTop);
-  showFeedback("success", `✅ Top : <strong>${wLink(word)}</strong> — ${score} pts en ${pos}`, "");
+  showTopFeedback(word, score);           // barre verte
+  const div = $("#feedback");             // vider la barre jaune
+  div.hidden = true; div.innerHTML = ""; div.className = "feedback";
 }
 
 // ============================================================
@@ -1786,7 +1803,7 @@ function applyMobileLayout() {
   const timerChip     = rightCol.querySelector(".move-timer-chip");
   const preStartRow   = rightCol.querySelector("#actionRowPreStart");
   const inGameRow     = rightCol.querySelector("#actionRowInGame");
-  const feedback      = rightCol.querySelector(".feedback");
+  const feedback      = rightCol.querySelector("#feedbackZone");
   const review        = rightCol.querySelector(".review-panel");
   const bag           = rightCol.querySelector(".bag-display");
   const board         = gameWrap.querySelector(".board");
