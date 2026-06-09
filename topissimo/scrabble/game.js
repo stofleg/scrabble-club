@@ -1587,6 +1587,7 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
     } : null,
     played: playedWord,
     playedPos: playedMove ? posLabel(playedMove) : null,
+    placedCount: playedMove ? state.pending.length : 0,
     playerScore,
     neg: playerScore - (tm?.score || 0),
     status,        // "top" | "giveup" | "timeout"
