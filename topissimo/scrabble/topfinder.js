@@ -426,7 +426,7 @@ function extend(ctx) {
       const move = { word: currentWord, row: startR, col: startC, dir, blanks: [...blanksAt] };
       const result = scoreMove(board, move, dict, { bonuses });
       if (result.errors.length === 0) {
-        candidates.push({ score: result.score, move, words: result.words });
+        candidates.push({ score: result.score, move, words: result.words, placedCount: result.placed.length });
       }
     }
   }

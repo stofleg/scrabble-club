@@ -1584,10 +1584,12 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
       row: tm.move.row, col: tm.move.col, dir: tm.move.dir,
       blanks: tm.move.blanks || [],
       words: tm.words || [],
+      hadBonus: !!(currentMode().bonuses?.[tm.placedCount]),
     } : null,
     played: playedWord,
     playedPos: playedMove ? posLabel(playedMove) : null,
     placedCount: playedMove ? state.pending.length : 0,
+    gotBonus: playedMove ? !!(currentMode().bonuses?.[state.pending.length]) : false,
     playerScore,
     neg: playerScore - (tm?.score || 0),
     status,        // "top" | "giveup" | "timeout"
