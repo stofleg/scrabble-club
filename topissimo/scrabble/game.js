@@ -66,6 +66,7 @@ const state = {
   pending: [],        // [{row, col, letter, rackId, isBlank}]
   jokerPending: false,// vrai si on attend la lettre à associer au ?
   topMove: null,      // {score, move, words}
+  currentRackFresh: true,  // le tirage courant est-il un chevalet complet neuf ?
   moveNo: 1,
   totalScore: 0,
   sumNeg: 0,
@@ -1577,6 +1578,7 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
   state.history.push({
     moveNo: state.moveNo,
     rack: state.rack.map(t => t.letter).join(""),
+    freshRack: !!state.currentRackFresh,
     top: tm ? {
       word: tm.move.word,
       score: tm.score,
@@ -1635,6 +1637,7 @@ function nextMove() {
     }
     const next = state.prepared.moves[state.preparedIdx];
     state.rack = next.rack.split("").map(L => ({ letter: L, used: false, id: nextTileId() }));
+    state.currentRackFresh = !!next.freshRack;
     renderRack();
     renderBoard();
     computeTop();
@@ -1675,6 +1678,10 @@ function nextMove() {
     return;
   }
   state.bag = result.bag;
+  // Rejet : le reliquat (hors jokers) est remis dans le sac → on ne garde que
+  // les jokers conservés, le reste est un tirage complet neuf.
+  if (result.fresh) state.rack = state.rack.filter(t => t.letter === "?");
+  state.currentRackFresh = !!result.fresh;
   for (const L of (result.drawn || [])) {
     state.rack.push({ letter: L, used: false, id: nextTileId() });
   }
@@ -2928,7 +2935,7 @@ window.openSheet = () => {
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
     return `<tr class="${rowClass}" ${onclick}>
       <td>${h.moveNo}</td>
-      <td><code>${h.rack}</code></td>
+      <td><code>${h.freshRack ? "–" : ""}${h.rack}</code></td>
       <td>${topCell}</td>
       <td>${playedCell}</td>
       <td style="text-align:center" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>

@@ -1716,7 +1716,7 @@ window.openPlayerGameSheet = function(playerId, gameId) {
     const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
     return `<tr class="${rowClass}">
       <td>${h.moveNo}</td>
-      <td><code>${h.rack || ""}</code></td>
+      <td><code>${h.freshRack ? "–" : ""}${h.rack || ""}</code></td>
       <td>${topCell}</td>
       <td>${playedCell}</td>
       <td style="text-align:center" class="${(h.neg || 0) < 0 ? 'neg' : ''}">${(h.neg || 0) < 0 ? h.neg : ''}</td>

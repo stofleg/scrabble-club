@@ -65,8 +65,12 @@ export function generateGame(dict, options = {}, onProgress = null) {
     const result = drawForDuplicate(bag, kept, moveNo, regularTarget);
     if (result.failed) break;
     bag = result.bag;
+    // Rejet : le reliquat (hors jokers) a été remis dans le sac → on le retire
+    // du chevalet et on garde uniquement les jokers conservés.
+    if (result.fresh) rack = rack.filter(t => t.letter === "?");
     for (const L of (result.drawn || [])) rack.push({ letter: L, id: nextId++ });
     if (forceJoker) rack.push({ letter: "?", id: nextId++ });
+    const freshRack = !!result.fresh;
 
     // Si on n'a pas pu compléter (sac vide), fin
     if (rack.length === 0) break;
@@ -88,6 +92,7 @@ export function generateGame(dict, options = {}, onProgress = null) {
     moves.push({
       moveNo,
       rack: rackLetters.join(""),
+      freshRack,
       top: {
         word: top.move.word,
         row: top.move.row,

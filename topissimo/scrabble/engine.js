@@ -261,74 +261,102 @@ export function applyMove(board, move) {
 
 // ============================================================
 //  Tirage en duplicate (règle officielle FFSC)
-//   - Coups 1 à 14 : au moins 2 voyelles ET 2 consonnes
+//   - Coups 1 à 14 : au moins 2 voyelles ET 2 consonnes (sur le rack entier)
 //   - Coup 15 et + : au moins 1 voyelle ET 1 consonne
-//   - Si conditions impossibles à satisfaire (sac vidé d'un type),
-//     on relâche progressivement.
-//   Retourne { drawn: [], bag: nouveauSac } ou { drawn: null, failed: true }
-//   si même en relâchant on ne peut plus rien tirer.
+//   - REJET : si le rack complété ne respecte pas la règle, on remet TOUT
+//     (reliquat + lettres piochées) dans le sac et on tire un chevalet
+//     complet neuf. On répète jusqu'à obtenir un tirage valide.
+//   - Les jokers conservés sur le chevalet ne sont jamais remis dans le sac.
+//   - Si la règle est impossible à satisfaire (sac vidé d'un type en fin de
+//     partie), on relâche progressivement tant que le rack reste jouable.
+//
+//   Retour : { drawn, bag, fresh, minApplied } ou { drawn:null, failed:true }.
+//     - drawn : lettres à AJOUTER au reliquat si fresh === false ;
+//               chevalet complet neuf (hors jokers conservés) si fresh === true.
+//     - fresh : true si le chevalet est un tirage complet (reliquat vidé par le
+//               jeu, ou rejet) → affiché « –XXX » sur la feuille de route.
 // ============================================================
 export function drawForDuplicate(bag, kept, moveNo, target = 7) {
-  const need = target - kept.length;
-  if (need <= 0) return { drawn: [], bag: { ...bag } };
-
-  const baseMin = moveNo >= 15 ? 1 : 2;
+  const minVC = moveNo >= 15 ? 1 : 2;
   const countTypes = (rack) => {
     const v = rack.filter(l => VOWELS.has(l) || l === "?").length;
     return { vowels: v, consonants: rack.length - v };
   };
 
-  // Si le sac est vide : on retourne le chevalet tel quel SI il a au moins
-  // 1 voyelle + 1 consonne (= jouable). Sinon échec (fin de partie).
+  const realKept = kept.filter(l => l !== "?");
+  const jokerCount = kept.length - realKept.length;
+  const need = target - kept.length;
+
+  // Rien à piocher : on garde le chevalet tel quel.
+  if (need <= 0) {
+    return { drawn: [], bag: { ...bag }, fresh: realKept.length === 0, minApplied: minVC };
+  }
+
+  // Sac vide : on retourne le chevalet tel quel s'il est jouable, sinon échec.
   const bagEmpty = Object.values(bag).every(c => !c);
   if (bagEmpty) {
     const { vowels, consonants } = countTypes(kept);
     if (vowels >= 1 && consonants >= 1) {
-      return { drawn: [], bag: { ...bag }, minApplied: 0 };
+      return { drawn: [], bag: { ...bag }, fresh: false, minApplied: 0 };
     }
     return { drawn: null, bag: { ...bag }, failed: true };
   }
 
-  // On essaie d'abord avec la règle stricte, puis si impossible on relâche
-  for (const minVC of [baseMin, 1, 0]) {
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const trial = { ...bag };
-      const drawn = [];
-      let ok = true;
-      for (let i = 0; i < need; i++) {
-        const pool = [];
-        for (const [l, c] of Object.entries(trial)) for (let j = 0; j < c; j++) pool.push(l);
-        if (!pool.length) { ok = false; break; }
-        const idx = Math.floor(Math.random() * pool.length);
-        const letter = pool[idx];
-        drawn.push(letter);
-        trial[letter]--;
-      }
-      const final = [...kept, ...drawn];
-      const { vowels, consonants } = countTypes(final);
+  // Pioche n lettres aléatoires dans une copie du sac.
+  const drawN = (srcBag, n) => {
+    const trial = { ...srcBag };
+    const drawn = [];
+    for (let i = 0; i < n; i++) {
+      const pool = [];
+      for (const [l, c] of Object.entries(trial)) for (let j = 0; j < c; j++) pool.push(l);
+      if (!pool.length) break;
+      const idx = Math.floor(Math.random() * pool.length);
+      drawn.push(pool[idx]);
+      trial[pool[idx]]--;
+    }
+    return { drawn, bag: trial };
+  };
+
+  // 1) Tirage de complément : on garde le reliquat, on pioche `need` lettres.
+  {
+    const r = drawN(bag, need);
+    if (r.drawn.length === need) {
+      const { vowels, consonants } = countTypes([...kept, ...r.drawn]);
       if (vowels >= minVC && consonants >= minVC) {
-        return { drawn, bag: trial, minApplied: minVC };
+        return { drawn: r.drawn, bag: r.bag, fresh: realKept.length === 0, minApplied: minVC };
       }
     }
   }
-  // Vraiment impossible : tirer sans contrainte ; ne PAS échouer si le
-  // résultat final reste jouable (≥1 voyelle + ≥1 consonne).
-  const trial = { ...bag };
-  const drawn = [];
-  for (let i = 0; i < need; i++) {
-    const pool = [];
-    for (const [l, c] of Object.entries(trial)) for (let j = 0; j < c; j++) pool.push(l);
-    if (!pool.length) break;
-    const idx = Math.floor(Math.random() * pool.length);
-    drawn.push(pool[idx]);
-    trial[drawn[drawn.length-1]]--;
+
+  // 2) REJET : on remet le reliquat (hors jokers) dans le sac et on tire un
+  //    chevalet complet neuf. On répète jusqu'à satisfaire la règle.
+  const bagBack = { ...bag };
+  for (const l of realKept) bagBack[l] = (bagBack[l] || 0) + 1;
+  const freshNeed = target - jokerCount;
+  const jokerFill = Array(jokerCount).fill("?");
+
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const r = drawN(bagBack, freshNeed);
+    if (r.drawn.length < freshNeed) break;   // plus assez de lettres
+    const { vowels, consonants } = countTypes([...jokerFill, ...r.drawn]);
+    if (vowels >= minVC && consonants >= minVC) {
+      return { drawn: r.drawn, bag: r.bag, fresh: true, minApplied: minVC };
+    }
   }
-  const finalRack = [...kept, ...drawn];
-  const { vowels, consonants } = countTypes(finalRack);
-  if (vowels === 0 || consonants === 0) {
-    return { drawn: null, bag: { ...bag }, failed: true };
+
+  // 3) Fin de partie : règle impossible. On relâche tant que le rack reste
+  //    jouable (≥1 voyelle + ≥1 consonne), tirage complet.
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const r = drawN(bagBack, freshNeed);
+    if (!r.drawn.length) break;
+    const { vowels, consonants } = countTypes([...jokerFill, ...r.drawn]);
+    if (vowels >= 1 && consonants >= 1) {
+      return { drawn: r.drawn, bag: r.bag, fresh: true, minApplied: 0 };
+    }
   }
-  return { drawn, bag: trial, minApplied: 0 };
+
+  // Vraiment impossible → fin de partie.
+  return { drawn: null, bag: { ...bag }, failed: true };
 }
 
 // Tirage générique (utilisé pour tests/contextes hors duplicate)
