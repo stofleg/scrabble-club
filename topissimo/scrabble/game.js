@@ -3185,3 +3185,47 @@ function abandonRest() {
 }
 
 initGame();
+
+// ============================================================
+//  Mise à jour du service worker (anti « code panaché »)
+//  Si un nouveau SW prend le contrôle pendant qu'on est sur la page de jeu,
+//  l'app tourne avec l'ancien code en mémoire alors que le SW sert les
+//  nouveaux fichiers → état incohérent (plateau faux, etc.). On recharge :
+//   - immédiatement si AUCUNE partie n'est en cours (sûr) ;
+//   - sinon on affiche un bandeau cliquable (pour ne pas faire perdre de coups).
+// ============================================================
+if ("serviceWorker" in navigator) {
+  let swRefreshing = false;
+  const doReload = () => { if (!swRefreshing) { swRefreshing = true; location.reload(); } };
+  function showUpdateBanner() {
+    if (document.getElementById("swUpdateBanner")) return;
+    const b = document.createElement("button");
+    b.id = "swUpdateBanner";
+    b.textContent = "⟳ Nouvelle version disponible — recharger";
+    b.setAttribute("style",
+      "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;" +
+      "padding:10px 16px;border:none;border-radius:8px;background:var(--yellow,#ffdd00);" +
+      "color:var(--petrol-dark,#002e44);font-weight:700;font-size:.9rem;cursor:pointer;" +
+      "box-shadow:0 4px 16px rgba(0,0,0,.25)");
+    b.onclick = doReload;
+    document.body.appendChild(b);
+  }
+  const inGame = () => state.started && state.chronoFinal == null && !review.active;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (inGame()) showUpdateBanner(); else doReload();
+  });
+  navigator.serviceWorker.getRegistration?.().then(reg => {
+    if (!reg) return;
+    reg.update();
+    setInterval(() => reg.update(), 5 * 60 * 1000);
+    if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    reg.addEventListener("updatefound", () => {
+      const sw = reg.installing;
+      if (sw) sw.addEventListener("statechange", () => {
+        if (sw.state === "installed" && navigator.serviceWorker.controller) {
+          if (inGame()) showUpdateBanner(); else sw.postMessage({ type: "SKIP_WAITING" });
+        }
+      });
+    });
+  }).catch(() => {});
+}
