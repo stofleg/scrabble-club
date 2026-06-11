@@ -542,7 +542,9 @@ const VOYELLES_SET = ["A","E","I","O","U","Y"];
 function renderBag() {
   const el = $("#bagDisplay");
   if (!el) return;
-  if (!state.started || review.active) { el.hidden = true; return; }
+  // Pas de sac en review, ni en partie pré-tirée/tournoi/puzzle (tirages figés :
+  // state.bag n'y est pas décrémenté → affichage non pertinent).
+  if (!state.started || review.active || state.prepared || state.isPuzzle) { el.hidden = true; return; }
   el.hidden = false;
   const counts = { ...state.bag };
   if (state.settings.withJoker && state.spareJokers > 0) {
