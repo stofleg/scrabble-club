@@ -1007,151 +1007,121 @@ async function loadTournamentLeaderboard(tournamentId, games) {
     sorted.forEach((p, i) => ranks[p.id] = i + 1);
     return ranks;
   }
-  const rankByCat = {
-    std:   rank(p => p.byCat.std.count   > 0 ? p.byCat.std.neg   : null),
-    blitz: rank(p => p.byCat.blitz.count > 0 ? p.byCat.blitz.neg : null),
-    orig:  rank(p => p.byCat.orig.count  > 0 ? p.byCat.orig.neg  : null),
+  // ----- Complétude & rangs : un rang chiffré n'est attribué qu'aux joueurs
+  //       ayant TERMINÉ l'ensemble concerné (toutes les parties pour le
+  //       général ; toutes les parties de la catégorie pour chaque bloc). -----
+  const rankAmong = (eligible, getVal, asc = false) => {
+    const ranks = {};
+    eligible.slice().sort((a, b) => asc ? getVal(a) - getVal(b) : getVal(b) - getVal(a))
+      .forEach((p, i) => ranks[p.id] = i + 1);
+    return ranks;
   };
-  const rankTotalNeg    = rank(p => p.total.count > 0 ? p.total.neg : null);
-  const rankTotalTime   = rank(p => p.total.count > 0 ? p.total.time : null, true);
-  const rankTotalMissed = rank(p => p.total.count > 0 ? p.total.missed : null, true);
+  const completeGeneral = (p) => games.length > 0 && p.total.count === games.length;
+  const completeCat = (p, c) => cats[c].length > 0 && p.byCat[c].count === cats[c].length;
 
-  // Trier les joueurs par classement général (neg)
-  players.sort((a, b) => (rankTotalNeg[a.id] || 99) - (rankTotalNeg[b.id] || 99));
+  const genEligible = players.filter(completeGeneral);
+  const rankTotalNeg    = rankAmong(genEligible, p => p.total.neg);
+  const rankTotalTime   = rankAmong(genEligible, p => p.total.time, true);
+  const rankTotalMissed = rankAmong(genEligible, p => p.total.missed, true);
+  const rankByCat = {};
+  for (const c of ["std", "blitz", "orig"]) {
+    rankByCat[c] = rankAmong(players.filter(p => completeCat(p, c)), p => p.byCat[c].neg);
+  }
 
   const me = +state.currentPlayerId || 0;
-  const fmtT = (s) => !s ? "—" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+  const fmtT = (s) => !s ? "—" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const rankClass = (r) => r === 1 ? "gold" : r === 2 ? "silver" : r === 3 ? "bronze" : "";
+  const orderedCats = ["std", "blitz", "orig"].filter(c => cats[c].length > 0);
 
   // Contexte pour les modales feuille de route joueur
   const myGameIds = new Set(results.filter(r => r.player_id === me).map(r => r.prepared_game_id));
   window._lbCtx = { games, byPlayer, myGameIds };
 
-  // ===== Tableau compact : 1 ligne par joueur, sous-totaux par catégorie + total =====
-  const orderedCats = ["std", "blitz", "orig"].filter(c => cats[c].length > 0);
-
-  // Définition des colonnes triables : key + comparateur
-  const sortable = {
-    rank:    (p) => rankTotalNeg[p.id] || 999,
-    name:    (p) => p.name.toLowerCase(),
-    sumNeg:  (p) => -p.total.neg,           // négatif ≤ 0 → on inverse pour que "asc" = closer to 0
-    sumTime: (p) => p.total.time || Infinity,
-    sumMiss: (p) => p.total.missed,
-    rankT:   (p) => rankTotalTime[p.id] || 999,
-    rankL:   (p) => rankTotalMissed[p.id] || 999,
+  // Liste affichée : les classés (triés par rang) + le joueur courant en plus
+  // s'il n'est pas classé (rang "–"), pour qu'il puisse se situer.
+  const displayList = (ranks, eligible) => {
+    const list = eligible.slice().sort((a, b) => (ranks[a.id] || 1e9) - (ranks[b.id] || 1e9));
+    if (me && !list.some(p => p.id === me) && byPlayer[me]) list.push(byPlayer[me]);
+    return list;
   };
-  for (const c of orderedCats) sortable["cat_" + c] = (p) => -(p.byCat[c].neg || 0);
 
-  let header = `<thead><tr>
-    <th data-sort="rank">#</th>
-    <th data-sort="name">Joueur</th>`;
-  for (const c of orderedCats) header += `<th data-sort="cat_${c}">${CAT_LABEL[c]}<br><small style="font-weight:400;text-transform:none">${cats[c].length} partie${cats[c].length>1?'s':''}</small></th>`;
-  header += `<th data-sort="sumNeg">∑ Nég.</th><th data-sort="sumTime">∑ Temps</th><th data-sort="sumMiss">∑ Loupés</th><th data-sort="rankT" title="Rang temps">R-T</th><th data-sort="rankL" title="Rang loupés">R-L</th>
-  </tr></thead>`;
-
-  // Index des parties par catégorie/index pour le détail expand
   const expandHtml = (p) => {
     let html = `<div class="expand-inner"><table>
       <thead><tr><th>Catégorie</th><th>Partie</th><th>Négatif</th><th>Temps</th><th>Loupés</th></tr></thead><tbody>`;
-    for (const c of orderedCats) {
-      cats[c].forEach((g, i) => {
-        const r = p.perGame[g.id];
-        const negDisp = r ? r.neg : "—";
-        const timeDisp = r ? fmtT(r.time) : "—";
-        const missDisp = r ? r.missed : "—";
-        html += `<tr><td>${CAT_LABEL[c]}</td><td>${escapeHtml(g.name)}</td><td class="neg">${negDisp}</td><td>${timeDisp}</td><td>${missDisp}</td></tr>`;
-      });
-    }
+    for (const c of orderedCats) cats[c].forEach((g) => {
+      const r = p.perGame[g.id];
+      html += `<tr><td>${CAT_LABEL[c]}</td><td>${escapeHtml(g.name)}</td><td class="neg">${r ? r.neg : "—"}</td><td>${r ? fmtT(r.time) : "—"}</td><td>${r ? r.missed : "—"}</td></tr>`;
+    });
     html += `</tbody></table></div>`;
     return html;
   };
 
-  const rows = players.map(p => {
-    const generalRank = rankTotalNeg[p.id];
+  // ===== Onglet "Classement général" (table riche, sous-totaux par catégorie) =====
+  const genRows = displayList(rankTotalNeg, genEligible).map(p => {
+    const gr = rankTotalNeg[p.id];
     let row = `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
-      <td class="rank ${rankClass(generalRank)}">${generalRank || "—"}</td>
+      <td class="rank ${rankClass(gr)}">${gr || "–"}</td>
       <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>`;
     for (const c of orderedCats) {
       const cd = p.byCat[c];
-      if (cd.count === 0) {
-        row += `<td class="cat-cell muted">—</td>`;
-      } else {
-        const r = rankByCat[c][p.id];
-        row += `<td class="cat-cell">
-          <span class="cat-neg">${cd.neg}</span>
-          <span class="cat-rank">rang ${r}</span>
-        </td>`;
-      }
+      if (cd.count === 0) { row += `<td class="cat-cell muted">—</td>`; continue; }
+      const cr = rankByCat[c][p.id];
+      row += `<td class="cat-cell"><span class="cat-neg">${cd.neg}</span><span class="cat-rank">${cr ? "rang " + cr : "—"}</span></td>`;
     }
     row += `<td><strong>${p.total.neg || 0}</strong></td>
             <td>${fmtT(p.total.time)}</td>
             <td>${p.total.missed}</td>
-            <td class="rank ${rankClass(rankTotalTime[p.id])}">${rankTotalTime[p.id]}</td>
-            <td class="rank ${rankClass(rankTotalMissed[p.id])}">${rankTotalMissed[p.id]}</td>
-            </tr>`;
+            <td class="rank ${rankClass(rankTotalTime[p.id])}">${rankTotalTime[p.id] || "–"}</td>
+            <td class="rank ${rankClass(rankTotalMissed[p.id])}">${rankTotalMissed[p.id] || "–"}</td></tr>`;
     row += `<tr class="expand-row" hidden><td colspan="${5 + orderedCats.length}">${expandHtml(p)}</td></tr>`;
     return row;
-  });
+  }).join("");
+  let genHeader = `<thead><tr><th>#</th><th>Joueur</th>`;
+  for (const c of orderedCats) genHeader += `<th>${CAT_LABEL[c]}<br><small style="font-weight:400;text-transform:none">${cats[c].length} partie${cats[c].length > 1 ? 's' : ''}</small></th>`;
+  genHeader += `<th>∑ Nég.</th><th>∑ Temps</th><th>∑ Loupés</th><th title="Rang temps">R-T</th><th title="Rang loupés">R-L</th></tr></thead>`;
+  const generalTable = `<table class="lb-compact">${genHeader}<tbody>${genRows || `<tr><td colspan="${5 + orderedCats.length}" class="muted">Aucun joueur n'a encore terminé toutes les parties.</td></tr>`}</tbody></table>`;
+
+  // ===== Onglets par catégorie (compact : # · Joueur · ∑ Négatif · ∑ Temps) =====
+  const catTable = (c) => {
+    const rows = displayList(rankByCat[c], players.filter(p => completeCat(p, c))).map(p => {
+      const cd = p.byCat[c];
+      const cr = rankByCat[c][p.id];
+      const played = cd.count > 0;
+      return `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
+        <td class="rank ${rankClass(cr)}">${cr || "–"}</td>
+        <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>
+        <td><strong>${played ? cd.neg : "—"}</strong></td>
+        <td>${played ? fmtT(cd.time) : "—"}</td></tr>
+        <tr class="expand-row" hidden><td colspan="4">${expandHtml(p)}</td></tr>`;
+    }).join("");
+    return `<table class="lb-compact">
+      <thead><tr><th>#</th><th>Joueur</th><th>∑ Négatif</th><th>∑ Temps</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="4" class="muted">Aucun joueur n'a encore terminé ce bloc.</td></tr>`}</tbody></table>`;
+  };
+
+  // ===== Barre d'onglets + 4 vues (affichage des panneaux en inline pour être
+  //       insensible au cache CSS ; surbrillance d'onglet via styles inline). =====
+  const tabs = [{ k: "gen", label: "Classement général", html: generalTable }];
+  if (cats.std.length)   tabs.push({ k: "std",   label: "Parties standard",   html: catTable("std") });
+  if (cats.blitz.length) tabs.push({ k: "blitz", label: "Parties blitz",      html: catTable("blitz") });
+  if (cats.orig.length)  tabs.push({ k: "orig",  label: "Parties originales", html: catTable("orig") });
+  const tabBase = "padding:7px 13px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--ink-soft);font-weight:600;font-size:.85rem;cursor:pointer";
+  const tabActive = "padding:7px 13px;border:none;border-bottom:2px solid var(--petrol);background:transparent;color:var(--petrol);font-weight:700;font-size:.85rem;cursor:pointer";
 
   body.innerHTML = `
-    <table class="lb-compact">
-      ${header}
-      <tbody>${rows.join("")}</tbody>
-    </table>
-    <p class="muted" style="margin-top:8px;font-size:.78rem">
-      Clique sur un en-tête de colonne pour trier · clique sur un joueur pour le détail · <strong>#</strong> = rang par négatif.
-    </p>`;
+    <div style="display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid rgba(0,0,0,.08);margin-bottom:10px">${
+      tabs.map((t, i) => `<button data-lbtab="${t.k}" style="${i === 0 ? tabActive : tabBase}">${t.label}</button>`).join("")
+    }</div>
+    ${tabs.map((t, i) => `<div data-lbpanel="${t.k}" style="display:${i === 0 ? 'block' : 'none'}">${t.html}</div>`).join("")}
+    <p class="muted" style="margin-top:8px;font-size:.78rem">Rang attribué uniquement après avoir terminé l'ensemble · clique sur un joueur pour le détail · <strong>#</strong> = rang par négatif.</p>`;
 
-  // Tri par clic sur en-tête (toggle asc/desc)
-  let sortKey = "rank", sortDir = "asc";
-  function reSort() {
-    const cmp = sortable[sortKey];
-    if (!cmp) return;
-    const sorted = [...players].sort((a, b) => {
-      const va = cmp(a), vb = cmp(b);
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    // Reconstruire seulement les rangées
-    const newRows = sorted.map(p => {
-      const generalRank = rankTotalNeg[p.id];
-      let row = `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
-        <td class="rank ${rankClass(generalRank)}">${generalRank || "—"}</td>
-        <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>`;
-      for (const c of orderedCats) {
-        const cd = p.byCat[c];
-        if (cd.count === 0) row += `<td class="cat-cell muted">—</td>`;
-        else {
-          const r = rankByCat[c][p.id];
-          row += `<td class="cat-cell"><span class="cat-neg">${cd.neg}</span><span class="cat-rank">rang ${r}</span></td>`;
-        }
-      }
-      row += `<td><strong>${p.total.neg || 0}</strong></td>
-              <td>${fmtT(p.total.time)}</td>
-              <td>${p.total.missed}</td>
-              <td class="rank ${rankClass(rankTotalTime[p.id])}">${rankTotalTime[p.id]}</td>
-              <td class="rank ${rankClass(rankTotalMissed[p.id])}">${rankTotalMissed[p.id]}</td></tr>`;
-      row += `<tr class="expand-row" hidden><td colspan="${5 + orderedCats.length}">${expandHtml(p)}</td></tr>`;
-      return row;
-    });
-    body.querySelector("tbody").innerHTML = newRows.join("");
-    // Mettre à jour l'indicateur visuel
-    body.querySelectorAll("th").forEach(th => {
-      th.classList.remove("sort-asc", "sort-desc");
-      if (th.dataset.sort === sortKey) th.classList.add(sortDir === "asc" ? "sort-asc" : "sort-desc");
-    });
-  }
-  body.querySelectorAll("th[data-sort]").forEach(th => {
-    th.style.cursor = "pointer";
-    th.onclick = () => {
-      const k = th.dataset.sort;
-      if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc";
-      else { sortKey = k; sortDir = "asc"; }
-      reSort();
+  body.querySelectorAll("button[data-lbtab]").forEach(btn => {
+    btn.onclick = () => {
+      const k = btn.dataset.lbtab;
+      body.querySelectorAll("button[data-lbtab]").forEach(b => b.setAttribute("style", b === btn ? tabActive : tabBase));
+      body.querySelectorAll("div[data-lbpanel]").forEach(pan => pan.style.display = pan.dataset.lbpanel === k ? "block" : "none");
     };
   });
-  reSort();   // applique le tri initial (rank asc)
 }
 
 window.toggleLbRow = function(tr) {
