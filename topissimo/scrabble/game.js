@@ -1083,11 +1083,11 @@ function handleKey(e) {
     if (state.started && state.chronoFinal == null) revealTop();
     return;
   }
-  // Touche "0" : raccourci Abandonner (mode entraînement uniquement)
-  if ((e.key === "0" || e.code === "Digit0" || e.code === "Numpad0")
-      && !state.prepared && state.started && state.chronoFinal == null) {
+  // F2 : raccourci Abandonner (mode entraînement uniquement)
+  if (e.key === "F2") {
     e.preventDefault();
-    if (confirm("Abandonner la partie ? Les coups restants seront révélés automatiquement.")) {
+    if (!state.prepared && state.started && state.chronoFinal == null &&
+        confirm("Abandonner la partie ? Les coups restants seront révélés automatiquement.")) {
       abandonRest();
     }
     return;
