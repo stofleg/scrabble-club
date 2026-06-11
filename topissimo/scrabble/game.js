@@ -68,6 +68,7 @@ const state = {
   topMove: null,      // {score, move, words}
   currentRackFresh: true,  // le tirage courant est-il un chevalet complet neuf ?
   currentKept: "",         // reliquat (lettres conservées) du tirage courant
+  moveMaxPlaced: 0,        // max de jetons posés dans un mot VALIDE ce coup (scrabble ?)
   moveNo: 1,
   totalScore: 0,
   sumNeg: 0,
@@ -1235,6 +1236,7 @@ function validate() {
       state.topMove.isotopWords = isotopWords;
     }
     if (isotopWords.includes(move.word)) {
+      state.moveMaxPlaced = Math.max(state.moveMaxPlaced, state.pending.length);
       recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
       hideTopFeedback();  // efface le top du coup précédent dès validation
       placeTopAndAdvance(topScore, move.word, topScore, move);
@@ -1275,6 +1277,7 @@ function validate() {
     move.row === topMv.row &&
     move.col === topMv.col &&
     move.dir === topMv.dir;
+  state.moveMaxPlaced = Math.max(state.moveMaxPlaced, result.placed?.length || 0);
   if (result.score === topScore || isFirstMoveTopWord || isSameAsTopButJokerElsewhere) {
     // TOP trouvé
     recordMove({ status: "top", playerScore: topScore, playedWord: move.word, playedMove: move });
@@ -1530,6 +1533,7 @@ function placeTopAndAdvance(playerScore, playedWord = null, playedScore = null, 
   state.pending = [];
   state.bestAttempt = null;
   state.moveInvalidCount = 0;
+  state.moveMaxPlaced = 0;
   state.moveNo++;
   if (state.prepared) state.preparedIdx++;
   renderInfo();
@@ -1592,13 +1596,17 @@ function recordMove({ status, playerScore, playedWord = null, playedMove = null 
     } : null,
     played: playedWord,
     playedPos: playedMove ? posLabel(playedMove) : null,
-    placedCount: playedMove ? state.pending.length : 0,
+    // Meilleur nombre de jetons posés dans un mot VALIDE ce coup (même non-top,
+    // même si finalement abandonné). Sert à savoir si le joueur a posé un
+    // scrabble. v:2 marque ce nouveau format fiable (cf. "scrabbles ratés").
+    placedCount: Math.max(state.moveMaxPlaced, playedMove ? state.pending.length : 0),
     gotBonus: playedMove ? !!(currentMode().bonuses?.[state.pending.length]) : false,
     playerScore,
     neg: playerScore - (tm?.score || 0),
     status,        // "top" | "giveup" | "timeout"
     invalidCount: state.moveInvalidCount,
     timeMs,
+    v: 2,
   });
 }
 

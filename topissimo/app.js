@@ -1352,12 +1352,14 @@ async function loadTournamentStats(tournamentId, games) {
   }
 
   for (const p of players) p.missedScrabbles = 0;
-  // La rubrique n'est calculable que si TOUTES les feuilles du tournoi portent
-  // placedCount (parties récentes). Sinon (résidu d'anciennes parties pour
-  // certains joueurs), le classement serait partiel et trompeur → on masque tout.
+  // La rubrique n'est fiable que si TOUTES les feuilles du tournoi sont au
+  // format v:2 (placedCount = meilleur nb de jetons posés, capturé même sur les
+  // coups abandonnés). Les feuilles antérieures mettaient placedCount=0 sur les
+  // abandons → impossible de savoir si le joueur avait posé un scrabble → on
+  // masque la rubrique pour tout le tournoi ("—").
   const scrabbleReliable = players.every(p =>
     (p.results || []).every(r =>
-      !(r.details || []).length || (r.details || []).some(m => m.placedCount != null)));
+      !(r.details || []).length || (r.details || []).every(m => m.v >= 2)));
   if (scrabbleReliable) {
     for (const p of players) {
       for (const r of (p.results || [])) {
@@ -1366,10 +1368,9 @@ async function loadTournamentStats(tournamentId, games) {
         const bonuses = bonusesOf(r.prepared_game_id);
         for (const m of (r.details || [])) {
           if (!scrabbleMoves.has(m.moveNo)) continue;        // le top n'était pas un scrabble
-          if (m.placedCount == null) continue;
-          // Trouvé le top-scrabble (status "top") OU posé son propre scrabble
-          // (placedCount → prime) → pas de raté.
-          if (m.status === "top" || bonuses[m.placedCount]) continue;
+          // Le joueur a posé un scrabble (son meilleur mot atteint la prime) →
+          // pas de raté, même si ce n'était pas le top.
+          if (bonuses[m.placedCount]) continue;
           p.missedScrabbles++;
         }
       }
