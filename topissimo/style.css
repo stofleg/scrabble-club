@@ -642,21 +642,23 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 .shame-grid h4 { margin: 0 0 6px; font-size: .85rem; font-weight: 700; color: var(--petrol-dark); }
 @media (max-width: 600px) { .shame-grid { grid-template-columns: 1fr; } }
 
-/* Solos à rejouer (records du tournoi) */
-.solo-replay-list { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow-y: auto; }
-.solo-replay-list li {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,.06);
-}
-.solo-replay-list li:last-child { border-bottom: none; }
-.solo-replay-list .solo-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; font-size: .85rem; }
-.solo-replay-list .solo-info .muted { font-size: .75rem; }
+/* Solos (records du tournoi) : pseudo + boutons rejouer dessous */
+.solo-list { list-style: none; counter-reset: rank; padding: 0; margin: 0; }
+.solo-list li { counter-increment: rank; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+.solo-list li:last-child { border-bottom: none; }
+.solo-list li.me { color: var(--petrol); }
+.solo-list .solo-head { display: flex; align-items: baseline; gap: 6px; }
+.solo-list .solo-head::before { content: counter(rank) "."; color: var(--ink-soft); flex: 0 0 auto; }
+.solo-list .solo-head strong { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.solo-list .solo-head .muted { flex: 0 0 auto; }
+.solo-list .solo-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 5px 0 0 14px; }
 .btn-solo-replay {
-  flex: 0 0 auto; text-decoration: none;
-  padding: 4px 10px; border-radius: 6px;
+  text-decoration: none;
+  padding: 5px 12px; border-radius: 6px;
   background: var(--yellow); color: var(--petrol-dark);
-  font-weight: 600; font-size: .8rem; white-space: nowrap;
+  font-weight: 600; font-size: .85rem; white-space: nowrap;
 }
+.btn-solo-replay:hover { filter: brightness(.97); }
 
 .stat .value {
   font-size: 1.4rem;
