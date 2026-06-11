@@ -1715,6 +1715,7 @@ function nextMove() {
   }
   renderRack();
   renderBoard();
+  renderBag();           // afficher le sac dès le nouveau tirage (entraînement)
   computeTop();
   startMoveTimer();
   showLastTopFeedback();
