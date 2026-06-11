@@ -642,6 +642,22 @@ tbody tr.me:hover { background: rgba(255,221,0,.22); }
 .shame-grid h4 { margin: 0 0 6px; font-size: .85rem; font-weight: 700; color: var(--petrol-dark); }
 @media (max-width: 600px) { .shame-grid { grid-template-columns: 1fr; } }
 
+/* Solos à rejouer (records du tournoi) */
+.solo-replay-list { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow-y: auto; }
+.solo-replay-list li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.solo-replay-list li:last-child { border-bottom: none; }
+.solo-replay-list .solo-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; font-size: .85rem; }
+.solo-replay-list .solo-info .muted { font-size: .75rem; }
+.btn-solo-replay {
+  flex: 0 0 auto; text-decoration: none;
+  padding: 4px 10px; border-radius: 6px;
+  background: var(--yellow); color: var(--petrol-dark);
+  font-weight: 600; font-size: .8rem; white-space: nowrap;
+}
+
 .stat .value {
   font-size: 1.4rem;
   font-weight: 700;

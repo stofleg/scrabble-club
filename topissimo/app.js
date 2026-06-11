@@ -692,57 +692,15 @@ async function loadSolosAndStreaks() {
     .select("player_id, prepared_game_id, total_time_seconds, finished_at, details, players(name), prepared_games(id,name,mode,with_joker,time_per_move,created_at)")
     .limit(5000);
   if (!detailed || detailed.length === 0) {
-    $("#solosBody").innerHTML = `<tr><td colspan="6" class="muted">Pas encore de parties tournoi.</td></tr>`;
     $("#recordsGrid").innerHTML = `<p class="muted">Pas encore de parties tournoi.</p>`;
     return;
   }
 
-  const { modeDisplayName } = await import("./scrabble/engine.js");
   const me = +state.currentPlayerId || 0;
   const fmtT = (s) => !s ? "—" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 
-  // ===== SOLOS (sans spoiler : on cache mot/place/score) =====
-  const byGame = {};
-  for (const r of detailed) (byGame[r.prepared_game_id] ||= []).push(r);
-  const solos = [];
-  for (const rs of Object.values(byGame)) {
-    const topsByMove = {};
-    for (const r of rs) {
-      for (const h of (r.details || [])) {
-        if (h.status === "top") (topsByMove[h.moveNo] ||= []).push(r);
-      }
-    }
-    for (const [moveNo, who] of Object.entries(topsByMove)) {
-      if (who.length !== 1) continue;
-      const winner = who[0];
-      const g = winner.prepared_games;
-      solos.push({
-        player_id: winner.player_id,
-        name: winner.players?.name || "?",
-        gameId: winner.prepared_game_id,
-        gameName: g?.name || "?",
-        modeLabel: modeDisplayName(g?.mode, g?.with_joker),
-        timePerMove: g?.time_per_move || 0,
-        date: (g?.created_at || winner.finished_at || "").slice(0, 10),
-        moveNo: +moveNo,
-      });
-    }
-  }
-  solos.sort((a, b) => b.date.localeCompare(a.date));   // les plus récents d'abord
-
-  const replayBtn = (gameId, moveNo) => `<a class="primary" style="text-decoration:none;padding:4px 10px;border-radius:6px;background:var(--yellow);color:var(--petrol-dark);font-weight:600;font-size:.82rem" href="scrabble/game.html?puzzle=${gameId}&move=${moveNo}">↻ Rejouer</a>`;
-
-  $("#solosBody").innerHTML = solos.length === 0
-    ? `<tr><td colspan="6" class="muted">Aucun solo enregistré pour l'instant.</td></tr>`
-    : solos.slice(0, 30).map(s => `
-      <tr>
-        <td class="clickable" onclick="openPlayerModal(${s.player_id})"><strong>${escapeHtml(s.name)}</strong></td>
-        <td class="muted">${escapeHtml(s.gameName)}</td>
-        <td>${s.modeLabel}</td>
-        <td>${s.timePerMove ? s.timePerMove + ' s' : '<span class="muted">illimité</span>'}</td>
-        <td class="muted">${s.date}</td>
-        <td>${replayBtn(s.gameId, s.moveNo)}</td>
-      </tr>`).join("");
+  // (Les solos rejouables sont désormais dans les Records du tournoi concerné,
+  //  pas dans les Stats du club.)
 
   // ===== STREAK INTER-PARTIES =====
   // Pour chaque joueur : concaténer tous ses coups dans l'ordre chronologique (par created_at de la partie puis moveNo),
@@ -1240,6 +1198,7 @@ async function loadTournamentStats(tournamentId, games) {
   // On groupe les résultats par game_id, puis on parcourt les moves par moveNo
   const byGame = {};
   for (const r of results) (byGame[r.prepared_game_id] ||= []).push(r);
+  const soloList = [];   // solos individuels rejouables : { gid, moveNo, pid }
   for (const [gid, rs] of Object.entries(byGame)) {
     // Construire map moveNo → liste de player_ids ayant top
     const topsByMove = {};
@@ -1251,10 +1210,11 @@ async function loadTournamentStats(tournamentId, games) {
       }
     }
     // Pour chaque coup avec un seul top, c'est un solo pour ce joueur
-    for (const list of Object.values(topsByMove)) {
+    for (const [moveNo, list] of Object.entries(topsByMove)) {
       if (list.length === 1) {
         const pid = list[0];
         if (byPlayer[pid]) byPlayer[pid].solos++;
+        soloList.push({ gid: +gid, moveNo: +moveNo, pid });
       }
     }
   }
@@ -1385,13 +1345,35 @@ async function loadTournamentStats(tournamentId, games) {
       <div><h4>😤 Scrabbles ratés</h4><ol>${[...players].sort((a,b)=>b.missedScrabbles-a.missedScrabbles).filter(p=>p.missedScrabbles>0).slice(0,5).map(p=>shRow(p,p.missedScrabbles+' scrabble'+(p.missedScrabbles>1?'s':''))).join('')||'<li class="muted">—</li>'}</ol></div>
     </div>`;
 
+  // Solos rejouables : un bouton "Rejouer" sous chaque solo du tournoi.
+  const gameNameById = {};
+  for (const g of games) gameNameById[g.id] = g.name;
+  const playerNameById = {};
+  for (const p of players) playerNameById[p.id] = p.name;
+  const soloReplayBtn = (gid, moveNo) =>
+    `<a class="btn-solo-replay" href="scrabble/game.html?puzzle=${gid}&move=${moveNo}">↻ Rejouer</a>`;
+  const sortedSolos = [...soloList].sort((a, b) =>
+    a.gid - b.gid || a.moveNo - b.moveNo);
+  const cardSolosReplay = `
+    <h3>🎯 Solos à rejouer</h3>
+    <p class="muted" style="margin:-2px 0 8px;font-size:.78rem">Coups trouvés par un seul joueur. Le mot n'est pas dévoilé.</p>
+    <ul class="solo-replay-list">${
+      sortedSolos.map(s => `
+        <li>
+          <span class="solo-info"><strong>${escapeHtml(playerNameById[s.pid] || "?")}</strong>
+            <span class="muted">${escapeHtml(gameNameById[s.gid] || "?")} · coup ${s.moveNo}</span></span>
+          ${soloReplayBtn(s.gid, s.moveNo)}
+        </li>`).join("") || '<li class="muted">Aucun solo pour l\'instant</li>'
+    }</ul>`;
+
   body.innerHTML = `
     <div class="tournament-stats-grid">
       <div class="t-stat-card">${cardSolos}</div>
       <div class="t-stat-card">${cardBestTime}</div>
       <div class="t-stat-card">${cardCumulTime}</div>
       <div class="t-stat-card">${cardCumulNeg}</div>
-    </div>`;
+    </div>
+    <div class="t-stat-card" style="margin-top:14px">${cardSolosReplay}</div>`;
 
   const shameContainer = $("#tournamentShameBody");
   if (shameContainer) {
