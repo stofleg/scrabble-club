@@ -1236,18 +1236,24 @@ async function loadTournamentStats(tournamentId, games) {
     </li>`;
 
   // Solos : sous chaque pseudo, un bouton "Rejouer" par solo (coup trouvé seul).
+  // Styles inline (comme le bouton "Jouer") pour être insensible au cache CSS.
+  const _soloBtnStyle = "display:inline-block;text-decoration:none;padding:5px 12px;border-radius:6px;font-weight:600;font-size:.85rem;background:var(--yellow);color:var(--petrol-dark);white-space:nowrap";
   const soloReplayBtn = (gid, moveNo) =>
-    `<a class="btn-solo-replay" href="scrabble/game.html?puzzle=${gid}&move=${moveNo}">↻ Rejouer</a>`;
+    `<a style="${_soloBtnStyle}" href="scrabble/game.html?puzzle=${gid}&move=${moveNo}">↻ Rejouer</a>`;
   const solosByPlayer = {};
   for (const s of soloList) (solosByPlayer[s.pid] ||= []).push(s);
   for (const k in solosByPlayer) solosByPlayer[k].sort((a, b) => a.gid - b.gid || a.moveNo - b.moveNo);
   const cardSolos = `
     <h3>🏆 Solos</h3>
-    <ul class="solo-list">${
-      topN(players, 5, "solos").map(p => `
-        <li class="${p.id === me ? 'me' : ''}">
-          <div class="solo-head"><strong>${escapeHtml(p.name)}</strong><span class="muted">${p.solos}</span></div>
-          <div class="solo-btns">${(solosByPlayer[p.id] || []).map(s => soloReplayBtn(s.gid, s.moveNo)).join("")}</div>
+    <ul style="list-style:none;padding:0;margin:0">${
+      topN(players, 5, "solos").map((p, i) => `
+        <li style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)${p.id === me ? ';color:var(--petrol)' : ''}">
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span style="color:var(--ink-soft)">${i + 1}.</span>
+            <strong style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.name)}</strong>
+            <span style="color:var(--ink-soft)">${p.solos}</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0 16px">${(solosByPlayer[p.id] || []).map(s => soloReplayBtn(s.gid, s.moveNo)).join("")}</div>
         </li>`).join("") || '<li class="muted">Aucun solo pour l\'instant</li>'
     }</ul>`;
   const cardBestTime = `
