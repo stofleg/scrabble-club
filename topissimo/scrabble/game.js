@@ -108,6 +108,7 @@ function loadSettings() {
     timePerMove: 120, gameMode: "duplicate", withJoker: false,
     colorTheme: "classic",
     chronoType: "challenge",
+    highlightTop: true,
   };
   try {
     const local = JSON.parse(localStorage.getItem("scrabbleSettings") || "{}");
@@ -142,6 +143,7 @@ async function saveSettingsToSupabase() {
     showCoords: state.settings.showCoords,
     colorTheme: state.settings.colorTheme,
     chronoType: state.settings.chronoType,
+    highlightTop: state.settings.highlightTop,
   };
   await window._sb.from("players").update({ settings: persisted }).eq("id", pid);
 }
@@ -204,7 +206,7 @@ function renderBoard() {
       const isCursor = state.cursor && state.cursor.row === r && state.cursor.col === c;
       if (isCursor) cls.push("cursor", state.cursor.dir === "H" ? "dir-h" : "dir-v");
       if (state.lastPlaced.some(p => p.row === r && p.col === c)) cls.push("last-placed");
-      if (state.lastTopCells.some(p => p.row === r && p.col === c)) cls.push("top-word");
+      if (state.settings.highlightTop !== false && state.lastTopCells.some(p => p.row === r && p.col === c)) cls.push("top-word");
       let tileHtmlStr = "";
       if (tile) {
         const tcls = ["tile"];
@@ -839,12 +841,14 @@ function moveCursorKey(key) {
   if (key === "ArrowRight") col++;
   if (key === "ArrowUp")    row--;
   if (key === "ArrowDown")  row++;
-  if (row < 0 || col < 0 || row >= BOARD_SIZE || col >= BOARD_SIZE) return;
+  // Passage d'un bord à l'autre (ex. O1 + flèche gauche → O15).
+  col = (col + BOARD_SIZE) % BOARD_SIZE;
+  row = (row + BOARD_SIZE) % BOARD_SIZE;
   state.cursor.row = row;
   state.cursor.col = col;
-  // En sens horizontal : flèches G/D ; en vertical : flèches H/B (sinon on garde le sens actuel)
-  if (key === "ArrowLeft" || key === "ArrowRight") state.cursor.dir = "H";
-  else state.cursor.dir = "V";
+  // Le déplacement clavier fige le curseur en HORIZONTAL ; l'utilisateur change
+  // le sens avec la barre espace s'il le souhaite.
+  state.cursor.dir = "H";
   renderBoard();
 }
 
@@ -1073,8 +1077,12 @@ function handleKey(e) {
     return;
   }
   if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
-  if (e.key === "F1") { e.preventDefault(); shuffleRack(); return; }
-  if (e.key === "F2") { e.preventDefault(); restoreRackSort(); return; }
+  // F1 : Voir le top (−20 s)  [anciennement touche "1"]
+  if (e.key === "F1") {
+    e.preventDefault();
+    if (state.started && state.chronoFinal == null) revealTop();
+    return;
+  }
   // Touche "0" : raccourci Abandonner (mode entraînement uniquement)
   if ((e.key === "0" || e.code === "Digit0" || e.code === "Numpad0")
       && !state.prepared && state.started && state.chronoFinal == null) {
@@ -1084,12 +1092,13 @@ function handleKey(e) {
     }
     return;
   }
-  // Touche "1" : raccourci Voir le top (−20 s)
-  if ((e.key === "1" || e.code === "Digit1" || e.code === "Numpad1")
-      && state.started && state.chronoFinal == null) {
-    e.preventDefault();
-    revealTop();
-    return;
+  // Touche "1" : Mélanger le chevalet  [anciennement F1]
+  if (e.key === "1" || e.code === "Digit1" || e.code === "Numpad1") {
+    e.preventDefault(); shuffleRack(); return;
+  }
+  // Touche "2" : Trier le chevalet (alpha)  [anciennement F2]
+  if (e.key === "2" || e.code === "Digit2" || e.code === "Numpad2") {
+    e.preventDefault(); restoreRackSort(); return;
   }
   // Flèches : déplacer le curseur (seulement s'il n'y a pas de pending tile)
   if (state.cursor && state.pending.length === 0 &&
@@ -1775,6 +1784,7 @@ window.openSettings = () => {
   $("#optShowCoords").checked = state.settings.showCoords;
   $("#optColorTheme").value = state.settings.colorTheme || "classic";
   $("#optChronoType").value = state.settings.chronoType || "challenge";
+  $("#optHighlightTop").checked = state.settings.highlightTop !== false;
   $("#optTimePerMove").value = state.settings.timePerMove;
   // Si la partie est en cours, on verrouille les "Paramètres de jeu"
   // (préférences perso restent modifiables).
@@ -1797,6 +1807,7 @@ window.closeSettings = () => {
   state.settings.showCoords = $("#optShowCoords").checked;
   state.settings.colorTheme = $("#optColorTheme").value || "classic";
   state.settings.chronoType = $("#optChronoType").value || "challenge";
+  state.settings.highlightTop = $("#optHighlightTop").checked;
   state.settings.timePerMove = +$("#optTimePerMove").value || 0;
   saveSettings();
   saveSettingsToSupabase().catch(() => {});   // sync compte (silencieux si pas connecté ou pas de colonne)
@@ -2963,10 +2974,10 @@ window.openSheet = () => {
     const onclick = clickable ? `onclick="jumpToReviewMove(${h.moveNo})" style="cursor:pointer"` : "";
     return `<tr class="${rowClass}" ${onclick}>
       <td>${h.moveNo}</td>
-      <td><code>${rackDisplay(h)}</code></td>
-      <td>${topCell}</td>
+      <td style="padding-right:26px"><code>${rackDisplay(h)}</code></td>
+      <td style="padding-right:26px">${topCell}</td>
       <td>${playedCell}</td>
-      <td style="text-align:center" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>
+      <td style="text-align:center;padding:6px 4px" class="${h.neg < 0 ? 'neg' : ''}">${h.neg < 0 ? h.neg : ''}</td>
       <td>${statusIcon} <span style="color:#888;font-size:.85em">${statusLabel}</span></td>
       <td style="text-align:right">${time}</td>
     </tr>`;
@@ -2981,10 +2992,10 @@ window.openSheet = () => {
     <table style="width:100%;border-collapse:collapse;font-size:.9rem;white-space:nowrap">
       <thead><tr style="background:var(--petrol);color:#fff;position:sticky;top:0">
         <th style="padding:6px 8px;text-align:left">#</th>
-        <th style="padding:6px 8px;text-align:left">Tirage</th>
-        <th style="padding:6px 8px;text-align:left">Top</th>
+        <th style="padding:6px 26px 6px 8px;text-align:left">Tirage</th>
+        <th style="padding:6px 26px 6px 8px;text-align:left">Top</th>
         <th style="padding:6px 8px;text-align:left">Joué</th>
-        <th style="padding:6px 8px;text-align:center">Négatif</th>
+        <th style="padding:6px 4px;text-align:center">Nég.</th>
         <th style="padding:6px 8px;text-align:left">Statut</th>
         <th style="padding:6px 8px;text-align:right">Temps</th>
       </tr></thead>

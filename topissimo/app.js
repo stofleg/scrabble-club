@@ -1828,10 +1828,10 @@ window.openPlayerGameSheet = function(playerId, gameId) {
     const time = h.timeMs ? (h.timeMs / 1000).toFixed(2) + "s" : "—";
     return `<tr class="${rowClass}">
       <td>${h.moveNo}</td>
-      <td><code>${rackDisplay(h)}</code></td>
-      <td>${topCell}</td>
+      <td style="padding-right:26px"><code>${rackDisplay(h)}</code></td>
+      <td style="padding-right:26px">${topCell}</td>
       <td>${playedCell}</td>
-      <td style="text-align:center" class="${(h.neg || 0) < 0 ? 'neg' : ''}">${(h.neg || 0) < 0 ? h.neg : ''}</td>
+      <td style="text-align:center;padding:6px 4px" class="${(h.neg || 0) < 0 ? 'neg' : ''}">${(h.neg || 0) < 0 ? h.neg : ''}</td>
       <td>${statusIcon} <span style="color:#888;font-size:.85em">${statusLabel}</span></td>
       <td style="text-align:right">${time}</td>
     </tr>`;
@@ -1850,10 +1850,10 @@ window.openPlayerGameSheet = function(playerId, gameId) {
     <table style="width:100%;border-collapse:collapse;font-size:.9rem">
       <thead><tr style="background:var(--petrol);color:#fff;position:sticky;top:0">
         <th style="padding:6px 8px;text-align:left">#</th>
-        <th style="padding:6px 8px;text-align:left">Tirage</th>
-        <th style="padding:6px 8px;text-align:left">Top</th>
+        <th style="padding:6px 26px 6px 8px;text-align:left">Tirage</th>
+        <th style="padding:6px 26px 6px 8px;text-align:left">Top</th>
         <th style="padding:6px 8px;text-align:left">Joué</th>
-        <th style="padding:6px 8px;text-align:center">Négatif</th>
+        <th style="padding:6px 4px;text-align:center">Nég.</th>
         <th style="padding:6px 8px;text-align:left">Statut</th>
         <th style="padding:6px 8px;text-align:right">Temps</th>
       </tr></thead>
