@@ -1536,20 +1536,24 @@ $("#authForm").addEventListener("submit", async (e) => {
       if (error) throw error;
     } else if (authMode === "signup") {
       if (!pseudo) throw new Error("Choisis un pseudo.");
-      // 1) Vérifier en amont si l'email est déjà associé à un player
-      const { data: byEmail } = await sb.from("players").select("id,name").ilike("email", email).maybeSingle();
-      if (byEmail) {
+      // 1) Email : s'il est déjà rattaché à un COMPTE → connecte-toi. S'il
+      //    correspond à un joueur non lié (placeholder créé par l'admin avec
+      //    l'email), on autorise : il sera réclamé par email à la connexion.
+      const { data: byEmail } = await sb.from("players").select("id,name,auth_user_id").ilike("email", email).maybeSingle();
+      if (byEmail && byEmail.auth_user_id) {
         throw new Error(`Email déjà utilisé (par "${byEmail.name}"). Connecte-toi plutôt.`);
       }
-      const { data: byName } = await sb.from("players").select("id,auth_user_id").eq("name", pseudo).maybeSingle();
-      // Si le pseudo existe ET qu'il est déjà rattaché à un compte → vraiment pris.
-      // S'il existe mais n'est PAS rattaché (placeholder créé par l'admin), on
-      // autorise l'inscription : onSignedIn le réclamera via claim_player().
-      const willClaimPlaceholder = !!(byName && !byName.auth_user_id);
-      if (byName && byName.auth_user_id) {
-        throw new Error("Pseudo déjà pris, choisis-en un autre.");
+      const willClaimByEmail = !!(byEmail && !byEmail.auth_user_id);
+      // 2) Pseudo : s'il existe déjà (lié OU placeholder) → déjà pris.
+      //    (Sauf si on réclame un placeholder par email : le pseudo saisi sera
+      //    de toute façon remplacé par celui du placeholder.)
+      if (!willClaimByEmail) {
+        const { data: byName } = await sb.from("players").select("id").eq("name", pseudo).maybeSingle();
+        if (byName) {
+          throw new Error("Pseudo déjà pris, choisis-en un autre.");
+        }
       }
-      // 2) créer le compte auth (on stocke pseudo + club pour le rattachement)
+      // 3) créer le compte auth (on stocke pseudo + club pour la création différée)
       const { data, error } = await sb.auth.signUp({
         email, password,
         options: { data: { pseudo, club: club || null } },
@@ -1557,9 +1561,9 @@ $("#authForm").addEventListener("submit", async (e) => {
       if (error) throw error;
       const userId = data.user?.id;
       if (!userId) throw new Error("Inscription échouée (Supabase n'a pas renvoyé d'utilisateur).");
-      // 3) créer le player lié — SAUF si on doit réclamer un placeholder existant
-      //    (auquel cas onSignedIn s'en charge, pour éviter un doublon).
-      if (!willClaimPlaceholder) {
+      // 4) créer le player lié — SAUF si un placeholder par email sera réclamé
+      //    à la connexion (onSignedIn s'en charge, pour éviter un doublon).
+      if (!willClaimByEmail) {
         const { error: pErr } = await sb.from("players").insert({
           name: pseudo, email, auth_user_id: userId, club: club || null,
         });
@@ -1660,17 +1664,13 @@ async function onSignedIn() {
   let { data: player } = await sb.from("players").select("*").eq("auth_user_id", userId).maybeSingle();
   if (!player) {
     // Pas de player lié à ce compte. Avant de créer un nouveau joueur (et donc
-    // un doublon), on tente de RATTACHER un joueur existant non lié :
-    //   1) par le pseudo choisi à l'inscription (stocké en user_metadata)
-    //   2) sinon par l'email du compte
+    // un doublon), on tente de RATTACHER un joueur existant non lié dont l'EMAIL
+    // correspond. On ne rattache JAMAIS par pseudo seul (risque d'usurpation) :
+    // l'email prouve l'identité.
     const meta = session.user.user_metadata || {};
     const desiredPseudo = (meta.pseudo || "").trim();
     let claimedId = null;
-    if (desiredPseudo) {
-      const { data } = await sb.rpc("claim_player", { p_name: desiredPseudo });
-      claimedId = data || null;
-    }
-    if (!claimedId) {
+    {
       const { data } = await sb.rpc("claim_player_by_email");
       claimedId = data || null;
     }
