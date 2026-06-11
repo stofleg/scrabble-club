@@ -1056,8 +1056,8 @@ async function loadTournamentLeaderboard(tournamentId, games) {
     return html;
   };
 
-  // ===== Onglet "Classement général" (table riche, sous-totaux par catégorie) =====
-  const genRows = displayList(rankTotalNeg, genEligible).map(p => {
+  // ===== Constructeurs de lignes =====
+  const genRowFn = (p) => {
     const gr = rankTotalNeg[p.id];
     let row = `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
       <td class="rank ${rankClass(gr)}">${gr || "–"}</td>
@@ -1075,46 +1075,74 @@ async function loadTournamentLeaderboard(tournamentId, games) {
             <td class="rank ${rankClass(rankTotalMissed[p.id])}">${rankTotalMissed[p.id] || "–"}</td></tr>`;
     row += `<tr class="expand-row" hidden><td colspan="${5 + orderedCats.length}">${expandHtml(p)}</td></tr>`;
     return row;
-  }).join("");
-  let genHeader = `<thead><tr><th>#</th><th>Joueur</th>`;
-  for (const c of orderedCats) genHeader += `<th>${CAT_LABEL[c]}<br><small style="font-weight:400;text-transform:none">${cats[c].length} partie${cats[c].length > 1 ? 's' : ''}</small></th>`;
-  genHeader += `<th>∑ Nég.</th><th>∑ Temps</th><th>∑ Loupés</th><th title="Rang temps">R-T</th><th title="Rang loupés">R-L</th></tr></thead>`;
-  const generalTable = `<table class="lb-compact">${genHeader}<tbody>${genRows || `<tr><td colspan="${5 + orderedCats.length}" class="muted">Aucun joueur n'a encore terminé toutes les parties.</td></tr>`}</tbody></table>`;
-
-  // ===== Onglets par catégorie (compact : # · Joueur · ∑ Négatif · ∑ Temps) =====
-  const catTable = (c) => {
-    const rows = displayList(rankByCat[c], players.filter(p => completeCat(p, c))).map(p => {
-      const cd = p.byCat[c];
-      const cr = rankByCat[c][p.id];
-      const played = cd.count > 0;
-      return `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
-        <td class="rank ${rankClass(cr)}">${cr || "–"}</td>
-        <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>
-        <td><strong>${played ? cd.neg : "—"}</strong></td>
-        <td>${played ? fmtT(cd.time) : "—"}</td></tr>
-        <tr class="expand-row" hidden><td colspan="4">${expandHtml(p)}</td></tr>`;
-    }).join("");
-    return `<table class="lb-compact">
-      <thead><tr><th>#</th><th>Joueur</th><th>∑ Négatif</th><th>∑ Temps</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="4" class="muted">Aucun joueur n'a encore terminé ce bloc.</td></tr>`}</tbody></table>`;
+  };
+  const catRowFn = (c) => (p) => {
+    const cd = p.byCat[c];
+    const cr = rankByCat[c][p.id];
+    const played = cd.count > 0;
+    return `<tr class="${p.id === me ? 'me' : ''}" onclick="toggleLbRow(this)" data-pid="${p.id}">
+      <td class="rank ${rankClass(cr)}">${cr || "–"}</td>
+      <td class="player-name"><span class="player-name-link" onclick="event.stopPropagation();openPlayerGamesModal(${p.id})">${escapeHtml(p.name)}</span></td>
+      <td><strong>${played ? cd.neg : "—"}</strong></td>
+      <td>${played ? fmtT(cd.time) : "—"}</td></tr>
+      <tr class="expand-row" hidden><td colspan="4">${expandHtml(p)}</td></tr>`;
   };
 
-  // ===== Barre d'onglets + 4 vues (affichage des panneaux en inline pour être
-  //       insensible au cache CSS ; surbrillance d'onglet via styles inline). =====
-  const tabs = [{ k: "gen", label: "Classement général", html: generalTable }];
-  if (cats.std.length)   tabs.push({ k: "std",   label: "Parties standard",   html: catTable("std") });
-  if (cats.blitz.length) tabs.push({ k: "blitz", label: "Parties blitz",      html: catTable("blitz") });
-  if (cats.orig.length)  tabs.push({ k: "orig",  label: "Parties originales", html: catTable("orig") });
+  // ===== En-têtes triables (data-sort) =====
+  const th = (key, label, extra = "") => `<th data-sort="${key}" style="cursor:pointer"${extra}>${label}<span class="lb-arrow"></span></th>`;
+  let genHeader = `<thead><tr>${th("rank", "#")}${th("name", "Joueur")}`;
+  for (const c of orderedCats) genHeader += th("cat_" + c, `${CAT_LABEL[c]}<br><small style="font-weight:400;text-transform:none">${cats[c].length} partie${cats[c].length > 1 ? 's' : ''}</small>`);
+  genHeader += `${th("sumNeg", "∑ Nég.")}${th("sumTime", "∑ Temps")}${th("sumMiss", "∑ Loupés")}${th("rankT", "R-T", ' title="Rang temps"')}${th("rankL", "R-L", ' title="Rang loupés"')}</tr></thead>`;
+  const catHeader = `<thead><tr>${th("rank", "#")}${th("name", "Joueur")}${th("catNeg", "∑ Négatif")}${th("catTime", "∑ Temps")}</tr></thead>`;
+
+  // ===== Accesseurs de tri =====
+  const genCols = {
+    rank:    p => rankTotalNeg[p.id] || 1e9,
+    name:    p => p.name.toLowerCase(),
+    sumNeg:  p => -(p.total.neg || 0),
+    sumTime: p => p.total.time || 1e12,
+    sumMiss: p => p.total.missed || 0,
+    rankT:   p => rankTotalTime[p.id] || 1e9,
+    rankL:   p => rankTotalMissed[p.id] || 1e9,
+  };
+  for (const c of orderedCats) genCols["cat_" + c] = p => p.byCat[c].count ? -(p.byCat[c].neg || 0) : 1e9;
+  const catCols = (c) => ({
+    rank:    p => rankByCat[c][p.id] || 1e9,
+    name:    p => p.name.toLowerCase(),
+    catNeg:  p => p.byCat[c].count ? -(p.byCat[c].neg || 0) : 1e9,
+    catTime: p => p.byCat[c].time || 1e12,
+  });
+
+  // ===== Panneaux =====
+  const catMeta = { std: "Parties standard", blitz: "Parties blitz", orig: "Parties originales" };
+  const panels = [{
+    k: "gen", label: "Classement général", header: genHeader, rowFn: genRowFn, cols: genCols,
+    list: displayList(rankTotalNeg, genEligible), colspan: 5 + orderedCats.length,
+    empty: "Aucun joueur n'a encore terminé toutes les parties.",
+  }];
+  for (const c of ["std", "blitz", "orig"]) {
+    if (!cats[c].length) continue;
+    panels.push({
+      k: c, label: catMeta[c], header: catHeader, rowFn: catRowFn(c), cols: catCols(c),
+      list: displayList(rankByCat[c], players.filter(pp => completeCat(pp, c))), colspan: 4,
+      empty: "Aucun joueur n'a encore terminé ce bloc.",
+    });
+  }
+  const panelTable = (pn) => `<table class="lb-compact">${pn.header}<tbody>${
+    pn.list.map(pn.rowFn).join("") || `<tr><td colspan="${pn.colspan}" class="muted">${pn.empty}</td></tr>`
+  }</tbody></table>`;
+
   const tabBase = "padding:7px 13px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--ink-soft);font-weight:600;font-size:.85rem;cursor:pointer";
   const tabActive = "padding:7px 13px;border:none;border-bottom:2px solid var(--petrol);background:transparent;color:var(--petrol);font-weight:700;font-size:.85rem;cursor:pointer";
 
   body.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid rgba(0,0,0,.08);margin-bottom:10px">${
-      tabs.map((t, i) => `<button data-lbtab="${t.k}" style="${i === 0 ? tabActive : tabBase}">${t.label}</button>`).join("")
+      panels.map((pn, i) => `<button data-lbtab="${pn.k}" style="${i === 0 ? tabActive : tabBase}">${pn.label}</button>`).join("")
     }</div>
-    ${tabs.map((t, i) => `<div data-lbpanel="${t.k}" style="display:${i === 0 ? 'block' : 'none'}">${t.html}</div>`).join("")}
-    <p class="muted" style="margin-top:8px;font-size:.78rem">Rang attribué uniquement après avoir terminé l'ensemble · clique sur un joueur pour le détail · <strong>#</strong> = rang par négatif.</p>`;
+    ${panels.map((pn, i) => `<div data-lbpanel="${pn.k}" style="display:${i === 0 ? 'block' : 'none'}">${panelTable(pn)}</div>`).join("")}
+    <p class="muted" style="margin-top:8px;font-size:.78rem">Rang attribué après avoir terminé l'ensemble · clique sur une colonne pour trier · clique sur un joueur pour le détail.</p>`;
 
+  // Bascule d'onglets
   body.querySelectorAll("button[data-lbtab]").forEach(btn => {
     btn.onclick = () => {
       const k = btn.dataset.lbtab;
@@ -1122,6 +1150,33 @@ async function loadTournamentLeaderboard(tournamentId, games) {
       body.querySelectorAll("div[data-lbpanel]").forEach(pan => pan.style.display = pan.dataset.lbpanel === k ? "block" : "none");
     };
   });
+
+  // Tri par clic sur en-tête (indépendant par panneau)
+  const sortState = {};
+  for (const pn of panels) {
+    const panelEl = body.querySelector(`div[data-lbpanel="${pn.k}"]`);
+    if (!panelEl) continue;
+    panelEl.querySelectorAll("th[data-sort]").forEach(thEl => {
+      thEl.onclick = () => {
+        const key = thEl.dataset.sort;
+        const st = sortState[pn.k] || { key: "rank", dir: "asc" };
+        if (st.key === key) st.dir = st.dir === "asc" ? "desc" : "asc";
+        else { st.key = key; st.dir = "asc"; }
+        sortState[pn.k] = st;
+        const get = pn.cols[key];
+        const sorted = pn.list.slice().sort((a, b) => {
+          const va = get(a), vb = get(b);
+          if (va < vb) return st.dir === "asc" ? -1 : 1;
+          if (va > vb) return st.dir === "asc" ? 1 : -1;
+          return 0;
+        });
+        panelEl.querySelector("tbody").innerHTML = sorted.map(pn.rowFn).join("");
+        panelEl.querySelectorAll("th[data-sort] .lb-arrow").forEach(s => s.textContent = "");
+        const arrow = panelEl.querySelector(`th[data-sort="${key}"] .lb-arrow`);
+        if (arrow) arrow.textContent = st.dir === "asc" ? " ▲" : " ▼";
+      };
+    });
+  }
 }
 
 window.toggleLbRow = function(tr) {
