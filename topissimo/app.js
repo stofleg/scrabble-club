@@ -812,10 +812,14 @@ async function autoArchiveOldest() {
 
 window.openTournament = async (id) => {
   currentTournamentId = id;
+  // Refléter le tournoi ouvert dans l'URL (sans déclencher hashchange) pour que
+  // le bouton "précédent" du navigateur revienne ici après un rejeu/une partie.
+  if (location.hash !== `#tid=${id}`) history.replaceState(null, "", `#tid=${id}`);
   await loadTournamentDetail(id);
 };
 window.backToTournaments = async () => {
   currentTournamentId = null;
+  history.replaceState(null, "", location.pathname);
   await loadTournaments();
 };
 window.archiveTournament = async (id) => {
@@ -1237,9 +1241,19 @@ async function loadTournamentStats(tournamentId, games) {
 
   // Solos : sous chaque pseudo, un bouton "Rejouer" par solo (coup trouvé seul).
   // Styles inline (comme le bouton "Jouer") pour être insensible au cache CSS.
+  // Le rejeu n'est cliquable que si le joueur courant a DÉJÀ joué la partie
+  // correspondante (sinon on spoile une partie non encore jouée).
+  const myPlayedGames = new Set(
+    results.filter(r => r.player_id === me && Array.isArray(r.details) && r.details.length)
+           .map(r => r.prepared_game_id));
   const _soloBtnStyle = "display:inline-block;text-decoration:none;padding:5px 12px;border-radius:6px;font-weight:600;font-size:.85rem;background:var(--yellow);color:var(--petrol-dark);white-space:nowrap";
-  const soloReplayBtn = (gid, moveNo) =>
-    `<a style="${_soloBtnStyle}" href="scrabble/game.html?puzzle=${gid}&move=${moveNo}">↻ Rejouer</a>`;
+  const _soloBtnDisabled = "display:inline-block;padding:5px 12px;border-radius:6px;font-weight:600;font-size:.85rem;background:#e6e9eb;color:#9aa6ac;white-space:nowrap;cursor:not-allowed";
+  const soloReplayBtn = (gid, moveNo) => {
+    if (!myPlayedGames.has(gid)) {
+      return `<span style="${_soloBtnDisabled}" title="Joue d'abord cette partie pour pouvoir la rejouer">↻ Rejouer</span>`;
+    }
+    return `<a style="${_soloBtnStyle}" href="scrabble/game.html?puzzle=${gid}&move=${moveNo}&tid=${currentTournamentId}">↻ Rejouer</a>`;
+  };
   const solosByPlayer = {};
   for (const s of soloList) (solosByPlayer[s.pid] ||= []).push(s);
   for (const k in solosByPlayer) solosByPlayer[k].sort((a, b) => a.gid - b.gid || a.moveNo - b.moveNo);
@@ -1595,13 +1609,13 @@ function checkRecoveryHash() {
     const btn = document.querySelector('nav button[data-tab="prepared"]');
     if (btn) { btn.click(); history.replaceState(null, "", location.pathname); }
   }
-  // Retour vers un tournoi spécifique
+  // Retour vers un tournoi spécifique (on CONSERVE le #tid pour que le bouton
+  // "précédent" du navigateur puisse y revenir après un rejeu).
   if (h.startsWith("#tid=")) {
     const tid = h.slice(5);
     const btn = document.querySelector('nav button[data-tab="prepared"]');
     if (btn) btn.click();
     if (tid) openTournament(tid).catch(() => {});
-    history.replaceState(null, "", location.pathname);
   }
 }
 window.addEventListener("hashchange", checkRecoveryHash);
