@@ -1541,20 +1541,30 @@ $("#authForm").addEventListener("submit", async (e) => {
       if (byEmail) {
         throw new Error(`Email déjà utilisé (par "${byEmail.name}"). Connecte-toi plutôt.`);
       }
-      const { data: byName } = await sb.from("players").select("id").eq("name", pseudo).maybeSingle();
-      if (byName) {
+      const { data: byName } = await sb.from("players").select("id,auth_user_id").eq("name", pseudo).maybeSingle();
+      // Si le pseudo existe ET qu'il est déjà rattaché à un compte → vraiment pris.
+      // S'il existe mais n'est PAS rattaché (placeholder créé par l'admin), on
+      // autorise l'inscription : onSignedIn le réclamera via claim_player().
+      const willClaimPlaceholder = !!(byName && !byName.auth_user_id);
+      if (byName && byName.auth_user_id) {
         throw new Error("Pseudo déjà pris, choisis-en un autre.");
       }
-      // 2) créer le compte auth
-      const { data, error } = await sb.auth.signUp({ email, password });
+      // 2) créer le compte auth (on stocke pseudo + club pour le rattachement)
+      const { data, error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { pseudo, club: club || null } },
+      });
       if (error) throw error;
       const userId = data.user?.id;
       if (!userId) throw new Error("Inscription échouée (Supabase n'a pas renvoyé d'utilisateur).");
-      // 3) créer le player lié
-      const { error: pErr } = await sb.from("players").insert({
-        name: pseudo, email, auth_user_id: userId, club: club || null,
-      });
-      if (pErr) throw new Error("Création du profil : " + pErr.message);
+      // 3) créer le player lié — SAUF si on doit réclamer un placeholder existant
+      //    (auquel cas onSignedIn s'en charge, pour éviter un doublon).
+      if (!willClaimPlaceholder) {
+        const { error: pErr } = await sb.from("players").insert({
+          name: pseudo, email, auth_user_id: userId, club: club || null,
+        });
+        if (pErr) throw new Error("Création du profil : " + pErr.message);
+      }
       // 4) Si la session est déjà ouverte (confirmation email désactivée), onAuthStateChange prendra le relais.
       //    Sinon on bascule sur l'onglet Connexion avec un message clair.
       msg.className = "auth-msg ok";
@@ -1649,12 +1659,34 @@ async function onSignedIn() {
   // Charger le player lié à cet auth_user_id
   let { data: player } = await sb.from("players").select("*").eq("auth_user_id", userId).maybeSingle();
   if (!player) {
-    // Pas de player lié : peut arriver si inscription incomplète. Créer un brouillon.
-    const fallbackName = (session.user.email || "Joueur").split("@")[0];
-    const { data: created } = await sb.from("players").insert({
-      name: fallbackName, email: session.user.email, auth_user_id: userId,
-    }).select().single();
-    player = created;
+    // Pas de player lié à ce compte. Avant de créer un nouveau joueur (et donc
+    // un doublon), on tente de RATTACHER un joueur existant non lié :
+    //   1) par le pseudo choisi à l'inscription (stocké en user_metadata)
+    //   2) sinon par l'email du compte
+    const meta = session.user.user_metadata || {};
+    const desiredPseudo = (meta.pseudo || "").trim();
+    let claimedId = null;
+    if (desiredPseudo) {
+      const { data } = await sb.rpc("claim_player", { p_name: desiredPseudo });
+      claimedId = data || null;
+    }
+    if (!claimedId) {
+      const { data } = await sb.rpc("claim_player_by_email");
+      claimedId = data || null;
+    }
+    if (claimedId) {
+      const { data: linked } = await sb.from("players").select("*").eq("id", claimedId).maybeSingle();
+      player = linked;
+    }
+    if (!player) {
+      // Aucun joueur à rattacher : on crée un nouveau profil.
+      const fallbackName = desiredPseudo || (session.user.email || "Joueur").split("@")[0];
+      const { data: created } = await sb.from("players").insert({
+        name: fallbackName, email: session.user.email, auth_user_id: userId,
+        club: meta.club || null,
+      }).select().single();
+      player = created;
+    }
   }
   currentPlayer = player;
   state.currentPlayerId = player.id;
